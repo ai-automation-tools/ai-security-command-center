@@ -15,6 +15,9 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 
 ## Unreleased
 
+**Docs**
+- cedar-go check (`docs/reports/2026-cedar-go-check.md`): cedar-go v1.9.0 matched the Rust reference engine on 9 of 9 requests and on schema validation, at about 1.3 µs per decision. It needs Go 1.26, and in both engines a `forbid` that errors on a missing attribute fails open, so Slice 1 now carries four fail-closed rules. *Slice 0: Contracts*
+
 ## 2026-11-09
 
 **Added**
