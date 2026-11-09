@@ -42,7 +42,14 @@ trust scores beyond rule-based risk tier · policy simulation · **NHI lifecycle
 revoke)** · **connectors beyond OpenBao/Vault, GitHub and the config collector** · **heuristic reconciliation
 and conflict UI** · **plugin library, submission pipeline and developer programme pages** · **Python and
 TypeScript SDKs** · **scanner, detector, notification, console-panel and policy-pack plugin types** ·
-**workflow-intelligence detection of any class** (fingerprint fields only).
+**workflow-intelligence detection of any class** (fingerprint fields only) · **managed-settings generation,
+change control, ownership transfer and expiry (EP-24 beyond groups, posture and self-protection)** ·
+**vendor-hosted agent connectors and the `agent_identity` kind**.
+
+**In the MVP from the 2026-11-09 review, under existing criteria:** agent groups as policy targets and the
+self-protection rule (MVP-2, ABUSE-33); the posture check behind every `enforced` label (MVP-8, ABUSE-34); the
+containment record listing the NHIs an agent uses (MVP-7); agents in the NHI inventory view and
+inventory-document import (MVP-12).
 
 ## 2. MVP screens
 

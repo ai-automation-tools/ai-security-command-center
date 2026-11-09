@@ -32,6 +32,17 @@ in between, enforced at more than one choke point and honest about where it can'
    more workflows do the same job and propose **consolidation**, which removes cost, credentials and attack
    surface at once.
 
+**Two more, from the 2026-11-09 requirements review [C]:** Mike's stated purpose is *agent management within an
+enterprise, and governing non-human accounts, AI agents included*.
+
+4. **An AI agent is a non-human identity, and is governed as one.** Agents, their instances and the identities
+   platforms issue to them sit in the same inventory as service accounts and keys, with the same owner, review,
+   expiry and offboarding rules. One population, one review.
+5. **Managing a fleet means knowing each runtime's posture, not only its policy.** A policy is enforced on a
+   machine only while the hook that asks for it can't be switched off there. ASCC checks that per host, generates
+   the managed settings that make it true, and puts a changed agent back through review. It does not deploy
+   settings: device management does.
+
 ## 2. Target personas
 
 | Persona | Owns | Top jobs | Primary screens |
@@ -66,6 +77,8 @@ in between, enforced at more than one choke point and honest about where it can'
 | **U13** | **Aggregate and manage NHIs across clouds and on-premise systems**: one inventory of service accounts, keys, roles, app registrations and vault roles; which agents use each; ownerless, stale and over-privileged ones flagged; disable, rotate and revoke through the same connectors **[C]** | An agent is governed only as far as its credentials are; NHIs outnumber humans and nobody owns most of them | MVP (SDK + two read-only connectors) / Phase 2 (cloud connectors, lifecycle actions) |
 | **U14** | **Extend ASCC with a plugin**: a developer scaffolds a connector, scanner, detector, adapter or integration from a template, tests it against a local harness, submits it, and it appears in the library after an automated scan and review **[C]** | Coverage grows with the number of connectors and adapters; the core team can't write them all; a visible ecosystem is a buying signal | MVP (contract, SDK, harness, two in-house plugins) / Phase 2 (library launch) |
 | **U15** | **Find redundant workflows and propose consolidation**: show where several agents or automations solve the same use case with overlapping tools, data and schedules, with the savings and risk reduction of merging them **[C]** | Each duplicate is extra cost, extra NHIs and extra attack surface; ASCC is the one system that sees them all | Phase 2 (deterministic overlap) / Phase 3 (semantic) |
+| **U16** | **Run the agent fleet**: every agent in a group with a policy profile, each host's runtime posture checked, a changed agent re-reviewed, an owner who leaves hands over, a pilot agent expires **[C, 2026-11-09 review]** | "Agent management" is the stated purpose; without it ASCC governs one agent at a time | MVP (groups, posture for one runtime, PEP self-protection) / Phase 2 (managed-config generation, change control, transfer, expiry) |
+| **U17** | **See agents as NHIs, including the ones on vendor platforms**: one non-human list with agents in it; agents built on SaaS and cloud agent services inventoried as `observed` **[C, 2026-11-09 review]** | The agents an enterprise can't put a hook in front of are the ones nobody has listed | MVP (unified view, inventory-document import) / Phase 2 (agent-platform connectors) |
 
 ## 4. Value proposition and differentiators
 
@@ -140,6 +153,7 @@ Priority: **P0** in MVP, **P1** Phase 2, **P2** Phase 3+, **R** research. Mode: 
 | **Registry and discovery** | Manual + API registration; lifecycle states; owner required; config-file discovery of local MCP servers 🔍 (as a plugin) | Cloud/SCM/IdP discovery connectors; drift alerts; attestations | Network-traffic shadow-AI detection 🔍 (R) |
 | **NHI connectors** [new] | Connector contract; **two read-only connectors** (OpenBao/Vault credential refs and roles; GitHub Apps, installations and deploy keys **[V]**); NHI record type; AI-linkage edges; coverage per connector 🔍 | AWS IAM, Entra ID / Azure, GCP, Okta, Kubernetes service accounts, Active Directory / LDAP, CI secrets (GitHub Actions, GitLab), workflow platforms (n8n and peers); **cross-source reconciliation**; ownerless / stale / over-privileged findings 🔍; **lifecycle actions** (disable, rotate, revoke) with approval ⛔ | IGA/PAM connectors (SailPoint, CyberArk); data platforms (Snowflake, Databricks); SaaS admin APIs; usage-based right-sizing proposals |
 | **Plugin platform** [new] | **v1alpha1 plugin contract** (gRPC), Go SDK, local dev harness, conformance suite, out-of-process host with capability-scoped tokens and health, install gated by scan + approval ⛔, kill switch can disable a plugin ⛔; the two connectors and the config collector ship as plugins | Python and TypeScript SDKs; plugin types: scanner, detector, notification, console panel, policy pack; **public library** with verified tiers, submission pipeline, docs site, template repo; developer programme launch | WASM in-process plugins for hot-path detectors with a latency budget; runtime-adapter plugins for new agent CLIs; partner certification |
+| **Fleet management** [new, 2026-11-09 review] | Agent groups as policy targets; runtime posture check for the MVP runtime 🔍; policy forbids the agent touching its own PEP ⛔; agents in the NHI view; containment lists the NHIs left standing | Managed-settings generation per runtime; change control on approved agents ⛔; ownership transfer; expiry ⛔; declarative manifests; vendor-hosted agent connectors 🔍 | Posture attested by the OS or device management instead of self-reported (R) |
 | **Workflow intelligence** [new] | Workflow fingerprint fields captured on agents and discovered automations (trigger, inputs, tools, destinations, schedule, purpose) so data accumulates | **Deterministic overlap detection** (shared tool sets, data sources, destinations, schedules, duplicated credentials); idle workflows; optimization inbox with accept / dismiss / snooze 🔍 | Semantic similarity of purpose and prompts (local embeddings) 🔍; chain-collapse and shared-service proposals; savings estimates calibrated against accepted proposals (R) |
 | **Identity and delegation** | OIDC login; agent identity records; token exchange with actor chain; intersection rule ⛔; max depth ⛔ | JIT grants, access requests, access reviews, SoD rules, SCIM; **SPIFFE/SPIRE for server agents** [DS, pulled forward] | PAM session brokering |
 | **Policy** | Cedar policies; deny-overrides; decision log; explain API | Policy simulation against recorded traffic; policy tests in CI; policy packs as plugins | Formal policy analysis (R) |
@@ -193,6 +207,8 @@ Priority: **P0** in MVP, **P1** Phase 2, **P2** Phase 3+, **R** research. Mode: 
    and its policies remain the only source of permits and forbids.
 9. **No automatic workflow changes.** Workflow intelligence proposes; owners dispose, in the platform that owns
    the workflow.
+10. **Not device management.** ASCC generates a runtime's managed settings and checks they're in place; the
+    enterprise's own MDM, GPO or image pipeline deploys them.
 
 ## 9. Success measures (targets, to be baselined in Phase 0)
 

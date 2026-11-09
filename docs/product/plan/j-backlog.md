@@ -2,7 +2,8 @@
 
 [Package index](README.md) · Previous: [I. Validation](i-validation.md) · Next: [K. Next steps](k-next-steps.md)
 
-Epics are defined in [C §1](c-requirements-catalog.md#1-epics). Below: the first 40 tickets, in dependency order,
+Epics are defined in [C §1](c-requirements-catalog.md#1-epics). Below: the first 42 tickets (TKT-041 and 042 came
+from the 2026-11-09 requirements review), in dependency order,
 covering Phase 0 and Phase 1. Size: **S** ≤ 3 days, **M** ≤ 2 weeks, **L** ≤ 4 weeks (one engineer;
 provisional). TKT-001 to 030 come from the Claude run (TKT-030 narrowed); TKT-031 to 039 are the 2026-11-09
 additions; TKT-040 folds in the DeepSeek run's end-to-end acceptance and demo-runbook tickets [DS].
@@ -61,7 +62,9 @@ platform API scopes they need, marked [V] until confirmed** (FR-CON-05/10).
 | **TKT-037** | GitHub NHI connector: GitHub Apps and installations with permissions, deploy keys, organization PAT policy, Actions secret names; repositories containing MCP server manifests or agent configs registered as `discovered` **[V]** REST/GraphQL scopes | EP-21 | M | 032, 033, 034 | FR-CON-01/05/09/11/14; conformance + fixture replay green incl. rate-limit and permission-denied fixtures |
 | **TKT-038** | NHI inventory: `nhi_account` type and kinds, exact-key reconciliation (ARN, client ID, object ID, vault path + role, key fingerprint), `uses_nhi` / `observed_by` edges, `ownerless` finding, `unlinked` filter, connector coverage rows, freshness, NHI list API | EP-21 | M | 007, 008, 029, 036, 037 | FR-CON-02/03 (exact)/04/06 (`ownerless`)/07; AppRole + GitHub App fixture merges into one record; MVP-12 |
 | **TKT-039** | `workflow` entity with fingerprint fields (trigger, inputs, tools, models, destinations, schedule, owner, platform, purpose, rollups); populated from agent registration; API | EP-23 | S | 008 | FR-WFI-01; every registered agent has a workflow record |
-| **TKT-040** | End-to-end acceptance suite for MVP-1..12 in CI against the Compose stack, plus the one-command `docker compose up` demo runbook and the outsider-builds-a-connector exit test script [DS] | all | M | 020, 021, 022, 025, 026, 028, 035, 036, 037, 038, 039 | G §3 demo script runs green from a clean stack; MVP-1..12 asserted; runbook followed by someone other than the builder |
+| **TKT-041** | Fleet management in the adapter and PDP: agent groups as Cedar parents in the bundle compiler; runtime posture check for the MVP runtime reported with the heartbeat and feeding the coverage engine; self-protection policy rule and the command features behind it | EP-24 | M | 011, 020, 029 | FR-POL-11 (groups), FR-RT-05, FR-RT-07; ABUSE-33, -34 green; an instance with a failing check shows `observed` with the finding |
+| **TKT-042** | Agents in the NHI inventory: unified non-human view and API over agents, instances and `nhi_account`; suite inventory-document import and export; containment record lists the NHIs an agent uses with `revocable_by` | EP-21 | S | 026, 038 | FR-CON-15 (view), FR-CON-18, FR-KS-08; import is idempotent; export validates against the suite schema |
+| **TKT-040** | End-to-end acceptance suite for MVP-1..12 in CI against the Compose stack, plus the one-command `docker compose up` demo runbook and the outsider-builds-a-connector exit test script [DS] | all | M | 020, 021, 022, 025, 026, 028, 035, 036, 037, 038, 039, 041, 042 | G §3 demo script runs green from a clean stack; MVP-1..12 asserted; runbook followed by someone other than the builder |
 
 ## Parked for Phase 2 (epics, not yet ticketed)
 
@@ -76,7 +79,11 @@ FR-CON-12 kill via connector, FR-CON-13 NHI export and reviews · **EP-22:** FR-
 SDKs, FR-PLG-10 library index and browser, FR-PLG-11 submission pipeline and tiers, FR-PLG-13 developer
 programme pages, scanner / detector / notification / console-panel / policy-pack plugin types (FR-PLG-02,
 FR-SC-10, FR-DLP-06, FR-ADM-05, FR-POL-10) · **EP-23:** FR-WFI-02..09 (telemetry fingerprints, deterministic
-overlap, idle and credential-consolidation classes, proposal lifecycle, estimates, privacy rules, workflow map).
+overlap, idle and credential-consolidation classes, proposal lifecycle, estimates, privacy rules, workflow map) ·
+**EP-24:** FR-RT-06 managed-configuration generation, FR-REG-12 ownership transfer, FR-REG-13 change control,
+FR-REG-14 expiry, FR-REG-15 declarative manifests, shipped policy profiles (FR-POL-11) · **EP-21 additions:**
+FR-CON-15 `agent_identity` via connectors, FR-CON-16 vendor-hosted agent connectors, FR-CON-17 OWASP NHI Top 10
+mapping and the three extra hygiene findings.
 
 ## Ticket dependency graph (Phase 1 critical path)
 
