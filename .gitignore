@@ -1,0 +1,15 @@
+# build output
+/bin/
+/dist/
+/_site/
+*.exe
+*.wasm
+coverage.out
+*.log
+# settings and runtime state
+.env
+.env.*
+!.env.example
+.ascc/
+.DS_Store
+Thumbs.db
