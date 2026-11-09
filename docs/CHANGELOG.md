@@ -16,6 +16,7 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 ## Unreleased
 
 **Docs**
+- `AGENTS.md` carries the two reports' rules: cedar-go v1.9.0 and the Go 1.26 bump it brings, the fail-closed handling of erroring policies, and the hook contract. *Slice 0: Contracts*
 - Claude Code hook contract (`docs/reports/2026-claude-code-hook-contract.md`): the PreToolUse payload, the deny JSON and exit codes, the fail-open defaults and `"onFailure": "block"` (v2.1.295+), the coverage gaps (`@` mentions, Monitor, `PowerShell`, editable settings), and seven rules for Slice 2. *Slice 0: Contracts*
 - cedar-go check (`docs/reports/2026-cedar-go-check.md`): cedar-go v1.9.0 matched the Rust reference engine on 9 of 9 requests and on schema validation, at about 1.3 µs per decision. It needs Go 1.26, and in both engines a `forbid` that errors on a missing attribute fails open, so Slice 1 now carries four fail-closed rules. *Slice 0: Contracts*
 

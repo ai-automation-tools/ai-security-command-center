@@ -32,8 +32,11 @@ decision goes in as an ADR amendment there, never as a quiet code change.
   `github.com/ai-automation-tools/ai-security-command-center`. Code lives under `src/`: the CLI in
   `src/cmd/ascc/`, packages in `src/internal/<name>/`. Tests are `_test.go` files next to the code, using
   `testing` only (table tests; no testify).
-- Cedar via `github.com/cedar-policy/cedar-go` (ADR-03), once the Slice 0 check confirms it. A JSON Schema
-  validator is fine as a test-only dependency for the inventory check.
+- Cedar via `github.com/cedar-policy/cedar-go` **v1.9.0** (ADR-03), confirmed against the Rust reference in
+  `docs/reports/2026-cedar-go-check.md`. It needs Go 1.26: the PR that adds it raises `go.mod` and every "1.25"
+  in the docs. Load policies with `NewPolicyListFromBytes` and key each by its `@id` (reject missing or
+  duplicate ids). Its schema validator is experimental (`x/exp/schema/validate`): keep it behind one function.
+  A JSON Schema validator is fine as a test-only dependency for the inventory check.
 - **The PDP and audit packages do no I/O.** They take bytes and return values, so the WebAssembly demo
   (`GOOS=js GOARCH=wasm`) imports exactly the code the CLI runs. File, stdin and clock access live in
   `src/cmd/ascc` or a thin `src/internal/store` package.
@@ -57,6 +60,14 @@ go build ./...
 
 - **Default deny, fail closed.** No permit, an unknown agent, an unknown tool, a parse error, a missing policy
   file or a panic is a deny with a reason. Every fail-closed path has a test.
+- **Cedar skips a policy that errors, so a `forbid` can fail open.** Deny any principal or resource not in the
+  registry before evaluating, validate entities and policies against the schema at load, and treat any entry in
+  `Diagnostic.Errors` as a deny. Requests R8 and R9 in the cedar-go report are the regression tests.
+- **The hook contract is `docs/reports/2026-claude-code-hook-contract.md`.** Deny with exit 0 and the
+  `hookSpecificOutput` JSON; an internal error writes stderr and exits 2, never 1. On allow, print nothing, so
+  Claude Code's own permission rules still apply. The agent id comes from `--agent` in the hook's `args`, not
+  the payload. Setup docs always show matcher `*`, `"timeout": 10` and `"onFailure": "block"`. Normalise
+  Windows backslashes and parse `Bash` and `PowerShell` commands alike.
 - **Policy decides, nothing else.** No model call, score or heuristic grants access (ADR-14).
 - **No secret at rest.** The audit line stores the tool name, parsed features and a SHA-256 of the raw input,
   never the raw input. A test asserts it.
