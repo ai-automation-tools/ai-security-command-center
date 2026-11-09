@@ -67,6 +67,9 @@ ownership rule is adopted in §8 [DS].
 // agent
 {
   "runtime": "claude-code",                 // runtime adapter key
+  "hosting": "self_hosted",                 // self_hosted | vendor_hosted (FR-CON-16: never `enforced`)
+  "groups": ["team:platform", "profile:ci"], // Cedar parents of the agent entity (FR-POL-11)
+  "expires_at": null,                       // optional; past it the agent is `restricted` (FR-REG-14)
   "access_profiles": ["llm", "mcp", "cli", "file"],
   "models_allowed": ["anthropic/claude-sonnet-*"],
   "mcp_servers": ["mcs_01JC…github"],
@@ -84,6 +87,13 @@ ownership rule is adopted in §8 [DS].
   "public_key_jwk": { "kty": "OKP", "crv": "Ed25519", "x": "…" },
   "spiffe_id": null,                         // P1: "spiffe://lab.internal/ns/prod/sa/triage" for server agents [DS]
   "adapter_version": "0.3.1",
+  "posture": {                               // FR-RT-05; re-read at every heartbeat, self-reported by the host
+    "checked_at": "2026-11-09T03:20:00Z",
+    "runtime_version": "2.1.301",
+    "pass": false,
+    "checks": { "hook_managed": true, "fail_closed": false, "matcher_all": true, "hooks_enabled": true, "bypass_modes_off": true },
+    "managed_config_digest": "sha256:41ab…"  // FR-RT-06: which generated settings artifact is deployed, if any
+  },
   "pep_id": "pep_01JC…adapter-devbox01",
   "enrolled_at": "2026-11-01T10:00:00Z",
   "expires_at": "2026-12-01T10:00:00Z"
@@ -233,7 +243,7 @@ All share the §2.1 envelope; shown here are `type`, the fields that matter and 
   "backup_owner": null,
   "coverage": "observed",                    // NHIs are observed by connectors, not enforced
   "spec": {
-    "kind": "oauth_app",                     // service_account | iam_user | iam_role | service_principal | managed_identity | api_key | oauth_app | bot_token | deploy_key | ci_token | db_user | certificate | vault_role | k8s_service_account | ad_service_account | workflow_credential
+    "kind": "oauth_app",                     // agent_identity (FR-CON-15) | service_account | iam_user | iam_role | service_principal | managed_identity | api_key | oauth_app | bot_token | deploy_key | ci_token | db_user | certificate | vault_role | k8s_service_account | ad_service_account | workflow_credential
     "platform": "github",
     "external_id": "app:1234567",
     "display": "Lab Triage (GitHub App)",

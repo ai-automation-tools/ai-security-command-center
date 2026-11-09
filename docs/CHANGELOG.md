@@ -16,6 +16,9 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 ## Unreleased
 
 **Docs**
+- Requirements review against the stated purpose (enterprise agent management, and governing non-human accounts including AI agents). The public-MVP spec gains a fourth feature, an offline fleet and NHI inventory (`posture`, `discover`, declared and imported identities), plus agent groups, a `retired` status, a computed coverage label and criteria 9 to 17. The build plan and roadmap don't carry these yet.
+- The same review found three holes in the MVP as specified and closed them in the spec: an agent could edit the registry or run `ascc revive` on itself, parallel hooks could fork the audit chain, and lines cut from the end of the log still verified.
+- Planning package v0.3: epic EP-24 (agent fleet management), FR-REG-12 to 15, FR-POL-11, FR-RT-05 to 07, FR-KS-08, FR-CON-15 to 18, threat T-28, abuse cases ABUSE-33 and 34, tickets TKT-041 and 042.
 - `AGENTS.md` carries the two reports' rules: cedar-go v1.9.0 and the Go 1.26 bump it brings, the fail-closed handling of erroring policies, and the hook contract. *Slice 0: Contracts*
 - Claude Code hook contract (`docs/reports/2026-claude-code-hook-contract.md`): the PreToolUse payload, the deny JSON and exit codes, the fail-open defaults and `"onFailure": "block"` (v2.1.295+), the coverage gaps (`@` mentions, Monitor, `PowerShell`, editable settings), and seven rules for Slice 2. *Slice 0: Contracts*
 - cedar-go check (`docs/reports/2026-cedar-go-check.md`): cedar-go v1.9.0 matched the Rust reference engine on 9 of 9 requests and on schema validation, at about 1.3 µs per decision. It needs Go 1.26, and in both engines a `forbid` that errors on a missing attribute fails open, so Slice 1 now carries four fail-closed rules. *Slice 0: Contracts*

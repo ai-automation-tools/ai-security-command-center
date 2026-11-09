@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/status-draft_v0.2-F59E0B?style=for-the-badge" alt="Status: draft v0.2">
+  <img src="https://img.shields.io/badge/status-draft_v0.3-F59E0B?style=for-the-badge" alt="Status: draft v0.3">
   <img src="https://img.shields.io/badge/code-none_yet-6B7280?style=for-the-badge" alt="No code yet">
   <a href="../README.md"><img src="https://img.shields.io/badge/↩-product-6B7280?style=for-the-badge" alt="Back to product"></a>
 </p>
@@ -13,7 +13,7 @@
 ---
 
 
-**Status:** Draft v0.2 for review · **Date:** 2026-11-09 · **Code written:** none
+**Status:** Draft v0.3 for review · **Date:** 2026-11-09 · **Code written:** none
 **Sources:** a Claude run (Opus 5.5, 2026-11-07) and a DeepSeek run (2026-11-07), both answering one master
 planning prompt built on an idea analysis. Merged by Claude (Fable 5.1). The two runs, the prompt and the idea
 analysis stay in the private planning workspace; this copy is the one the roadmap works from.
@@ -35,6 +35,18 @@ Three requirements were added on 2026-11-09 and are new to both runs:
 | **N2** | **Third-party plugin platform.** Developers outside the core team can extend ASCC with plugins; the platform, its SDK and its plugin library are a headline feature, built and advertised to attract contributors | Charter §3 U14 and §4, [C §3.12](c-requirements-catalog.md#312-plugin-platform-ep-22), D T-24/T-25, E §20, ADR-15, F §2.5 and §7.6, G, H, I, J | **EP-22** |
 | **N3** | **Workflow intelligence.** Because ASCC sees every agent workflow across platforms, it detects redundant workflows and use cases solved more than once, and suggests combining or optimizing them | Charter §3 U15, [C §3.13](c-requirements-catalog.md#313-workflow-intelligence-ep-23), D T-27, E §21, ADR-17, F §2.5, H, I, J | **EP-23** |
 
+A requirements review later the same day (2026-11-09, v0.3) checked the package against Mike's stated purpose,
+*agent management within an enterprise, and governing non-human accounts including AI agents*, and added two more:
+
+| # | Requirement | Where it lands | Epic |
+|:--|:--|:--|:--|
+| **N4** | **Agents are NHIs.** One non-human inventory with agents in it, an `agent_identity` kind, vendor-hosted agents discovered as `observed`, inventory documents imported and exported, hygiene rules mapped to the OWASP NHI Top 10, and containment that lists the credentials left standing | Charter §1 and U17, [C §3.11](c-requirements-catalog.md#311-nhi-connectors-ep-21) FR-CON-15 to 18, FR-KS-08, F §2.2 and §2.5 | EP-21 |
+| **N5** | **Agent fleet management.** Groups and profiles as policy targets, a runtime posture check behind every `enforced` label, generated managed settings, a rule that the agent can't touch its own enforcement point, change control on approved agents, ownership transfer and expiry | Charter §1 and U16, C FR-REG-12 to 15, FR-POL-11, FR-RT-05 to 07, D T-28, F §2.2, I ABUSE-33/34, J TKT-041/042 | **EP-24** |
+
+The public-MVP [spec](../spec.md) takes the offline part of both: posture, discovery, declared and imported
+NHIs, groups, and three hardening rules the review found missing (self-protection, serialized audit appends, a
+head anchor against truncation).
+
 Everything else in both runs is carried forward; nothing was dropped silently. Items that existed only in the
 DeepSeek run are tagged **[DS]** the first time they appear.
 
@@ -44,7 +56,7 @@ DeepSeek run are tagged **[DS]** the first time they appear.
 |:--|:--|:--|
 | A | [Product charter](a-product-charter.md) | Mission, personas, use cases, system boundaries, capability map, non-goals |
 | B | [Discovery questions](b-discovery-questions.md) | 15 questions, each with a default the rest of the package assumes |
-| C | [Requirements catalog](c-requirements-catalog.md) | 23 epics, stories, FR/NFR with acceptance criteria, priority, traceability |
+| C | [Requirements catalog](c-requirements-catalog.md) | 24 epics, stories, FR/NFR with acceptance criteria, priority, traceability |
 | D | [Threat model](d-threat-model.md) | Assets, adversaries, trust boundaries, STRIDE, AI attack scenarios, mitigations |
 | E | [Architecture package](e-architecture.md) | Planes, components, diagrams, enforcement comparison, connector and plugin runtime, tech options, failure modes |
 | E2 | [Architecture decision records](e2-adrs.md) | 17 ADRs with rejected alternatives |
@@ -52,7 +64,7 @@ DeepSeek run are tagged **[DS]** the first time they appear.
 | G | [MVP definition](g-mvp.md) | The vertical slice, demo script, measurable acceptance criteria |
 | H | [Roadmap](h-roadmap.md) | Phases 0 to 4, effort ranges, staffing, milestones, exit criteria |
 | I | [Validation plan](i-validation.md) | Security tests, abuse cases, red team, SLOs, failure injection, compliance evidence |
-| J | [Backlog](j-backlog.md) | Epics and the first 40 engineering tickets |
+| J | [Backlog](j-backlog.md) | Epics and the first 42 engineering tickets |
 | K | [Next steps and decisions](k-next-steps.md) | Prioritized checklist and the questions that block implementation |
 
 ## Labels used throughout

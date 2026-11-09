@@ -34,6 +34,7 @@ onto these priorities (M → P0, S → P1, C → P2, W → R) and are not repeat
 | **EP-21** | **NHI connectors and inventory** [new] | 1, 2, 11 | 1 (contract, two read-only connectors) / 2 (cloud and on-prem connectors, lifecycle actions) |
 | **EP-22** | **Plugin platform and developer ecosystem** [new] | 11, 12 | 1 (contract, host, Go SDK, harness) / 2 (library, more SDKs and types) |
 | **EP-23** | **Workflow intelligence: redundancy and optimization** [new] | 1, 6, 10 | 1 (fingerprint fields only) / 2 (deterministic) / 3 (semantic) |
+| **EP-24** | **Agent fleet management: posture, managed configuration, lifecycle change control** [new, 2026-11-09 review] | 1, 3 | 1 (posture for the MVP runtime, self-protection, groups) / 2 (managed-config generation, change control, ownership transfer) |
 
 ## 2. User stories (representative, one or more per epic)
 
@@ -65,6 +66,12 @@ onto these priorities (M → P0, S → P1, C → P2, W → R) and are not repeat
 | **US-24** | automation owner | to be told that two n8n workflows and one agent all summarise the same tickets from the same source to the same channel | I can merge them and own one thing | EP-23 |
 | **US-25** | security architect | each consolidation proposal to list the NHIs, permissions and destinations that disappear if it's accepted | I can see redundancy as attack surface, not just cost | EP-23 |
 | **US-26** | compliance lead | the NHI inventory included in access-review campaigns and evidence packs | non-human access gets the same review as human access | EP-21, EP-14 |
+| **US-27** | IAM engineer | AI agents listed in the same inventory as service accounts, keys and app registrations, with the same owner, last-use and credential-age columns | "non-human identity" means one population with one review, not two tools | EP-21 |
+| **US-28** | AI platform engineer | to know, per machine, whether the agent runtime is set up so the policy hook can't be switched off, and to hand my device-management team the settings file that makes it so | "enforced" on the dashboard is a fact about the machine, not a hope | EP-24 |
+| **US-29** | security architect | an approved agent that gains a tool, an MCP server, a model or an egress host to go back to review for that change | approval covers what the agent is now, not what it was when I signed | EP-24 |
+| **US-30** | agent owner leaving the team | my agents and NHIs handed to a named person who accepts them, with a deadline | nothing I owned becomes an orphan with live credentials | EP-24, EP-21 |
+| **US-31** | AI platform engineer | to put 200 agents under policy by assigning each to a profile | onboarding an agent is a registry entry, not a policy change | EP-24, EP-04 |
+| **US-32** | security architect | agents built on vendor platforms (assistant builders, cloud agent services) listed next to the ones we run ourselves, marked as not enforced | the fleet list includes the agents I can't put a hook in front of | EP-21 |
 
 ## 3. Functional requirements
 
@@ -83,6 +90,10 @@ onto these priorities (M → P0, S → P1, C → P2, W → R) and are not repeat
 | FR-REG-09 | Decommissioning: retiring an asset revokes its credentials, removes grants, **requests disable of NHIs it alone used (via connector, with approval)**, and keeps history | P1 | Retired asset has no active grants or credentials; audit history intact | T-12 | |
 | FR-REG-10 | Owner attestations (periodic "still needed, purpose unchanged") for agents **and NHIs** | P1 | Unattested after N days → `restricted` (agents) / `attestation_overdue` finding (NHIs) | T-12 | |
 | FR-REG-11 | Discovery results carry a confidence and a coverage indicator [DS] | P0 | Every `discovered` asset has `confidence ∈ {high, medium, low}` and the connector or collector that found it | T-12 | MVP-8 |
+| **FR-REG-12** | **Ownership transfer.** An `orphaned` asset or NHI (FR-REG-02) notifies its backup owner, who becomes owner on acceptance; a transfer names the new owner, who must accept; unresolved after N days (default 14) → agent `restricted`, NHI gets a `disable` proposal | P1 | Transfer without the new owner's acceptance stays pending; the deadline fires in a test with a deactivated owner; every step audited | T-12 | |
+| **FR-REG-13** | **Change control on approved agents.** A material change (model, tool or MCP server added, egress host added, new NHI used, risk tier up, definition digest changed) puts the *change* in `pending_review`; the agent keeps running on its last approved definition until the change is approved, and the new capability is denied meanwhile | P1 ⛔ | An approved agent with a new MCP server in its manifest can't call it before approval; removing a capability needs no review | T-05, T-06 | |
+| **FR-REG-14** | **Expiry.** An agent or grant may carry `expires_at` (pilots, contractors, experiments); past it the agent is `restricted` and its owner is asked to renew or retire | P1 ⛔ | Expired agent denied at the next call; renewal is an audited owner action | T-12 | |
+| **FR-REG-15** | **Declarative registration and bulk operations.** Agents and NHIs can be registered from manifest files kept in Git and validated in CI by the `ascc` CLI; import and export of the whole registry in the same format. The public MVP's `ascc.registry.json` is this format | P1 (P0 for the file format) | A manifest that fails schema validation fails CI with the field named; export then import is lossless | T-12 | |
 
 ### 3.2 Identity, delegation and access governance (EP-03, EP-14)
 
@@ -116,6 +127,7 @@ onto these priorities (M → P0, S → P1, C → P2, W → R) and are not repeat
 | FR-POL-08 | Distributed policy cache in PEPs with versioned bundles, max staleness bound, and revocation fast-path | P0 | PEP refuses to serve tier 2/3 decisions from a bundle older than `max_staleness` | T-14 | MVP-7 |
 | FR-POL-09 | Plugin-supplied data (findings, NHI attributes, workflow findings) enters policy only as entity attributes or context; **no plugin output can be a `permit` condition on tier 2/3 actions** | P0 ⛔ | Policy linter rejects permits conditioned solely on plugin-sourced attributes for tier 2/3 (extends ADR-14) | T-24, T-25 | MVP-11 |
 | FR-POL-10 | Policy packs (Cedar policies + schema fragment + tests) installable as plugins | P1 | Pack validates against the current schema; its tests run before publish | T-14 | |
+| **FR-POL-11** | **Agent groups and profiles.** Agents belong to groups (team, environment, risk tier, role profile such as `ci` or `read-only-coder`) that are Cedar parents of the agent entity; policies target groups, and a profile is a group with a shipped policy set | P0 (groups) / P1 (shipped profiles) | A policy on a group applies to every member and to no other agent; moving an agent between groups is an audited registry change that takes effect at the next bundle | T-02 | MVP-2 |
 
 ### 3.4 Gateways and runtime enforcement (EP-05 to EP-08, EP-16)
 
@@ -134,6 +146,9 @@ onto these priorities (M → P0, S → P1, C → P2, W → R) and are not repeat
 | FR-RT-02 | stdio MCP wrapper: client config launches `ascc-mcp-wrap -- <server cmd>`; wrapper enforces like the gateway; **stdio has no protocol-level auth, so trust comes from process identity and the wrapper, and coverage says so** [DS] | P0 ⛔ | Same tests as FR-GW-02/03 pass over stdio; coverage panel labels stdio-without-wrapper as `observed` at best | T-11 | MVP-2 |
 | FR-RT-03 | Adapter health heartbeat; missing heartbeat marks the runtime *unmonitored* in coverage | P0 🔍 | Kill the adapter → coverage panel shows unmonitored within 2 heartbeats | T-11 | MVP-8 |
 | FR-RT-04 | SDK interceptors (Python, TypeScript) for server-side agent frameworks; **further runtime adapters ship as plugins of type `runtime_adapter`** | P1 ⛔ (SDKs) / P2 (adapter plugins) | | T-11 | |
+| **FR-RT-05** | **Runtime posture check.** The adapter reads the runtime's own settings and reports, per host: hook registered from an admin-controlled (managed) location, fail-closed on hook failure, matcher covers every tool, nothing disables hooks, permission-bypass modes off, runtime version in the supported range. An agent instance is `enforced` only while its posture passes; otherwise `observed` with a posture finding naming the failed check | P0 🔍 (MVP runtime) / P1 (others) | Fixture hosts for each failing check produce the matching finding and an `observed` label; posture is re-read at every heartbeat | T-11, T-28 | MVP-8 |
+| **FR-RT-06** | **Managed configuration generation.** For each supported runtime ASCC generates the admin-level settings artifact (hook registration, fail-closed flag, MCP server allowlist, denied permission modes) for the enterprise's own device management to deploy. ASCC never pushes settings to a machine | P1 | Generated artifact, applied to a fixture host, passes FR-RT-05; the artifact is versioned and its digest recorded so posture can report "managed config out of date" | T-11 | |
+| **FR-RT-07** | **PEP self-protection.** The files a local PEP depends on (policy bundle, registry cache, adapter config, local audit spool, the runtime's hook settings) and the PEP's own state-changing commands are not reachable by the agent it governs: policy forbids tool calls that target them, and install guidance puts them where the agent's user can't write | P0 ⛔ (policy rule) / P1 (OS-level guidance per platform) | An agent asked to edit its policy, clear its audit spool, remove its hook or run the adapter's revive command is denied (ABUSE-33) | T-28 | MVP-2 |
 | FR-EG-01 | Default-deny egress proxy for managed runtimes; allowlist by host/SNI; per-agent policy from PDP | P0 ⛔ | Connection to non-allowlisted host refused and logged with agent identity | T-07 | MVP-3 |
 | FR-EG-02 | Egress logs reconciled with registry to find unregistered AI provider traffic | P1 🔍 | Report of provider API hosts contacted by unregistered identities | T-12 | |
 
@@ -190,6 +205,7 @@ Applies to MCP servers, skills, packages, agent configs **and plugins** (FR-PLG-
 | FR-KS-05 | SOAR/webhook trigger with signed requests | P1 | | — | |
 | FR-KS-06 | Network isolation via egress policy (agent's egress set to empty) | P1 ⛔ | | — | |
 | FR-KS-07 | Incident playbooks, case-management links, notifications and a post-incident review record per containment [DS] | P1 | Containment record links to a case and a review artifact | — | |
+| **FR-KS-08** | **Containment shows the credentials left standing.** Suspending or retiring an agent lists every NHI it uses (`uses_nhi`), marks the ones only it uses, and says for each whether ASCC can revoke it (brokered, or a connector with a write scope) or a human must | P0 (list) / P1 (queued revoke proposals) | Containment record for the demo agent lists its GitHub App NHI with `revocable_by: broker`; an NHI with no write connector shows `manual` | T-03, T-08 | MVP-7 |
 
 ### 3.9 Secrets (EP-09)
 
@@ -232,7 +248,7 @@ misused connector credential, **T-26** the aggregated NHI inventory as an attack
 | ID | Requirement | Pri | Acceptance criteria | Threats | MVP |
 |:--|:--|:--|:--|:--|:--|
 | FR-CON-01 | Connector contract: a plugin of type `connector` implements `Describe` (platform, capabilities, scopes it needs, rate limits), `Discover` (AI assets and NHIs, paginated, incremental since a cursor), `Enrich` (permissions summary, last used, credential age, rotation state), `Act` (optional lifecycle actions, each declared), `Health` | P0 | Conformance suite passes against a mock platform; a connector that omits `Act` is accepted as read-only | T-23 | MVP-12 |
-| FR-CON-02 | `nhi_account` registry type with kinds: `service_account`, `iam_user`, `iam_role`, `service_principal`, `managed_identity`, `api_key`, `oauth_app`, `bot_token`, `deploy_key`, `ci_token`, `db_user`, `certificate`, `vault_role`, `k8s_service_account`, `ad_service_account`, `workflow_credential`; fields per [F §2.5](f-data-contracts.md#25-nhi-connector-plugin-and-workflow-entities) | P0 | Schema published; unknown kind rejected; each record names the connector(s) that observed it | T-26 | MVP-12 |
+| FR-CON-02 | `nhi_account` registry type with kinds: `agent_identity` (FR-CON-15), `service_account`, `iam_user`, `iam_role`, `service_principal`, `managed_identity`, `api_key`, `oauth_app`, `bot_token`, `deploy_key`, `ci_token`, `db_user`, `certificate`, `vault_role`, `k8s_service_account`, `ad_service_account`, `workflow_credential`; fields per [F §2.5](f-data-contracts.md#25-nhi-connector-plugin-and-workflow-entities) | P0 | Schema published; unknown kind rejected; each record names the connector(s) that observed it | T-26 | MVP-12 |
 | FR-CON-03 | Cross-source reconciliation: the same NHI seen by several connectors merges into one record by deterministic keys (ARN, client ID, object ID, vault path + role, key fingerprint) with a confidence; conflicts are shown, not silently resolved | P0 (exact-key merge) / P1 (heuristic merge, conflict UI) | OpenBao AppRole and the GitHub App it authenticates appear as one NHI with two sources | T-26 | MVP-12 |
 | FR-CON-04 | AI linkage: `uses_nhi` edges from agent/workflow to NHI derived from credential_refs, broker usage, gateway authentication and config discovery; NHIs with no edge are flagged `unlinked` for review (shadow AI or retirement candidates) | P0 (registry and broker-derived) / P1 (telemetry-inferred) 🔍 | Blast-radius query for an NHI returns every agent and workflow using it; `unlinked` filter works | T-08, T-26 | MVP-12 |
 | FR-CON-05 | MVP connectors, read-only: **OpenBao/Vault** (KV paths as credential_refs, AppRoles, tokens and leases, transit keys) and **GitHub** (GitHub Apps and installations with permissions, deploy keys, organization PAT policy, Actions secret *names*) **[V]** API scopes for each | P0 🔍 | Both connectors pass conformance; inventory shows NHIs from both with owner or `ownerless`; coverage shows scopes scanned | T-23 | MVP-12 |
@@ -245,6 +261,10 @@ misused connector credential, **T-26** the aggregated NHI inventory as an attack
 | FR-CON-12 | Kill-switch integration: `revoke_nhi` and `disable_nhi` containment actions route through the owning connector and are tracked like PEP acks (FR-KS-02) | P1 ⛔ | Containment record shows connector ack or `unconfirmed` | T-03 | |
 | FR-CON-13 | NHI export and review: inventory export (CSV, JSON), inclusion in access-review campaigns (FR-IAM-10) and evidence packs | P1 | Campaign includes NHIs with owner certification; export is schema-versioned | — | |
 | FR-CON-14 | Connectors can also discover AI assets (agents, MCP servers, models in use, automations) on their platform and register them as `discovered` with confidence (FR-REG-11); this is how FR-REG-08 is delivered | P1 🔍 | GitHub connector lists repositories containing MCP server manifests or agent configs as `discovered` | T-12 | |
+| **FR-CON-15** | **One non-human population.** The NHI inventory view and API return agents and agent instances alongside `nhi_account` records, with the same governance columns (owner, status, last active, credential age, findings, coverage). New kind `agent_identity` for an identity a platform issues to an agent (directory or cloud agent-identity objects **[V]** product names and APIs), reconciled to the ASCC agent it belongs to | P0 (unified view) / P1 (`agent_identity` via connectors) | The inventory list filtered to "all non-human" shows the demo agent, its instance and its GitHub App; access reviews and exports (FR-CON-13) cover agents with no extra step | T-12, T-26 | MVP-12 |
+| **FR-CON-16** | **Vendor-hosted agents.** Connectors for agent-building platforms (SaaS assistant builders, cloud agent services, workflow tools with agent nodes) register the agents they find as `agent` assets with `hosting: vendor_hosted`, their declared tools, connections and owner; coverage is `observed` at best and says why. Each platform's API is **[V]** before build | P1 🔍 | A fixture platform with three agents yields three `discovered` agents with owner or `ownerless`; none is ever labelled `enforced` | T-12 | |
+| **FR-CON-17** | **Hygiene rules map to the OWASP NHI Top 10** **[V]** numbering. Adds findings `exposed_secret` (a scanner or DLP hit ties a leaked credential to its NHI), `cross_environment` (one NHI used in prod and non-prod), `human_use` (interactive sign-in on an NHI, where the platform reports it) | P1 🔍 (P2 for `human_use`) | Every hygiene rule carries its Top 10 item in `references`; a scan finding for a hardcoded key links to the NHI with the same fingerprint | T-07, T-26 | |
+| **FR-CON-18** | **Inventory documents in and out.** ASCC imports and exports the Agent Security Suite inventory document (schema v0.1): identities, credentials by fingerprint, grants, findings. Import is the connector of last resort for a platform with no plugin, and the only NHI source in the public MVP | P0 (file import and export) / P1 (scheduled import from a path) | Import of a fixture document creates `nhi_account` records with `found_by: import`; re-import is idempotent by identity `id`; export validates against the schema | T-26 | MVP-12 |
 
 ### 3.12 Plugin platform (EP-22)
 
@@ -343,6 +363,8 @@ flowchart LR
   EP01 & EP11 & EP21 --> EP23[EP-23 Workflow intelligence]
   EP23 --> EP19
   EP22 --> EP17[EP-17 Integrations]
+  EP01 & EP07 --> EP24[EP-24 Fleet management]
+  EP24 --> EP13
 ```
 
 The plugin platform depends on the registry (plugins are assets), the broker (plugin credentials), scanning
@@ -364,3 +386,5 @@ audit and connector data.
 | **Plugin platform proven (MVP-11)** **[C, 2026-11-09]** | FR-PLG-01..09, 12, 14, 15; FR-SC-02/03/08; FR-POL-09; FR-KS-01; FR-SEC-01 |
 | **NHI inventory from two connectors (MVP-12)** **[C, 2026-11-09]** | FR-CON-01..07, 09, 11; FR-SEC-06; FR-REG-02/05/11; FR-TEL-08 |
 | **Workflow data accumulating (no MVP criterion; feeds Phase 2)** | FR-WFI-01 |
+| **Fleet posture is evidence, and the agent can't disable its PEP (MVP-2, MVP-8)** **[2026-11-09 review]** | FR-RT-05, FR-RT-07, FR-POL-11 |
+| **Agents are part of the NHI inventory (MVP-7, MVP-12)** **[2026-11-09 review]** | FR-CON-15, FR-CON-18, FR-KS-08 |

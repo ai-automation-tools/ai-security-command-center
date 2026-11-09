@@ -61,6 +61,8 @@ ABUSE-17; its abuse cases T5 to T7 are ABUSE-25 to 27.
 | **ABUSE-30** | T-23 | Connector write credential used to disable many NHIs at once | Each action needs two approvers and a dry-run; rate limit refuses above N per connector per hour; every attempt audited | P1 |
 | **ABUSE-31** | T-23 | Connector credential replayed from outside the plugin host (copied token, different source) | Credential is host-bound and brokered; broker refuses; event and alert | ✅ |
 | **ABUSE-32** | T-27 | Attacker registers a decoy workflow to make a real one look redundant and get it retired | Finding is advisory; every involved owner must accept; decoy flagged by provenance and age; nothing is changed by ASCC | P1 |
+| **ABUSE-33** | T-28 | Injected agent edits its policy file or registry, deletes audit lines, removes the hook from the runtime settings, or runs the adapter's revive command through the shell tool | Every attempt denied by the self-protection rule and logged; the shell variants are documented as pattern-based (R6) | ✅ |
+| **ABUSE-34** | T-28, T-11 | Hook moved from managed to user settings, fail-closed flag removed, hooks disabled, or the last audit lines cut off | Posture finding within two heartbeats and the label drops to `observed`; the verifier reports the missing tail against the anchored head | ✅ |
 
 ## 3. Red-team exercises
 
