@@ -28,6 +28,7 @@
 | [**📦 product/**](product/README.md) | The public-MVP spec with its Won't list, the build plan, and the combined planning package (charter to backlog, ADR-01 to ADR-17). |
 | [**🔬 cedar-go check**](reports/2026-cedar-go-check.md) | Slice 0. cedar-go matches the Rust reference, and why the PDP must deny on any evaluation error. |
 | [**🧭 Claude Code setup guide**](guides/claude-code-setup.md) | Wire the hook into a repo, check it blocks, verify the audit log, stop an agent, check the registration enforces with `posture`, find what isn't registered with `discover`, list the identities the agents use, and what none of it covers. |
+| [**🖥️ Browser demo**](../site/) | The demo page's source. `go run ./src/cmd/buildsite` builds it to `_site/`: ascc as WebAssembly on the sample files, with no network call. Not published yet. |
 | [**🪝 Claude Code hook contract**](reports/2026-claude-code-hook-contract.md) | Slice 0. What the PreToolUse hook receives, how it blocks, where it fails open, and what it never sees. |
 | [**🧰 resources/**](resources/README.md) | Specs, tools and standards grouped by the part of ASCC they feed. Look here before adding a dependency. |
 

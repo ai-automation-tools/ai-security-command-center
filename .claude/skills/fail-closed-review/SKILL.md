@@ -22,7 +22,7 @@ weakens a row, the fix is in the code, never in the test.
 | **The chain names its first bad line; truncation changes the head.** | `TestVerifyNamesTheFirstBadLine`, `TestTruncationChangesTheHead`, `TestAuditVerifyCommand` | A new `audit.Entry` field is inside the hashed bytes. Field order and encoding stay stable. |
 | **No secret at rest.** The log holds a SHA-256 of the input, not the input. | `TestAuditHoldsNoRawInput` | No new field carries a command, a path's contents, an env value or a raw payload. Same for error strings. |
 | **Zero network.** | `TestBinaryCantOpenASocket` | No import of `net`, `net/http`, `crypto/tls` or `os/exec`, directly or through a dependency. |
-| **Core packages do no I/O** and build for WebAssembly. | `TestPackageDoesNoIO`, the CI wasm step | `pdp`, `audit` and `claudecode` take bytes and return values. No `os`, no `time.Now`. |
+| **Core packages do no I/O** and build for WebAssembly. | `TestPackageDoesNoIO`, the CI wasm step | `pdp`, `audit`, `claudecode` and `demo` take bytes and return values. No `os`, no `time.Now`. |
 | **The kill switch is not a policy.** | `TestKillAndRevive`, `TestRetiredAgentIsDenied` | The status check is in `Decide`, before the engine. `revive` still refuses a retired agent. |
 | **An agent can't switch ascc off.** | `TestAgentCantChangeAsccState` | A new state file or state-changing command is covered by `touches_ascc_state`. |
 | **Coverage is computed from evidence.** | `TestCoverageIsComputedFromEvidence`, `TestInventoryLabelsComeFromEvidence`, `TestCheckPosture`, `TestPostureCommand` | No label is read from the registry. No evidence means `unmonitored`; a settings file ascc can't read fails the posture check. A new posture condition only ever removes a pass. |
@@ -38,7 +38,7 @@ gofmt -l .                                         # prints nothing
 go vet ./...
 go test ./...
 go build ./...
-GOOS=js GOARCH=wasm go build ./src/internal/...    # PowerShell: $env:GOOS='js'; $env:GOARCH='wasm'; go build ./src/internal/...; then clear both
+GOOS=js GOARCH=wasm go build ./src/internal/... ./src/cmd/ascc-wasm    # PowerShell: $env:GOOS='js'; $env:GOARCH='wasm'; go build ./src/internal/... ./src/cmd/ascc-wasm; then clear both
 go list -deps ./src/cmd/ascc                       # scan for net, net/http, crypto/tls, os/exec
 ```
 

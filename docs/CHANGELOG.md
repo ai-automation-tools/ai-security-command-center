@@ -46,6 +46,7 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 - A suspended agent is denied by the PDP itself, not by a `deny-suspended-agent` sample policy as the cedar-go check sketched, so deleting a rule can't undo the kill switch.
 
 **Docs**
+- The docs index lists the browser demo, the setup guide names all five sample hook payloads, and the reviewer agent and the skills that list the core packages and the WebAssembly build now include `demo` and `ascc-wasm`.
 - README: an install line, a table of every command, flag and exit code, a sample run with output from a fresh build, a coverage section on what the hook sees and doesn't, the Won't list as the spec states it, and a responsible-use section.
 - The README quick start, the docs index and the threat-trace skill now cover `posture` and `discover`.
 - The roadmap and build plan now carry the requirements review: the four hardening rules are part of the Slice 2 item, and a new Slice 2b (fleet and NHI inventory: `posture`, `discover`, declared and imported identities) sits above the release line.

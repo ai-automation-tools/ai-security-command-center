@@ -25,7 +25,7 @@ A feature is a fact about a tool call that Cedar can read. It crosses four layer
    normalised string, never a command, a path's contents or a token. `TestAuditHoldsNoRawInput` guards this.
 7. **Docs.** Update the feature list in `AGENTS.md`, and add what the feature can't see to the limits table in
    `docs/guides/claude-code-setup.md`.
-8. **Checks.** The four commands in `AGENTS.md`, then `GOOS=js GOARCH=wasm go build ./src/internal/...`.
+8. **Checks.** The four commands in `AGENTS.md`, then `GOOS=js GOARCH=wasm go build ./src/internal/... ./src/cmd/ascc-wasm`.
 
 ## Parser rules
 
