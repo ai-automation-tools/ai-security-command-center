@@ -11,5 +11,6 @@ coverage.out
 .env.*
 !.env.example
 .ascc/
+.claude/settings.local.json
 .DS_Store
 Thumbs.db
