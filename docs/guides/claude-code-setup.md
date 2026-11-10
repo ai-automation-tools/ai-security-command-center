@@ -106,6 +106,9 @@ ascc hook claude-code --agent dev-agent < hook-payloads/exfil-curl.json
 `hook-payloads/read-repo-file.json` prints nothing and exits 0: an allowed call gets no answer from ascc, so
 Claude Code's own permission rules and prompts still apply. ascc only ever tightens.
 
+The folder has three more to try: `run-tests.json` (allowed), `push-to-main.json` and `edit-settings.json`, an
+edit to the hook's own registration (both denied). The [browser demo](../../site/) replays the same five.
+
 Then in a Claude Code session in the repo, ask it to read a file outside the repo. It reports the block with
 ascc's reason:
 

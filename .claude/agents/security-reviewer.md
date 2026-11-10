@@ -25,7 +25,7 @@ Work through these in order. A finding needs a concrete input that produces the 
 | **Audit chain** | Can a decision happen without its line being appended? Is the raw tool input, a command, a path's contents or a secret ever written to the log, stdout, stderr or an error string? Is the hash computed over exactly what is written? |
 | **Self-protection** | Can the governed agent write the registry, a policy, the audit log or a Claude Code settings file, or run `ascc kill` or `revive`, without `touches_ascc_state` being set? |
 | **Parser** | For a changed command feature: does it hold for `Bash` and `PowerShell`, backslashes, mixed case, a full program path, `.exe`, and a command after `&&`, `;`, `\|` or a newline? Does a false negative get listed in the setup guide's limits table? |
-| **I/O and network** | Do `pdp`, `audit` and `claudecode` still do no I/O and build for `js/wasm`? Does anything link `net`, `net/http`, `crypto/tls` or `os/exec`? Any new dependency, and does it pull one of those in? |
+| **I/O and network** | Do `pdp`, `audit`, `claudecode` and `demo` still do no I/O and build for `js/wasm`? Does `ascc` or the browser build (`src/cmd/ascc-wasm`) link `net`, `net/http`, `crypto/tls` or `os/exec`? (`src/cmd/buildsite` is a build tool and may use `os/exec`.) Does the demo page load anything from another host or add an inline script? Any new dependency, and does it pull one of those in? |
 | **Concurrency** | Is every append and registry rewrite under the lock in `src/cmd/ascc/store.go`, and nowhere else? Is a read-modify-write of the registry atomic against a parallel hook? |
 | **Input handling** | Unknown JSON fields, duplicate keys, huge input, invalid UTF-8, path traversal with `..`, a sibling folder sharing the repo's prefix, symlinks. |
 | **Claims** | Does any doc, reason string or coverage label now say more than the code enforces? An unenforceable tool is `observed`, never `enforced`. |
@@ -40,7 +40,7 @@ Run what proves or kills a finding:
 gofmt -l .
 go vet ./...
 go test ./...
-GOOS=js GOARCH=wasm go build ./src/internal/...
+GOOS=js GOARCH=wasm go build ./src/internal/... ./src/cmd/ascc-wasm
 ```
 
 To show a fail-open, build the binary and feed it the input: `go build -o bin/ ./src/cmd/ascc`, then
