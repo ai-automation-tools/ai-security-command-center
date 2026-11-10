@@ -110,3 +110,23 @@ func Verify(log []byte) (count int, head string, err error) {
 	}
 	return count, head, nil
 }
+
+// DecisionAgents returns the agents the hook has recorded a tool-call decision for: the evidence
+// that a hook is running for them. A line with no tool is the hook failing before it mapped a call
+// (an empty payload, a registry that won't load) and shows nothing. A log that doesn't verify is
+// evidence of nothing, so it returns the error.
+// ponytail: anyone who can run `ascc hook` against the log can still write such a line by hand.
+// The sample policies forbid the agent that; binding lines to a session needs the instance key.
+func DecisionAgents(log []byte) (map[string]bool, error) {
+	if _, _, err := Verify(log); err != nil {
+		return nil, err
+	}
+	agents := map[string]bool{}
+	for _, raw := range bytes.Split(log, []byte("\n")) {
+		var e Entry
+		if json.Unmarshal(raw, &e) == nil && e.Event == EventDecision && e.Tool != "" {
+			agents[e.Agent] = true
+		}
+	}
+	return agents, nil
+}

@@ -1,8 +1,9 @@
 // Command ascc is the AI Security Command Center CLI. `decide` answers one request against the agent
 // registry and the Cedar policies; `hook claude-code` does the same for every Claude Code tool call,
 // blocks the denied ones and records each decision in a hash-chained log; `audit verify` checks that
-// log; `kill` and `revive` suspend and restore an agent; `inventory` writes the registry as an Agent
-// Security Suite inventory document.
+// log; `kill` and `revive` suspend and restore an agent; `posture claude-code` checks that the hook is
+// registered so that it enforces; `inventory` writes the registry as an Agent Security Suite
+// inventory document.
 package main
 
 import (
@@ -30,14 +31,20 @@ Usage:
   ascc audit verify [--expect-head <hash>]     check the audit log's hash chain
   ascc kill <agent>                            suspend an agent: everything it asks for is denied
   ascc revive <agent>                          restore a suspended agent
+  ascc posture claude-code [--agent <id>]      check the hook is registered so that it enforces
   ascc inventory [--out <file>]                write the agent inventory document
   ascc version
 
 Every command takes --registry <file> (default ascc.registry.json), --policies <dir> (default
 policies, every *.cedar file in it) and --audit <file> (default .ascc/audit.jsonl).
 
+posture and inventory read the Claude Code settings, and never write them: --managed <file>
+(default: the system managed-settings.json), --user <file> (default ~/.claude/settings.json) and
+--project <dir> (default the current folder).
+
 Exit codes: 0 done (for decide and hook, a decision was made, allow or deny); 1 audit verify found
-a broken log; 2 ascc couldn't run. hook blocks the tool call on 2 as well as on a deny.
+a broken log, or posture found a hook that doesn't enforce; 2 ascc couldn't run. hook blocks the
+tool call on 2 as well as on a deny.
 `
 
 func main() {
@@ -82,10 +89,22 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) (code int) {
 
 	case "inventory":
 		out := fs.String("out", "", "write the document here instead of stdout")
+		sp := settingsFlags(fs)
 		if fs.Parse(rest) != nil {
 			return 2
 		}
-		return fail(stderr, inventory(*registry, *policies, *out, stdout))
+		return fail(stderr, inventory(*registry, *policies, *auditLog, *out, sp, stdout, stderr))
+
+	case "posture":
+		agent := fs.String("agent", "", "check only this agent (default: every claude-code agent in the registry)")
+		sp := settingsFlags(fs)
+		if len(rest) == 0 || rest[0] != "claude-code" {
+			return fail(stderr, errors.New("the only posture check is `ascc posture claude-code`"))
+		}
+		if fs.Parse(rest[1:]) != nil {
+			return 2
+		}
+		return posture(*registry, *agent, sp, stdout, stderr)
 
 	case "hook":
 		agent := fs.String("agent", "", "the registry id this hook registration speaks for")
@@ -95,6 +114,10 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) (code int) {
 		}
 		if fs.Parse(rest[1:]) != nil {
 			return 2
+		}
+		if fs.NArg() > 0 {
+			// Flags after a stray argument would be ignored, --agent among them. Exit 2 blocks the call.
+			return fail(stderr, errors.New("blocked: the hook takes flags only; fix its registration"))
 		}
 		return hook(*registry, *policies, *auditLog, *agent, *repo, stdin, stdout, stderr)
 
@@ -241,12 +264,12 @@ func decide(registry, policies, request string, stdin io.Reader) (pdp.Decision, 
 	return p.Decide(req), nil
 }
 
-func inventory(registry, policies, out string, stdout io.Writer) error {
+func inventory(registry, policies, auditLog, out string, sp settingsPaths, stdout, stderr io.Writer) error {
 	p, err := load(registry, policies)
 	if err != nil {
 		return err
 	}
-	doc := p.Inventory(version.Version, time.Now())
+	doc := p.Inventory(version.Version, time.Now(), evidence(auditLog, sp, stderr))
 	if out == "" {
 		return writeJSON(stdout, doc)
 	}

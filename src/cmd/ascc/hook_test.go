@@ -94,6 +94,17 @@ func denied(t *testing.T, code int, stdout string) (bool, string) {
 
 func cmd(c string) map[string]any { return map[string]any{"command": c} }
 
+// A stray argument would make Go's flag parsing drop every flag after it, --agent included, so the
+// hook would speak for the wrong agent. It blocks instead.
+func TestHookRefusesStrayArguments(t *testing.T) {
+	w := newWorkspace(t)
+	payload := `{"hook_event_name":"PreToolUse","tool_name":"TodoWrite","tool_input":{},"cwd":"` + filepath.ToSlash(w.dir) + `"}`
+	code, out, errOut := w.run(payload, "hook", "claude-code", "--agent", "ci-agent", "x", "--agent", "dev-agent")
+	if code != 2 || out != "" || !strings.Contains(errOut, "flags only") {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, out, errOut)
+	}
+}
+
 // Spec criterion 3: a block for a denied call, silence for an allowed one, in the contract's format.
 func TestHookBlocksAndPasses(t *testing.T) {
 	w := newWorkspace(t)

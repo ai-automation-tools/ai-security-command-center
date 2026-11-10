@@ -175,7 +175,7 @@ func TestParseRequestRejectsUnknownFields(t *testing.T) {
 // Spec criterion 7: the inventory validates against the suite schema, and the planted problems in
 // the sample registry come out as findings.
 func TestInventory(t *testing.T) {
-	inv := samplePDP(t).Inventory("0.0.0", time.Date(2026, 11, 9, 12, 0, 0, 0, time.UTC))
+	inv := samplePDP(t).Inventory("0.0.0", time.Date(2026, 11, 9, 12, 0, 0, 0, time.UTC), Evidence{})
 
 	raw, err := json.Marshal(inv)
 	if err != nil {
@@ -228,11 +228,31 @@ func TestInventoryNoPolicyFinding(t *testing.T) {
 		t.Fatal(err)
 	}
 	var got []string
-	for _, f := range p.Inventory("0.0.0", time.Unix(0, 0)).Findings {
+	for _, f := range p.Inventory("0.0.0", time.Unix(0, 0), Evidence{}).Findings {
 		got = append(got, f.RuleID+" "+f.IdentityID)
 	}
 	if !slices.Equal(got, []string{"ascc/no-policy local:agent/left-out"}) {
 		t.Fatalf("findings %v", got)
+	}
+}
+
+// Spec criterion 14, the label half: unmonitored with no audit lines, observed with audit lines but
+// no passing posture check, enforced only with both. Nothing in the registry can raise a label.
+func TestCoverageIsComputedFromEvidence(t *testing.T) {
+	ev := Evidence{
+		Audited:     map[string]bool{"dev-agent": true, "ci-agent": true},
+		PosturePass: map[string]bool{"dev-agent": true, "old-agent": true},
+	}
+	want := map[string]string{
+		"dev-agent":       CoverageEnforced,
+		"ci-agent":        CoverageObserved,
+		"old-agent":       CoverageUnmonitored, // a passing posture check, but the hook has recorded nothing
+		"ownerless-agent": CoverageUnmonitored,
+	}
+	for _, id := range samplePDP(t).Inventory("0.0.0", time.Unix(0, 0), ev).Identities {
+		if got := strings.TrimPrefix(id.Tags[0], "coverage:"); got != want[id.DisplayName] {
+			t.Errorf("%s: %s, want %s", id.DisplayName, got, want[id.DisplayName])
+		}
 	}
 }
 

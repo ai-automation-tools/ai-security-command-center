@@ -25,7 +25,7 @@ weakens a row, the fix is in the code, never in the test.
 | **Core packages do no I/O** and build for WebAssembly. | `TestPackageDoesNoIO`, the CI wasm step | `pdp`, `audit` and `claudecode` take bytes and return values. No `os`, no `time.Now`. |
 | **The kill switch is not a policy.** | `TestKillAndRevive`, `TestRetiredAgentIsDenied` | The status check is in `Decide`, before the engine. `revive` still refuses a retired agent. |
 | **An agent can't switch ascc off.** | `TestAgentCantChangeAsccState` | A new state file or state-changing command is covered by `touches_ascc_state`. |
-| **Coverage is computed from evidence.** | `TestInventory` | No label is read from the registry. No evidence means `unmonitored`. |
+| **Coverage is computed from evidence.** | `TestCoverageIsComputedFromEvidence`, `TestInventoryLabelsComeFromEvidence`, `TestCheckPosture`, `TestPostureCommand` | No label is read from the registry. No evidence means `unmonitored`; a settings file ascc can't read fails the posture check. A new posture condition only ever removes a pass. |
 | **Policy decides, nothing else** (ADR-14). | review | No score, model call or heuristic sits between the request and the decision. |
 
 ## Confirm

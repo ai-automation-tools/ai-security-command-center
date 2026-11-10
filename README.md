@@ -34,9 +34,9 @@
 ---
 
 > [!WARNING]
-> **Incubating.** The policy decision point, the Claude Code hook, the audit log and the kill switch work and are
-> tested. The fleet inventory commands and the browser demo aren't built yet, and nothing here has had an
-> outside review. The [roadmap](docs/ROADMAP.md) says what's next.
+> **Incubating.** The policy decision point, the Claude Code hook, the audit log, the kill switch and the posture
+> check work and are tested. `discover`, non-human identities and the browser demo aren't built yet, and nothing
+> here has had an outside review. The [roadmap](docs/ROADMAP.md) says what's next.
 
 ## 🎯 What it's for
 
@@ -52,7 +52,8 @@ ASCC (`ascc`) puts one policy decision point in front of the agent:
 | **`hook claude-code`** | works | Runs as a Claude Code PreToolUse hook: asks the policies before every tool call, blocks the denied ones and records every decision. Any error blocks the call. [Setup guide](docs/guides/claude-code-setup.md). |
 | **`audit verify`** | works | Checks the hash-chained log every decision lands in and names the first line that was edited, removed or reordered. `--expect-head <hash>` catches lines cut off the end. |
 | **`kill` / `revive`** | works | Suspends an agent so everything it asks for is denied, and brings it back. Both are audited. |
-| **`inventory`** | works | Writes the registry as an Agent Security Suite inventory document, each agent labelled `enforced`, `observed` or `unmonitored`, with findings for agents that have no owner, no policy or are suspended. Every agent is `unmonitored` until the posture check is built, because that label comes from evidence. |
+| **`posture claude-code`** | works | Reads the Claude Code settings files, never writes them, and says for each agent whether its hook is registered so that it enforces: in managed settings, matcher `*`, `"onFailure": "block"`, nothing switching it off. Each failure names its reason. [What it checks](docs/guides/claude-code-setup.md#posture). |
+| **`inventory`** | works | Writes the registry as an Agent Security Suite inventory document, with findings for agents that have no owner, no policy or are suspended. Each agent's label is computed from evidence, never declared: `unmonitored` when the hook has recorded nothing for it, `observed` when it has but the posture check doesn't pass, `enforced` only with both. |
 
 The browser demo will run the same Go core as WebAssembly on a planted setup.
 
@@ -94,7 +95,8 @@ That request is `dev-agent` asking to run a shell command that touches a secret 
 `ascc` reads `ascc.registry.json` and every `policies/*.cedar` from the current folder; `--registry` and
 `--policies` point it elsewhere, and `--request -` reads the request from stdin. `ascc inventory` prints the
 inventory document, or writes it with `--out <file>`. Exit code 0 means a decision was made, allow or deny;
-2 means ascc couldn't run, and `decide` still prints a deny.
+2 means ascc couldn't run, and `decide` still prints a deny. `ascc posture claude-code` exits 1 when a hook
+registration doesn't enforce; on a machine with no managed settings that is every agent, and it says why.
 
 To put it in front of a real agent, follow the [Claude Code setup guide](docs/guides/claude-code-setup.md). The
 same folder has two hook payloads to try by hand:
