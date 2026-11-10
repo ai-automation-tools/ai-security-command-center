@@ -15,6 +15,9 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 
 ## Unreleased
 
+**Security**
+- `.gitleaksignore` suppresses the two gitleaks hits on the planted fake credentials in `discover_test.go`, so the weekly secret scan stays quiet.
+
 **Added**
 - `ascc discover [--root <dir>] [--out <file>]` searches a folder for the agent config files it knows (Claude Code settings, `.mcp.json`, `.claude.json`, `managed-settings.json`, `managed-mcp.json`; the list and its version are in the code and in the document) and writes an inventory document of what the registry doesn't list: a Claude Code setup with no ascc hook, a hook for an unregistered agent, and an MCP server none of whose tools is listed, each `unmonitored` with an `ascc/unregistered` finding. Credential-looking variable and header names in an MCP server's config become candidate identities. Only names are read, never a value; a file it can't read is named on stderr and the exit code is 1. *Slice 2b: Fleet and NHI inventory*
 - `ascc posture claude-code [--agent <id>]` reads the Claude Code settings files (`--managed`, `--user`, `--project`, and `managed-settings.d` drop-ins) and never writes them. An agent passes only when its hook is registered in managed settings in exec form with matcher `*` and `"onFailure": "block"`, nothing switches hooks off, and the binary is there; each failure names its reason, and a settings file ascc can't read is a failure. Exit 1 when any agent fails. *Slice 2b: Fleet and NHI inventory*
