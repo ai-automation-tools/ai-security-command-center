@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/ai-automation-tools/ai-security-command-center/src/internal/pdp"
+	"github.com/santhosh-tekuri/jsonschema/v6"
 )
 
 var (
@@ -72,6 +73,8 @@ func TestDecideFailsClosed(t *testing.T) {
 	}
 }
 
+// The committed fixture (examples/) plants an agent with no owner. The document must validate against
+// the vendored suite schema and carry that finding; CI runs this test as its own step.
 func TestInventoryCommand(t *testing.T) {
 	out := filepath.Join(t.TempDir(), "inventory.json")
 	// Point every evidence source at an empty folder, so the test never reads this machine's settings.
@@ -87,6 +90,22 @@ func TestInventoryCommand(t *testing.T) {
 			var inv pdp.Inventory
 			if err := json.Unmarshal([]byte(stdout), &inv); err != nil || len(inv.Identities) != 8 || inv.Producer.Name != "ascc" {
 				t.Fatalf("bad inventory (%v): %s", err, stdout)
+			}
+			var doc any
+			if err := json.Unmarshal([]byte(stdout), &doc); err != nil {
+				t.Fatal(err)
+			}
+			c := jsonschema.NewCompiler()
+			c.AssertFormat()
+			sch, err := c.Compile(filepath.Join("..", "..", "..", "schemas", "agent-inventory.schema.json"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := sch.Validate(doc); err != nil {
+				t.Fatalf("the inventory doesn't validate against the suite schema: %v", err)
+			}
+			if !strings.Contains(stdout, `"id": "ascc/no-owner:ownerless-agent"`) {
+				t.Fatal("the planted ownerless agent has no finding")
 			}
 		} else if stdout != "" {
 			t.Fatalf("--out still wrote to stdout: %s", stdout)

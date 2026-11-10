@@ -11,6 +11,10 @@
 </p>
 
 <p align="center">
+  <a href="#-quick-start">Quick start</a>
+  ·
+  <a href="#-coverage-what-the-hook-sees-and-what-it-doesnt">Coverage</a>
+  ·
   <a href="docs/ROADMAP.md">Roadmap</a>
   ·
   <a href="https://github.com/ai-automation-tools/ai-security-command-center/issues">Report Bug</a>
@@ -65,22 +69,36 @@ That's the public MVP. The full design, a gateway for MCP and LLM traffic, a cre
 egress, a plugin platform and NHI connectors, is in the [planning package](docs/product/plan/README.md) and gets
 built in public after release.
 
-### What it won't do (yet)
+### What it won't do
 
-- Sit in the network path. No gateway or proxy in the MVP; the Claude Code hook is the only enforcement point,
-  and it judges shell commands by their text, which a determined agent can dodge. The
-  [setup guide](docs/guides/claude-code-setup.md#limits) lists what it doesn't cover.
-- Make a network call, or hold or print a secret. The audit log keeps a hash of each tool input, not the input.
-- Let a model decide. Decisions come from policy alone.
-- Pretend to see what it can't. An agent it can't enforce on is reported as `unmonitored`.
+This version, by design. The first is the next thing to be built; the rest are not on the way.
+
+- **Sit in the network path.** No gateway, proxy or credential broker. The Claude Code hook is the only
+  enforcement point.
+- **Make a network call.** The CLI and the demo read and write local files only. A test fails if the binary
+  ever links a package that can open a socket.
+- **Hold or print a secret.** The audit log keeps a hash of each tool input, never the input. An identity's
+  credential is a fingerprint and dates.
+- **Let a model decide.** Decisions come from Cedar policy alone: no score, no model reviewer.
+- **Claim coverage it doesn't have.** An agent it can't see is `unmonitored`, never left off the report.
+- **Change a non-human identity.** No disable, rotate or revoke. It lists what to do and a person does it on
+  the platform that holds the account.
+- **Push settings to machines.** `posture` reads Claude Code's settings and never writes them.
+- **Run on anything but Claude Code,** or come with accounts, telemetry, a hosted service or a paid tier.
 
 ## 🚀 Quick start
 
-From a clone, with Go 1.26 or newer:
+With Go 1.26 or newer:
+
+```bash
+go install github.com/ai-automation-tools/ai-security-command-center/src/cmd/ascc@latest
+```
+
+Or build it from a clone, which also gives you the sample files to try it on:
 
 ```bash
 go build -o bin/ ./src/cmd/ascc   # builds bin/ascc (bin/ascc.exe on Windows)
-cd examples                       # a sample registry, policies and requests, all fictional
+cd examples                       # a sample registry, policies, requests and hook payloads, all fictional
 ../bin/ascc decide --request requests/exfil-curl.json
 ```
 
@@ -96,31 +114,88 @@ That request is `dev-agent` asking to run a shell command that touches a secret 
 }
 ```
 
-`ascc` reads `ascc.registry.json` and every `policies/*.cedar` from the current folder; `--registry` and
-`--policies` point it elsewhere, and `--request -` reads the request from stdin. `ascc inventory` prints the
-inventory document, or writes it with `--out <file>`; the sample registry plants an ownerless service account,
-an overdue credential and an OAuth app nothing uses, and each comes out as a finding. Exit code 0 means a decision was made, allow or deny;
-2 means ascc couldn't run, and `decide` still prints a deny. `ascc posture claude-code` exits 1 when a hook
-registration doesn't enforce; on a machine with no managed settings that is every agent, and it says why.
-
-To put it in front of a real agent, follow the [Claude Code setup guide](docs/guides/claude-code-setup.md). The
-same folder has two hook payloads to try by hand:
+Now the same call as Claude Code would send it, through the hook, then the log it was written to and the
+kill switch:
 
 ```bash
-../bin/ascc hook claude-code --agent dev-agent < hook-payloads/exfil-curl.json   # prints the deny Claude Code blocks on
-../bin/ascc audit verify                                                          # checks the log that call was written to
-../bin/ascc kill dev-agent                                                        # now everything dev-agent asks for is denied; lists the identities it uses
-../bin/ascc posture claude-code                                                   # is each agent's hook registered so that it enforces?
-../bin/ascc discover --root ..                                                    # agent setups and MCP servers the registry doesn't list
+../bin/ascc hook claude-code --agent dev-agent < hook-payloads/exfil-curl.json
+../bin/ascc audit verify
+../bin/ascc kill dev-agent
 ```
 
-`posture` exits 1 here, and says why: the sample agents have no hook in managed settings. `discover` prints an
-inventory document; it reads names from config files and never a value.
+```text
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"ascc: forbidden by deny-network-with-secret-path: a shell command may not send a secret file over the network"}}
+
+audit: ok, 1 entries, head <a 64-character hash>
+audit: the head wasn't checked. Lines cut off the end still verify; record the head somewhere else and pass it back with --expect-head.
+
+dev-agent is suspended
+dev-agent uses the identities below, and stopping it here doesn't stop them. ascc holds no credential: rotate or revoke these yourself.
+  github:app/release-bot (bot on github, active)
+```
+
+The first line is the answer Claude Code blocks the call on. An allowed call prints nothing, so Claude Code's own
+permission rules still apply. After the kill, everything `dev-agent` asks for is denied until
+`../bin/ascc revive dev-agent`.
+
+To put it in front of a real agent, follow the [Claude Code setup guide](docs/guides/claude-code-setup.md).
+
+### Commands and flags
+
+| Command | Flags | Exit codes |
+|:---|:---|:---|
+| **`ascc decide`** | `--request <file>`, or `--request -` for stdin | 0 a decision was made, allow or deny; 2 ascc couldn't run, and it still prints a deny |
+| **`ascc hook claude-code`** | `--agent <id>` (required), `--repo <dir>` (default: the payload's working directory). The payload comes on stdin. | 0 a decision was made: a deny prints the blocking JSON, an allow prints nothing; 2 ascc couldn't run, which also blocks the call |
+| **`ascc audit verify`** | `--expect-head <hash>` fails unless the log ends at that hash | 0 the log verifies; 1 it doesn't; 2 ascc couldn't read it |
+| **`ascc kill <agent>`**, **`ascc revive <agent>`** | none | 0 done; 2 the agent is unknown or retired |
+| **`ascc posture claude-code`** | `--agent <id>` checks one agent; `--managed <file>`, `--user <file>`, `--project <dir>` point at other settings | 0 every agent passes; 1 one fails; 2 ascc couldn't run |
+| **`ascc discover`** | `--root <dir>` (default: the current folder), `--out <file>` | 0 everything under the root was read; 1 something couldn't be, and is named on stderr; 2 ascc couldn't run |
+| **`ascc inventory`** | `--import <file>` (repeatable), `--out <file>`, and the three settings flags `posture` takes | 0 done; 2 ascc couldn't run or an import isn't a valid suite document |
+| **`ascc version`**, **`ascc help`** | none | 0 |
+
+Every command also takes `--registry <file>` (default `ascc.registry.json`), `--policies <dir>` (default
+`policies`, every `*.cedar` file in it) and `--audit <file>` (default `.ascc/audit.jsonl`), all relative to the
+current folder.
+
+In `examples/`, `ascc inventory` prints six findings: the sample registry plants a suspended agent, an agent
+with no owner, an ownerless service account, an overdue credential, an OAuth app nothing uses and an identity
+a suspended agent still holds. `ascc posture claude-code` exits 1 there and says why: the sample agents have no
+hook in managed settings.
 
 What's denied without any policy saying so: an agent or a tool that isn't in the registry, a suspended or retired
 agent, a request whose context doesn't fit the built-in schema, a policy that errors while evaluating, and
 anything no policy permits. A registry with a typo, or a policy with no `@id` or one that reads an attribute
-the schema doesn't have, stops ascc loading at all.
+the schema doesn't have, stops ascc loading at all, and the hook blocks every call until it is fixed.
+
+## 🔭 Coverage: what the hook sees and what it doesn't
+
+ascc sees a tool call only when Claude Code runs its hook, and judges a shell command by its text.
+
+| The hook sees | The hook doesn't see |
+|:---|:---|
+| Every tool call Claude Code makes while the hook is registered with matcher `*`: built-in tools and MCP tools alike. A tool that isn't in the registry is denied. | Anything, once the hook is removed or switched off. A hook in project or user settings can be edited by the agent's user; only managed settings hold it in place, and `ascc posture claude-code` checks that. |
+| The command text of `Bash` and `PowerShell` calls, parsed into facts: does it reach the network, touch a secret file, push to a branch, change ascc's own files. | What a command does beyond its text. An encoded, aliased or downloaded command gets past the parser. Treat the policies as a guard against accidents and plain injected lines, not a sandbox. |
+| The file path of `Read`, `Write` and `Edit` calls, and whether it is inside the repo. | Files pulled in with `@` mentions, and where a symlink inside the repo really points. |
+| Which agent the hook registration says is asking. | Who is really asking: the id is asserted by `--agent`, not proven. |
+| Nothing on the network. | Traffic an allowed tool sends. There is no proxy in this version. |
+
+The inventory says how far each agent is covered, from evidence and never from a declaration: `unmonitored`
+when the hook has recorded nothing for it, `observed` when it has but the posture check doesn't pass, `enforced`
+only with both. The [setup guide's limits table](docs/guides/claude-code-setup.md#limits) has the full list and
+what to do about each.
+
+## ⚖️ Responsible use
+
+ascc is a defensive tool.
+
+- **Run it on agents and machines you own or are authorized to control.**
+- **It attacks nothing and contacts nothing.** It never exploits anything and never sends a request anywhere.
+- **It writes only its own files:** the registry (on `kill` and `revive`), the audit log, and the document you
+  ask for with `--out`. It reads Claude Code's settings and never changes them.
+- **A deny is only as good as the policy and the hook's coverage.** Read the coverage section above before
+  relying on one, and keep ascc's files where the agent's user can't write them.
+- **The demo and the samples are planted.** Every agent, host and account in `examples/` and on the demo page is
+  fictional.
 
 ## 🗂️ What's in here
 

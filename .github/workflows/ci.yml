@@ -43,6 +43,16 @@ jobs:
       - name: Build
         run: go build ./...
 
+      # The same check `go test ./...` ran above, as its own step so a broken inventory is named in the run:
+      # `ascc inventory` on examples/ must validate against the suite schema and report the planted
+      # ownerless agent.
+      - name: Inventory output validates against the suite schema
+        run: go test -count=1 -run "^TestInventoryCommand$" ./src/cmd/ascc
+
+      - name: Vendored schema matches the published one
+        if: runner.os == 'Linux'
+        run: curl -fsS --max-time 30 https://ai-automation-tools.dev/schemas/agent-inventory/v0.1.json | diff - schemas/agent-inventory.schema.json
+
       - name: Build the core and the demo for WebAssembly
         shell: bash
         run: GOOS=js GOARCH=wasm go build ./src/internal/... ./src/cmd/ascc-wasm
