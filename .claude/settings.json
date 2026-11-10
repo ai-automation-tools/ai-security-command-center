@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gofmt:*)",
+      "Bash(go vet:*)",
+      "Bash(go test:*)",
+      "Bash(go build:*)",
+      "Bash(go list:*)",
+      "Bash(go doc:*)",
+      "Bash(go mod tidy)",
+      "Bash(go mod verify)",
+      "Bash(gitleaks:*)",
+      "PowerShell(gofmt:*)",
+      "PowerShell(go vet:*)",
+      "PowerShell(go test:*)",
+      "PowerShell(go build:*)",
+      "PowerShell(go list:*)",
+      "PowerShell(go doc:*)",
+      "PowerShell(go mod tidy)",
+      "PowerShell(go mod verify)",
+      "PowerShell(gitleaks:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.local)",
+      "Bash(git push origin main:*)",
+      "Bash(git push --force:*)",
+      "PowerShell(git push origin main:*)",
+      "PowerShell(git push --force:*)"
+    ]
+  }
+}
