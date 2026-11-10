@@ -133,6 +133,37 @@ func TestDiscoverMatchesServersByNameOnly(t *testing.T) {
 	}
 }
 
+// A server or a credential the registry declares under the id discover would give it is known.
+func TestDiscoverSkipsDeclaredIdentities(t *testing.T) {
+	const entry = `"kind": "mcp-server", "platform": "local", "status": "active"`
+	reg, err := pdp.ParseRegistry([]byte(`{"agents": [{"id": "dev-agent", "owner": "o", "runtime": "claude-code", "risk_tier": 1, "status": "active"}],
+		"identities": [{"id": "local:mcp-server/paste", ` + entry + `}, {"id": "local:credential/paste/PASTE_API_KEY", ` + entry + `},
+			{"id": "local:claude-code-setup/shadow", ` + entry + `}, {"id": "local:mcp-server/Wiki", ` + entry + `},
+			{"id": "local:mcp-server/wiki", "kind": "mcp-server", "platform": "local", "status": "retired"},
+			{"id": "local:mcp-server/my docs", "kind": "other", "platform": "local", "status": "active"},
+			{"id": "local:credential/paste/Authorization", "kind": "other", "platform": "local", "status": "disabled"}], "tools": {}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	inv, _ := Discover(discoverTree(), reg, "0.0.0", time.Unix(0, 0))
+	var ids []string
+	for _, id := range inv.Identities {
+		ids = append(ids, id.ID)
+	}
+	for id, want := range map[string]bool{
+		"local:mcp-server/paste": false, "local:credential/paste/PASTE_API_KEY": false,
+		"local:credential/paste/dbPassword":    true, // each credential is declared on its own
+		"local:claude-code-setup/shadow":       true, // a setup is governed by a hook, not by a line in the registry
+		"local:mcp-server/wiki":                true, // ids match exactly, and a retired entry doesn't hide a server still configured
+		"local:mcp-server/my docs":             true, // nor does an entry of another kind
+		"local:credential/paste/Authorization": true, // nor a disabled one
+	} {
+		if slices.Contains(ids, id) != want {
+			t.Errorf("%s in the report: %v, want %v", id, !want, want)
+		}
+	}
+}
+
 func TestIsLocation(t *testing.T) {
 	for rel, want := range map[string]bool{
 		".mcp.json": true, "repo/.mcp.json": true, "repo/.claude/settings.json": true, ".claude/settings.local.json": true,

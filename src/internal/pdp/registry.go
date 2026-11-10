@@ -25,13 +25,16 @@ type Agent struct {
 	RiskTier *int64   `json:"risk_tier"`
 	Status   string   `json:"status"`
 	Groups   []string `json:"groups,omitempty"`
+	Uses     []string `json:"uses,omitempty"` // ids from the registry's identities list
 }
 
-// Registry is ascc.registry.json: the agents ascc knows and the tools they may ask for.
+// Registry is ascc.registry.json: the agents ascc knows, the non-human identities they use and the
+// tools they may ask for. Identities are written as the suite schema writes them (nhi.go).
 // Tools maps a tool id ("claude-code/Bash") to the tool groups it belongs to.
 type Registry struct {
-	Agents []Agent             `json:"agents"`
-	Tools  map[string][]string `json:"tools"`
+	Agents     []Agent             `json:"agents"`
+	Identities []Identity          `json:"identities,omitempty"`
+	Tools      map[string][]string `json:"tools"`
 }
 
 var nameRE = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$`)
@@ -47,6 +50,20 @@ func ParseRegistry(data []byte) (*Registry, error) {
 	}
 	if len(r.Agents) == 0 {
 		return nil, errors.New(`registry: "agents" is empty`)
+	}
+	declared := map[string]bool{}
+	for i := range r.Identities {
+		n := &r.Identities[i]
+		where := fmt.Sprintf("registry: identities[%d]", i)
+		switch err := checkIdentity(n); {
+		case err != nil:
+			return nil, fmt.Errorf("%s: %v", where, err)
+		case strings.HasPrefix(n.ID, agentIDPrefix):
+			return nil, fmt.Errorf(`%s: an id under %q is an agent's; list it in "agents"`, where, agentIDPrefix)
+		case declared[n.ID]:
+			return nil, fmt.Errorf("%s: its id is listed twice", where)
+		}
+		declared[n.ID] = true
 	}
 	seen := map[string]bool{}
 	for i, a := range r.Agents {
@@ -66,6 +83,13 @@ func ParseRegistry(data []byte) (*Registry, error) {
 		seen[a.ID] = true
 		if err := checkGroups(a.Groups); err != nil {
 			return nil, fmt.Errorf("%s: %v", where, err)
+		}
+		// A typo here would leave the identity looking unused and off the kill list.
+		// The value isn't repeated: this error becomes an audit line's reason.
+		for j, u := range a.Uses {
+			if !declared[u] || slices.Contains(a.Uses[:j], u) {
+				return nil, fmt.Errorf(`%s: uses[%d] must be an id from "identities", listed once`, where, j)
+			}
 		}
 	}
 	for id, groups := range r.Tools {

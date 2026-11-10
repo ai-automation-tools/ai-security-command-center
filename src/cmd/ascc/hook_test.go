@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/ai-automation-tools/ai-security-command-center/src/internal/audit"
+	"github.com/ai-automation-tools/ai-security-command-center/src/internal/pdp"
 )
 
 // workspace copies examples/ into a temp repo, so kill, revive and the audit log have files to change.
@@ -47,6 +48,15 @@ func (w *workspace) hook(agent, tool string, input map[string]any) (int, string,
 		w.t.Fatal(err)
 	}
 	return w.run(string(raw), "hook", "claude-code", "--agent", agent)
+}
+
+func (w *workspace) registry() string {
+	w.t.Helper()
+	b, err := os.ReadFile(filepath.Join(w.dir, "ascc.registry.json"))
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	return string(b)
 }
 
 func (w *workspace) log() string {
@@ -203,15 +213,27 @@ func TestKillAndRevive(t *testing.T) {
 	if blocked() {
 		t.Fatal("dev-agent should be allowed before the kill")
 	}
-	if code, out, errOut := w.run("", "kill", "dev-agent"); code != 0 || !strings.Contains(out, "dev-agent is suspended") {
+	// Criterion 17: the kill names the identities the agent uses, and only those. ascc can't stop them.
+	code, out, errOut := w.run("", "kill", "dev-agent")
+	if code != 0 || !strings.Contains(out, "dev-agent is suspended") || !strings.Contains(out, "rotate or revoke these yourself") ||
+		!strings.Contains(out, "\n  github:app/release-bot (bot on github, active)\n") || strings.Contains(out, "ci-deploy") {
 		t.Fatalf("kill: %d %q %q", code, out, errOut)
 	}
 	if !blocked() {
 		t.Fatal("a killed agent was let through")
 	}
 	// Flags before the agent id work too.
-	if code, out, errOut := ascc(t, "", append(append([]string{"revive"}, w.args...), "dev-agent")...); code != 0 || !strings.Contains(out, "dev-agent is active") {
+	if code, out, errOut := ascc(t, "", append(append([]string{"revive"}, w.args...), "dev-agent")...); code != 0 || out != "dev-agent is active\n" {
 		t.Fatalf("revive: %d %q %q", code, out, errOut)
+	}
+	// The registry was rewritten twice and still holds every identity and every link to one.
+	if reg, err := pdp.ParseRegistry([]byte(w.registry())); err != nil || len(reg.Identities) != 4 || len(reg.Agents[1].Uses) != 2 ||
+		reg.Identities[0].Credentials[0].RotateBy != "2026-06-30T00:00:00Z" || reg.Identities[1].Owner != nil {
+		t.Fatalf("the rewritten registry lost something: %v\n%s", err, w.registry())
+	}
+	// An agent that uses nothing gets no list.
+	if code, out, _ := w.run("", "kill", "ownerless-agent"); code != 0 || out != "ownerless-agent is suspended\n" {
+		t.Fatalf("kill of an agent with no identities: %d %q", code, out)
 	}
 	if blocked() {
 		t.Fatal("a revived agent is still denied")
@@ -221,7 +243,7 @@ func TestKillAndRevive(t *testing.T) {
 	for _, e := range w.entries() {
 		events = append(events, e.Event+" "+e.Agent+" "+e.Decision)
 	}
-	want := "decision dev-agent allow,kill dev-agent ,decision dev-agent deny,revive dev-agent ,decision dev-agent allow"
+	want := "decision dev-agent allow,kill dev-agent ,decision dev-agent deny,revive dev-agent ,kill ownerless-agent ,decision dev-agent allow"
 	if got := strings.Join(events, ","); got != want {
 		t.Fatalf("audit events:\n got %s\nwant %s", got, want)
 	}
@@ -241,6 +263,23 @@ func TestKillAndRevive(t *testing.T) {
 	}
 	if code, _, _ := w.run("", "kill"); code != 2 {
 		t.Fatal("kill with no agent should fail")
+	}
+}
+
+// A registry with a bad identity doesn't load, so the hook blocks, and the pasted value stays out of
+// stderr and the audit log.
+func TestHookBlocksOnABadIdentity(t *testing.T) {
+	w := newWorkspace(t)
+	bad := strings.Replace(w.registry(), `"fingerprint": "3f9a1c0b7e2d"`, `"fingerprint": "ghp_plantedFAKEfakeFAKEfakeFAKEfake0000"`, 1)
+	if err := os.WriteFile(filepath.Join(w.dir, "ascc.registry.json"), []byte(bad), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	code, out, errOut := w.hook("dev-agent", "Read", map[string]any{"file_path": filepath.Join(w.dir, "README.md")})
+	if code != 2 || out != "" || !strings.Contains(errOut, "blocked: registry: identities[0]") || strings.Contains(errOut+w.log(), "planted") {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, out, errOut)
+	}
+	if e := w.entries(); len(e) != 1 || e[0].Decision != "deny" {
+		t.Fatalf("audit entries %+v", e)
 	}
 }
 

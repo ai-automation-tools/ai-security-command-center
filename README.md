@@ -35,8 +35,8 @@
 
 > [!WARNING]
 > **Incubating.** The policy decision point, the Claude Code hook, the audit log, the kill switch and the posture
-> check and `discover` work and are tested. Non-human identities in the registry and the browser demo aren't
-> built yet, and nothing here has had an outside review. The [roadmap](docs/ROADMAP.md) says what's next.
+> check, `discover` and the inventory of agents and the non-human identities they use work and are tested.
+> The browser demo isn't built yet, and nothing here has had an outside review. The [roadmap](docs/ROADMAP.md) says what's next.
 
 ## 🎯 What it's for
 
@@ -51,10 +51,10 @@ ASCC (`ascc`) puts one policy decision point in front of the agent:
 | **`decide`** | works | Evaluates a request (agent, action, resource, context) against Cedar policies and an agent registry. Default deny, with the policy ids and a plain-English reason for every answer. |
 | **`hook claude-code`** | works | Runs as a Claude Code PreToolUse hook: asks the policies before every tool call, blocks the denied ones and records every decision. Any error blocks the call. [Setup guide](docs/guides/claude-code-setup.md). |
 | **`audit verify`** | works | Checks the hash-chained log every decision lands in and names the first line that was edited, removed or reordered. `--expect-head <hash>` catches lines cut off the end. |
-| **`kill` / `revive`** | works | Suspends an agent so everything it asks for is denied, and brings it back. Both are audited. |
+| **`kill` / `revive`** | works | Suspends an agent so everything it asks for is denied, and brings it back. Both are audited. `kill` lists the identities the agent uses, which still work until you rotate or revoke them. |
 | **`posture claude-code`** | works | Reads the Claude Code settings files, never writes them, and says for each agent whether its hook is registered so that it enforces: in managed settings, matcher `*`, `"onFailure": "block"`, nothing switching it off. Each failure names its reason. [What it checks](docs/guides/claude-code-setup.md#posture). |
 | **`discover`** | works | Searches a folder for the agent config files it knows (Claude Code settings, `.mcp.json`, `.claude.json` and the managed files) and reports what the registry doesn't list: a Claude Code setup with no ascc hook, a hook for an unregistered agent, an MCP server none of whose tools is listed. Variable names that look like credentials become candidate identities. It reads names only, never a value. [What it finds](docs/guides/claude-code-setup.md#discover). |
-| **`inventory`** | works | Writes the registry as an Agent Security Suite inventory document, with findings for agents that have no owner, no policy or are suspended. Each agent's label is computed from evidence, never declared: `unmonitored` when the hook has recorded nothing for it, `observed` when it has but the posture check doesn't pass, `enforced` only with both. |
+| **`inventory`** | works | Writes the registry as an Agent Security Suite inventory document: the agents, and the service accounts, bots, CI jobs, OAuth apps and MCP servers they use. Findings name an agent with no owner or no policy, and an identity with no owner, an overdue credential, no agent using it, or a stopped agent still holding it. `--import <file>` merges identities from another suite tool's document. Each agent's label is computed from evidence, never declared: `unmonitored` when the hook has recorded nothing for it, `observed` when it has but the posture check doesn't pass, `enforced` only with both. [The identity list](docs/guides/claude-code-setup.md#identities). |
 
 The browser demo will run the same Go core as WebAssembly on a planted setup.
 
@@ -95,7 +95,8 @@ That request is `dev-agent` asking to run a shell command that touches a secret 
 
 `ascc` reads `ascc.registry.json` and every `policies/*.cedar` from the current folder; `--registry` and
 `--policies` point it elsewhere, and `--request -` reads the request from stdin. `ascc inventory` prints the
-inventory document, or writes it with `--out <file>`. Exit code 0 means a decision was made, allow or deny;
+inventory document, or writes it with `--out <file>`; the sample registry plants an ownerless service account,
+an overdue credential and an OAuth app nothing uses, and each comes out as a finding. Exit code 0 means a decision was made, allow or deny;
 2 means ascc couldn't run, and `decide` still prints a deny. `ascc posture claude-code` exits 1 when a hook
 registration doesn't enforce; on a machine with no managed settings that is every agent, and it says why.
 
@@ -105,7 +106,7 @@ same folder has two hook payloads to try by hand:
 ```bash
 ../bin/ascc hook claude-code --agent dev-agent < hook-payloads/exfil-curl.json   # prints the deny Claude Code blocks on
 ../bin/ascc audit verify                                                          # checks the log that call was written to
-../bin/ascc kill dev-agent                                                        # now everything dev-agent asks for is denied
+../bin/ascc kill dev-agent                                                        # now everything dev-agent asks for is denied; lists the identities it uses
 ../bin/ascc posture claude-code                                                   # is each agent's hook registered so that it enforces?
 ../bin/ascc discover --root ..                                                    # agent setups and MCP servers the registry doesn't list
 ```

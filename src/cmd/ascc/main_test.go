@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -84,12 +85,73 @@ func TestInventoryCommand(t *testing.T) {
 		}
 		if args[1] != "--out" { // the document is on stdout
 			var inv pdp.Inventory
-			if err := json.Unmarshal([]byte(stdout), &inv); err != nil || len(inv.Identities) != 4 || inv.Producer.Name != "ascc" {
+			if err := json.Unmarshal([]byte(stdout), &inv); err != nil || len(inv.Identities) != 8 || inv.Producer.Name != "ascc" {
 				t.Fatalf("bad inventory (%v): %s", err, stdout)
 			}
 		} else if stdout != "" {
 			t.Fatalf("--out still wrote to stdout: %s", stdout)
 		}
+	}
+}
+
+// Spec criterion 16 through the CLI: --import adds another suite document's identities, once each.
+func TestInventoryImportCommand(t *testing.T) {
+	none := t.TempDir()
+	hermetic := append([]string{"--audit", filepath.Join(none, "audit.jsonl"), "--managed", filepath.Join(none, "managed-settings.json"),
+		"--user", filepath.Join(none, "settings.json"), "--project", none}, sample...)
+	write := func(name, content string) string {
+		file := filepath.Join(none, name)
+		if err := os.WriteFile(file, []byte(content), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		return file
+	}
+	first := write("ghost-grant.json", `{"schemaVersion":"0.1","generatedAt":"2026-11-01T00:00:00Z","producer":{"name":"ghost-grant","version":"1"},"identities":[
+		{"id":"slack:bot/standup","kind":"bot","platform":"slack","displayName":"standup","status":"active","owner":null},
+		{"id":"github:app/release-bot","kind":"bot","platform":"github","displayName":"IMPORTED-COPY","status":"unknown"}]}`)
+	second := write("mcp-frisk.json", `{"schemaVersion":"0.1","generatedAt":"2026-11-01T00:00:00Z","producer":{"name":"mcp-frisk","version":"1"},"identities":[
+		{"id":"slack:bot/standup","kind":"bot","platform":"slack","displayName":"SECOND-COPY","status":"active"},
+		{"id":"mcp:server/tickets","kind":"mcp-server","platform":"mcp","displayName":"tickets","status":"active","owner":{"team":"support"}}]}`)
+
+	code, out, errOut := ascc(t, "", append([]string{"inventory", "--import", first, "--import", second}, hermetic...)...)
+	var inv pdp.Inventory
+	if err := json.Unmarshal([]byte(out), &inv); code != 0 || err != nil || len(inv.Identities) != 10 {
+		t.Fatalf("exit %d, %d identities, stderr %q", code, len(inv.Identities), errOut)
+	}
+	for _, want := range []string{`"imported-from:ghost-grant"`, `"imported-from:mcp-frisk"`, `"ascc/nhi-no-owner:slack:bot/standup"`} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the document lacks %s", want)
+		}
+	}
+	if strings.Contains(out, "IMPORTED-COPY") || strings.Contains(out, "SECOND-COPY") {
+		t.Error("an imported identity replaced or doubled one ascc already had")
+	}
+	// discover's own report can be merged back in.
+	found := filepath.Join(none, "found.json")
+	if code, _, errOut := ascc(t, "", "discover", "--registry", sample[1], "--root", discoverFixture(t).root, "--out", found); code != 0 {
+		t.Fatal(errOut)
+	}
+	if code, out, errOut := ascc(t, "", append([]string{"inventory", "--import", found}, hermetic...)...); code != 0 || !strings.Contains(out, `"local:mcp-server/paste"`) {
+		t.Fatalf("importing a discover report: exit %d, %q", code, errOut)
+	}
+
+	bad := map[string]string{
+		"a missing file":    filepath.Join(none, "none.json"),
+		"a folder":          none,
+		"not JSON":          write("bad.json", `{"schemaVersion":"0.1","identities":[{"id":"sk-planted-not-a-real-key`),
+		"another version":   write("v9.json", `{"schemaVersion":"9.9","identities":[]}`),
+		"a broken identity": write("kind.json", `{"schemaVersion":"0.1","identities":[{"id":"x:1","kind":"sk-planted-not-a-real-key","platform":"slack","status":"active"}]}`),
+		"a pasted secret":   write("fp.json", `{"schemaVersion":"0.1","identities":[{"id":"x:1","kind":"bot","platform":"slack","status":"active","credentials":[{"id":"k","type":"api-key","fingerprint":"sk-planted-not-a-real-key+/=="}]}]}`),
+	}
+	for name, file := range bad {
+		// A good import beside the bad one doesn't rescue the run: nothing is printed.
+		code, out, errOut := ascc(t, "", append([]string{"inventory", "--import", first, "--import", file}, hermetic...)...)
+		if code != 2 || out != "" || !strings.Contains(errOut, "--import") || strings.Count(errOut, "\n") != 1 || strings.Contains(errOut, "sk-planted") {
+			t.Errorf("%s: exit %d, stdout %q, stderr %q", name, code, out, errOut)
+		}
+	}
+	if code, out, _ := ascc(t, "", append([]string{"inventory", first}, hermetic...)...); code != 2 || out != "" {
+		t.Errorf("a stray argument: exit %d", code)
 	}
 }
 

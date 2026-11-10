@@ -198,7 +198,7 @@ func TestInventoryLabelsComeFromEvidence(t *testing.T) {
 			t.Fatalf("exit %d, %v: %s", code, err, errOut)
 		}
 		got := map[string]string{}
-		for _, id := range inv.Identities {
+		for _, id := range inv.Identities[:4] { // the agents; the identities they use have no coverage label
 			got[id.DisplayName] = strings.TrimPrefix(id.Tags[0], "coverage:")
 		}
 		return got, errOut
