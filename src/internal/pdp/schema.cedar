@@ -7,5 +7,6 @@ entity Tool in [ToolGroup];
 action "runtime.tool_use" appliesTo {
   principal: Agent,
   resource: Tool,
-  context: { path_in_repo: Bool, network: Bool, touches_secret_path: Bool, git_push_target?: String }
+  context: { path_in_repo: Bool, network: Bool, touches_secret_path: Bool, touches_ascc_state: Bool,
+             git_push_target?: String }
 };

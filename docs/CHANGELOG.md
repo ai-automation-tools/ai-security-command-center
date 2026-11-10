@@ -16,12 +16,19 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 ## Unreleased
 
 **Added**
+- `ascc hook claude-code --agent <id>`: a Claude Code PreToolUse hook. It maps each tool call to a request (`path_in_repo`, `network`, `touches_secret_path`, `touches_ascc_state`, `git_push_target`, with `Bash` and `PowerShell` parsed alike and Windows paths normalised), blocks a policy deny with exit 0 and the deny JSON, prints nothing on an allow, and exits 2 on anything it can't do, which also blocks. Checked against a live Claude Code 2.1.321 session. *Slice 2: Enforce and record*
+- Hash-chained audit log (`.ascc/audit.jsonl`): one line per decision with the policy ids, the parsed features and a SHA-256 of the hook payload, never the payload. Appends take a lock, so twenty parallel hooks leave one chain; a call that can't be recorded is blocked. `ascc audit verify` names the first edited, removed or reordered line and exits 1, and `--expect-head <hash>` catches lines cut off the end. *Slice 2: Enforce and record*
+- `ascc kill <agent>` and `ascc revive <agent>` flip the registry status and are recorded. A retired agent can't be revived. *Slice 2: Enforce and record*
+- `deny-ascc-state-changes` sample policy and the `touches_ascc_state` context feature: an agent can't write the registry, a policy, the audit log or a Claude Code settings file, or run `ascc kill` or `revive`.
+- `docs/guides/claude-code-setup.md`: the settings snippet (matcher `*`, `"onFailure": "block"`, timeout 10), a check by hand, the audit log, the kill switch and a table of what the hook doesn't cover.
+- A test that the `ascc` binary links no package that can open a socket, and a CI step that builds the `pdp`, `audit` and `claudecode` packages for WebAssembly.
 - Policy decision point (`src/internal/pdp`) on cedar-go v1.9.0. `ascc decide --request <file|->` answers with `decision`, the determining `policy_ids` and a plain-English `reason` taken from each policy's `@reason`. Default deny, and denied before any policy runs: an agent or tool that isn't in the registry, a suspended or retired agent, a context that doesn't fit the built-in schema. A policy that errors while evaluating is a deny naming it. A registry typo, a policy with no `@id` or a duplicate one, or a policy that doesn't type-check against the schema stops ascc loading. *Slice 1: Policy decision point*
 - `ascc inventory` writes the registry as an Agent Security Suite inventory document (schema v0.1, vendored to `schemas/`), with findings `ascc/no-owner`, `ascc/no-policy` and `ascc/suspended`. Every agent is labelled `unmonitored` until the hook and the posture check give evidence for more. *Slice 1: Policy decision point*
 - Agent groups (`groups` in the registry become Cedar parents, so `principal in AgentGroup::"developers"` covers a team) and the `retired` status, both from the requirements review.
 - `examples/`: a sample registry, six policies and three requests with fictional agents. The policies permit Claude Code's internal tools so default deny under matcher `*` won't stall a session.
 
 **Changed**
+- Every request context now needs `touches_ascc_state`; the sample requests carry it. `deny-push-to-main` also forbids a push to every branch at once (`--all`, `--mirror`, several refspecs).
 - Go 1.26, which cedar-go v1.9.0 requires. Two dependencies: cedar-go, and `santhosh-tekuri/jsonschema/v6` for the test that validates the inventory against the suite schema.
 - `ascc` with no arguments prints usage and exits 2; the version moved to `ascc version`.
 - A suspended agent is denied by the PDP itself, not by a `deny-suspended-agent` sample policy as the cedar-go check sketched, so deleting a rule can't undo the kill switch.

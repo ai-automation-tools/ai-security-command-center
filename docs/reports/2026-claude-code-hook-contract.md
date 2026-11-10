@@ -19,8 +19,9 @@
 
 **Source:** Anthropic's hooks reference, <https://code.claude.com/docs/en/hooks>, read in full on 2026-11-09.
 Claude Code on the machine that ran the check is **2.1.321**. Two features below have version floors:
-`onFailure` needs 2.1.295, and the Monitor behaviour needs 2.1.314. Nothing here was exercised against a live
-session yet; Slice 2's end-to-end test does that.
+`onFailure` needs 2.1.295, and the Monitor behaviour needs 2.1.314. Slice 2 exercised the
+contract against a live 2.1.321 session on Windows: an allowed `Read` and `Bash` passed with no output from the
+hook, and a denied `Read` was blocked with the hook's reason shown as `PreToolUse:Read hook error: ascc: …`.
 
 ## 📥 What the hook receives (stdin)
 

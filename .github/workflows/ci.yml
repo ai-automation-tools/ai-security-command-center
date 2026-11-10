@@ -42,3 +42,7 @@ jobs:
 
       - name: Build
         run: go build ./...
+
+      - name: Build the core for WebAssembly
+        shell: bash
+        run: GOOS=js GOARCH=wasm go build ./src/internal/...

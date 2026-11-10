@@ -40,11 +40,17 @@ decision goes in as an ADR amendment there, never as a quiet code change.
 - `src/internal/pdp` is the decision point: `registry.go` parses `ascc.registry.json` (agents, and `tools` mapping
   each tool id to its tool groups), `pdp.go` loads policies and decides, `inventory.go` writes the suite document.
   `schema.cedar` there is the built-in Cedar schema: a new context feature or entity attribute is added to it
-  first, then to the fixtures. `examples/` holds the sample registry, policies and requests the tests and the
-  README both run.
-- **The PDP and audit packages do no I/O.** They take bytes and return values, so the WebAssembly demo
-  (`GOOS=js GOARCH=wasm`) imports exactly the code the CLI runs. File, stdin and clock access live in
-  `src/cmd/ascc` or a thin `src/internal/store` package.
+  first, then to the fixtures. `examples/` holds the sample registry, policies, requests and hook payloads the
+  tests and the README both run.
+- `src/internal/claudecode` maps a PreToolUse payload to a PDP request and parses the command features
+  (`path_in_repo`, `network`, `touches_secret_path`, `touches_ascc_state`, `git_push_target`). A new feature gets
+  a row in its table test for `Bash` and for `PowerShell`. `src/internal/audit` seals and verifies the chain.
+- `src/cmd/ascc/store.go` is the only place that locks, appends to the audit log or rewrites the registry.
+  The lock is a lock file (`<log>.lock`, cleared after 30 s if a hook died holding it): the standard library
+  has no portable file lock, and `golang.org/x/sys` isn't worth a dependency for it.
+- **The `pdp`, `audit` and `claudecode` packages do no I/O.** They take bytes and return values, so the WebAssembly demo
+  (`GOOS=js GOARCH=wasm`) imports exactly the code the CLI runs; CI builds them for that target. File, stdin and
+  clock access live in `src/cmd/ascc`.
 - Must build and test on Windows and Linux (CI runs both). Use `path/filepath`, never hard-coded separators.
 - Settings live in `.env` at the repo root, names in `.env.example`; the real environment wins. There are none
   today. If one is ever needed, load it with a few lines of stdlib parsing and document it in `.env.example`.
@@ -80,7 +86,13 @@ go build ./...
 - **Policy decides, nothing else.** No model call, score or heuristic grants access (ADR-14).
 - **No secret at rest.** The audit line stores the tool name, parsed features and a SHA-256 of the raw input,
   never the raw input. A test asserts it.
-- **Zero network.** The CLI and the demo make no network calls. A test proves it for each.
+- **Zero network.** The CLI and the demo make no network calls. For the CLI, `TestBinaryCantOpenASocket` fails
+  if the binary ever links `net`, `net/http`, `crypto/tls` or `os/exec`; a dependency that pulls one in can't be
+  added. The demo gets its own test in Slice 3.
+- **A call that can't be recorded doesn't happen.** If the audit append fails or can't get the lock, the hook
+  exits 2 even when policy said allow.
+- **An agent can't switch ascc off.** `touches_ascc_state` covers writes to the registry, policies, audit log
+  and Claude Code settings, and `ascc kill` or `revive` from a shell. The sample policies forbid it for everyone.
 - **Never claim coverage it doesn't have.** If the hook can't block a tool, that tool is `observed`, and the
   README's coverage section says so.
 

@@ -34,9 +34,9 @@
 ---
 
 > [!WARNING]
-> **It decides, but it doesn't enforce yet.** `ascc decide` and `ascc inventory` work. The Claude Code hook, the
-> audit log, the kill switch and the demo arrive one roadmap item at a time, so today nothing stops an agent.
-> The [roadmap](docs/ROADMAP.md) says what's next.
+> **Incubating.** The policy decision point, the Claude Code hook, the audit log and the kill switch work and are
+> tested. The fleet inventory commands and the browser demo aren't built yet, and nothing here has had an
+> outside review. The [roadmap](docs/ROADMAP.md) says what's next.
 
 ## 🎯 What it's for
 
@@ -49,10 +49,10 @@ ASCC (`ascc`) puts one policy decision point in front of the agent:
 | Command | Status | What it does |
 |:---|:---|:---|
 | **`decide`** | works | Evaluates a request (agent, action, resource, context) against Cedar policies and an agent registry. Default deny, with the policy ids and a plain-English reason for every answer. |
-| **`hook claude-code`** | planned | Runs as a Claude Code PreToolUse hook: asks `decide` before every tool call and blocks the denied ones. Any error is a deny. |
-| **`audit verify`** | planned | Checks the hash-chained log every decision lands in and names the first line that was edited, removed or reordered. |
-| **`kill` / `revive`** | planned | Suspends an agent so everything it asks for is denied, and brings it back. Both are audited. |
-| **`inventory`** | works | Writes the registry as an Agent Security Suite inventory document, each agent labelled `enforced`, `observed` or `unmonitored`, with findings for agents that have no owner, no policy or are suspended. Until the hook exists every agent is `unmonitored`, because that label comes from evidence. |
+| **`hook claude-code`** | works | Runs as a Claude Code PreToolUse hook: asks the policies before every tool call, blocks the denied ones and records every decision. Any error blocks the call. [Setup guide](docs/guides/claude-code-setup.md). |
+| **`audit verify`** | works | Checks the hash-chained log every decision lands in and names the first line that was edited, removed or reordered. `--expect-head <hash>` catches lines cut off the end. |
+| **`kill` / `revive`** | works | Suspends an agent so everything it asks for is denied, and brings it back. Both are audited. |
+| **`inventory`** | works | Writes the registry as an Agent Security Suite inventory document, each agent labelled `enforced`, `observed` or `unmonitored`, with findings for agents that have no owner, no policy or are suspended. Every agent is `unmonitored` until the posture check is built, because that label comes from evidence. |
 
 The browser demo will run the same Go core as WebAssembly on a planted setup.
 
@@ -62,7 +62,9 @@ built in public after release.
 
 ### What it won't do (yet)
 
-- Sit in the network path. No gateway or proxy in the MVP; the Claude Code hook is the only enforcement point.
+- Sit in the network path. No gateway or proxy in the MVP; the Claude Code hook is the only enforcement point,
+  and it judges shell commands by their text, which a determined agent can dodge. The
+  [setup guide](docs/guides/claude-code-setup.md#limits) lists what it doesn't cover.
 - Make a network call, or hold or print a secret. The audit log keeps a hash of each tool input, not the input.
 - Let a model decide. Decisions come from policy alone.
 - Pretend to see what it can't. An agent it can't enforce on is reported as `unmonitored`.
@@ -93,6 +95,15 @@ That request is `dev-agent` asking to run a shell command that touches a secret 
 `--policies` point it elsewhere, and `--request -` reads the request from stdin. `ascc inventory` prints the
 inventory document, or writes it with `--out <file>`. Exit code 0 means a decision was made, allow or deny;
 2 means ascc couldn't run, and `decide` still prints a deny.
+
+To put it in front of a real agent, follow the [Claude Code setup guide](docs/guides/claude-code-setup.md). The
+same folder has two hook payloads to try by hand:
+
+```bash
+../bin/ascc hook claude-code --agent dev-agent < hook-payloads/exfil-curl.json   # prints the deny Claude Code blocks on
+../bin/ascc audit verify                                                          # checks the log that call was written to
+../bin/ascc kill dev-agent                                                        # now everything dev-agent asks for is denied
+```
 
 What's denied without any policy saying so: an agent or a tool that isn't in the registry, a suspended or retired
 agent, a request whose context doesn't fit the built-in schema, a policy that errors while evaluating, and
