@@ -106,7 +106,12 @@ same folder has two hook payloads to try by hand:
 ../bin/ascc hook claude-code --agent dev-agent < hook-payloads/exfil-curl.json   # prints the deny Claude Code blocks on
 ../bin/ascc audit verify                                                          # checks the log that call was written to
 ../bin/ascc kill dev-agent                                                        # now everything dev-agent asks for is denied
+../bin/ascc posture claude-code                                                   # is each agent's hook registered so that it enforces?
+../bin/ascc discover --root ..                                                    # agent setups and MCP servers the registry doesn't list
 ```
+
+`posture` exits 1 here, and says why: the sample agents have no hook in managed settings. `discover` prints an
+inventory document; it reads names from config files and never a value.
 
 What's denied without any policy saying so: an agent or a tool that isn't in the registry, a suspended or retired
 agent, a request whose context doesn't fit the built-in schema, a policy that errors while evaluating, and

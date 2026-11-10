@@ -40,6 +40,7 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 - A suspended agent is denied by the PDP itself, not by a `deny-suspended-agent` sample policy as the cedar-go check sketched, so deleting a rule can't undo the kill switch.
 
 **Docs**
+- The README quick start, the docs index and the threat-trace skill now cover `posture` and `discover`.
 - The roadmap and build plan now carry the requirements review: the four hardening rules are part of the Slice 2 item, and a new Slice 2b (fleet and NHI inventory: `posture`, `discover`, declared and imported identities) sits above the release line.
 - Requirements review against the stated purpose (enterprise agent management, and governing non-human accounts including AI agents). The public-MVP spec gains a fourth feature, an offline fleet and NHI inventory (`posture`, `discover`, declared and imported identities), plus agent groups, a `retired` status, a computed coverage label and criteria 9 to 17.
 - The same review found three holes in the MVP as specified and closed them in the spec: an agent could edit the registry or run `ascc revive` on itself, parallel hooks could fork the audit chain, and lines cut from the end of the log still verified.

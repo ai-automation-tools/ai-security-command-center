@@ -28,8 +28,8 @@ for, or missing the reason it has to fail closed.
 |:---|:---|:---|
 | **T-04** indirect injection steers a tool call | The hook decides every tool call on policy and parsed features | A permitted tool can still be misused within its constraints |
 | **T-07** exfiltration through a tool call | `deny-network-with-secret-path` on shell commands | Judged from command text; no egress control until a later slice |
-| **T-11** a person bypasses the hook | Posture check and `unmonitored` label (Slice 2b) | Reported, not prevented, outside managed settings |
-| **T-12** shadow agents and orphaned identities | `inventory` findings, `discover` (Slice 2b) | Discovery is partial by nature |
+| **T-11** a person bypasses the hook | `ascc posture claude-code` and the computed coverage label | Reported, not prevented, outside managed settings |
+| **T-12** shadow agents and orphaned identities | `inventory` findings, `ascc discover` | Discovery is partial by nature |
 | **T-13** audit tampering | Hash chain, `audit verify`, `--expect-head` | Tamper-evident, not tamper-proof; the head must be kept off-host |
 | **T-14** policy tampering | Schema-validated load, `deny-ascc-state-changes` | An approved but wrong policy still decides |
 | **T-22** model output run as a shell command | The hook checks `Bash` and `PowerShell` | Patterns are bypassable |
