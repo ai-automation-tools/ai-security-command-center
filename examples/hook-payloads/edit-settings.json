@@ -1,0 +1,9 @@
+{
+  "session_id": "example-session",
+  "cwd": "/home/dev/repo",
+  "permission_mode": "default",
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Edit",
+  "tool_input": { "file_path": "/home/dev/repo/.claude/settings.json", "old_string": "\"onFailure\": \"block\"", "new_string": "\"onFailure\": \"ignore\"" },
+  "tool_use_id": "toolu_example_4"
+}

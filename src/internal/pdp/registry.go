@@ -103,6 +103,23 @@ func ParseRegistry(data []byte) (*Registry, error) {
 	return &r, nil
 }
 
+// SetStatus flips one agent between active and suspended: the kill switch. A retired agent stays
+// retired, because offboarding is one-way.
+func (r *Registry) SetStatus(agentID, want string) error {
+	for i := range r.Agents {
+		a := &r.Agents[i]
+		if a.ID != agentID {
+			continue
+		}
+		if a.Status == StatusRetired {
+			return fmt.Errorf("agent %q is retired, and a retired agent can't be suspended or revived", agentID)
+		}
+		a.Status = want
+		return nil
+	}
+	return fmt.Errorf("agent %q is not in the registry", agentID)
+}
+
 func checkGroups(groups []string) error {
 	for _, g := range groups {
 		if !nameRE.MatchString(g) {

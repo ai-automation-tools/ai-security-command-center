@@ -266,6 +266,26 @@ func TestKillAndRevive(t *testing.T) {
 	}
 }
 
+// The demo page replays these payloads through the same code. The CLI must give each the answer the
+// page shows (src/internal/demo's TestHookOnThePlantedCalls), wherever its own files happen to sit.
+func TestHookOnThePlantedPayloads(t *testing.T) {
+	w := newWorkspace(t)
+	for name, want := range map[string]string{
+		"exfil-curl": "deny-network-with-secret-path", "read-repo-file": "", "run-tests": "",
+		"push-to-main": "deny-push-to-main", "edit-settings": "deny-ascc-state-changes",
+	} {
+		payload, err := os.ReadFile(filepath.Join(w.dir, "hook-payloads", name+".json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		code, out, errOut := w.run(string(payload), "hook", "claude-code", "--agent", "dev-agent")
+		blocked, reason := denied(t, code, out)
+		if blocked != (want != "") || !strings.Contains(reason, want) {
+			t.Errorf("%s: blocked %v, reason %q, stderr %q; want policy %q", name, blocked, reason, errOut, want)
+		}
+	}
+}
+
 // A registry with a bad identity doesn't load, so the hook blocks, and the pasted value stays out of
 // stderr and the audit log.
 func TestHookBlocksOnABadIdentity(t *testing.T) {

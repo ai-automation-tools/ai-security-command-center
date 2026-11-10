@@ -104,22 +104,14 @@ func setStatus(registryPath, auditPath, agentID, event string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	found := false
-	var uses []string
-	for i := range reg.Agents {
-		a := &reg.Agents[i]
-		if a.ID != agentID {
-			continue
-		}
-		found = true
-		if a.Status == pdp.StatusRetired {
-			return "", fmt.Errorf("agent %q is retired, and a retired agent can't be %sd", agentID, event)
-		}
-		a.Status = want
-		uses = a.Uses
+	if err := reg.SetStatus(agentID, want); err != nil {
+		return "", err
 	}
-	if !found {
-		return "", fmt.Errorf("agent %q is not in the registry", agentID)
+	var uses []string
+	for _, a := range reg.Agents {
+		if a.ID == agentID {
+			uses = a.Uses
+		}
 	}
 
 	var buf bytes.Buffer
