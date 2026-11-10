@@ -20,6 +20,7 @@ type Inventory struct {
 	Producer      Producer   `json:"producer"`
 	Identities    []Identity `json:"identities"`
 	Findings      []Finding  `json:"findings"`
+	X             any        `json:"x,omitempty"` // producer-specific extension data
 }
 
 type Producer struct {
@@ -82,14 +83,7 @@ func coverage(a Agent, ev Evidence) string {
 // Inventory writes the registry as an inventory document. Agents are sorted by id, so the same
 // registry, policies, version, time and evidence always give the same bytes.
 func (p *PDP) Inventory(version string, generatedAt time.Time, ev Evidence) Inventory {
-	inv := Inventory{
-		SchemaVersion: "0.1",
-		GeneratedAt:   generatedAt.UTC().Format(time.RFC3339),
-		Producer: Producer{Name: "ascc", Version: version,
-			URL: "https://github.com/ai-automation-tools/ai-security-command-center"},
-		Identities: []Identity{},
-		Findings:   []Finding{},
-	}
+	inv := NewInventory(version, generatedAt)
 	agents := slices.Clone(p.registry.Agents)
 	slices.SortFunc(agents, func(a, b Agent) int { return strings.Compare(a.ID, b.ID) })
 
@@ -129,6 +123,18 @@ func (p *PDP) Inventory(version string, generatedAt time.Time, ev Evidence) Inve
 		inv.Identities = append(inv.Identities, ident)
 	}
 	return inv
+}
+
+// NewInventory is an empty inventory document with ascc as its producer.
+func NewInventory(version string, generatedAt time.Time) Inventory {
+	return Inventory{
+		SchemaVersion: "0.1",
+		GeneratedAt:   generatedAt.UTC().Format(time.RFC3339),
+		Producer: Producer{Name: "ascc", Version: version,
+			URL: "https://github.com/ai-automation-tools/ai-security-command-center"},
+		Identities: []Identity{},
+		Findings:   []Finding{},
+	}
 }
 
 // hasPermit reports whether any permit policy's principal scope matches the agent.

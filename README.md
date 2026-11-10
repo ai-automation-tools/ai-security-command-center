@@ -35,8 +35,8 @@
 
 > [!WARNING]
 > **Incubating.** The policy decision point, the Claude Code hook, the audit log, the kill switch and the posture
-> check work and are tested. `discover`, non-human identities and the browser demo aren't built yet, and nothing
-> here has had an outside review. The [roadmap](docs/ROADMAP.md) says what's next.
+> check and `discover` work and are tested. Non-human identities in the registry and the browser demo aren't
+> built yet, and nothing here has had an outside review. The [roadmap](docs/ROADMAP.md) says what's next.
 
 ## 🎯 What it's for
 
@@ -53,6 +53,7 @@ ASCC (`ascc`) puts one policy decision point in front of the agent:
 | **`audit verify`** | works | Checks the hash-chained log every decision lands in and names the first line that was edited, removed or reordered. `--expect-head <hash>` catches lines cut off the end. |
 | **`kill` / `revive`** | works | Suspends an agent so everything it asks for is denied, and brings it back. Both are audited. |
 | **`posture claude-code`** | works | Reads the Claude Code settings files, never writes them, and says for each agent whether its hook is registered so that it enforces: in managed settings, matcher `*`, `"onFailure": "block"`, nothing switching it off. Each failure names its reason. [What it checks](docs/guides/claude-code-setup.md#posture). |
+| **`discover`** | works | Searches a folder for the agent config files it knows (Claude Code settings, `.mcp.json`, `.claude.json` and the managed files) and reports what the registry doesn't list: a Claude Code setup with no ascc hook, a hook for an unregistered agent, an MCP server none of whose tools is listed. Variable names that look like credentials become candidate identities. It reads names only, never a value. [What it finds](docs/guides/claude-code-setup.md#discover). |
 | **`inventory`** | works | Writes the registry as an Agent Security Suite inventory document, with findings for agents that have no owner, no policy or are suspended. Each agent's label is computed from evidence, never declared: `unmonitored` when the hook has recorded nothing for it, `observed` when it has but the posture check doesn't pass, `enforced` only with both. |
 
 The browser demo will run the same Go core as WebAssembly on a planted setup.

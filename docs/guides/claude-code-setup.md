@@ -1,7 +1,7 @@
 <h1 align="center">🪝 Wire ascc into Claude Code</h1>
 
 <p align="center">
-  <em>Register the hook, check it blocks, read the audit log, stop an agent, and check the registration enforces.</em>
+  <em>Register the hook, check it blocks, read the audit log, stop an agent, check the registration enforces, and find what isn't registered.</em>
 </p>
 
 <p align="center">
@@ -198,6 +198,38 @@ run it on fixtures.
 | **`observed`** | The hook has recorded decisions, but the posture check fails. |
 | **`enforced`** | The hook has recorded decisions and the posture check passes. |
 
+<a id="discover"></a>
+
+## 8. Find what isn't registered
+
+`ascc discover` searches a folder for agent config files and reports what the registry doesn't know, as an
+inventory document in the same format `ascc inventory` writes. It reads only.
+
+```bash
+ascc discover --root ~/work              # prints the document
+ascc discover --root ~/work --out discovered.json
+```
+
+| It reports | When |
+|:---|:---|
+| **A Claude Code setup** (`local:claude-code-setup/<folder>`) | A folder has `.claude/settings.json`, `.claude/settings.local.json` or `.mcp.json`, and none of them registers an ascc hook that can enforce: matcher `*`, exec form, `"onFailure": "block"`, not `async`, no `if`, and `disableAllHooks` unset. |
+| **An agent** (`local:agent/<id>`) | A hook is registered with `--agent <id>` and the registry has no such agent. |
+| **An MCP server** (`local:mcp-server/<name>`) | A server is configured and the registry lists no `claude-code/mcp__<name>__<tool>` for it. |
+| **A candidate credential** (`local:credential/<server>/<NAME>`) | A variable or header name in a server's `env` or `headers` looks like a credential (`API_KEY`, `Authorization`, `dbPassword`). Tagged `candidate`, with no finding: a person decides whether it is one. |
+
+The first three carry an `ascc/unregistered` finding and the tag `coverage:unmonitored`. **Only names reach the
+document**: server names, variable names, agent ids and paths relative to `--root`. No command, argument, URL
+or variable value is read into it.
+
+The files it knows are a list in the code, and the document records the list and its version under
+`x.discover`: `.claude/settings.json`, `.claude/settings.local.json`, `.mcp.json`, `.claude.json`,
+`managed-settings.json` and `managed-mcp.json`, in any letter case, anywhere under the root except `.git` and
+`node_modules`.
+
+It exits 0 when it read everything, 2 when it couldn't run, and 1 when a config file or folder couldn't be read
+or a linked folder wasn't followed: the document is still written, and each gap is named on stderr. `--out` won't
+write over the registry, the audit log or anything in the policies folder.
+
 <a id="limits"></a>
 
 ## ⚠️ What this doesn't cover
@@ -208,6 +240,7 @@ run it on fixtures.
 | **Whoever can edit the settings can remove the hook**, or set `disableAllHooks`. | Same: managed settings. A hook in project or user settings is best effort. |
 | **The sample policies stop the agent editing ascc's files** (`deny-ascc-state-changes`: the registry, policies, audit log, Claude Code settings, and `ascc kill`, `revive` or `hook` from a shell). They do it by reading the command's text, which can be dodged. | Keep the registry, the policies and the audit log where the agent's user can't write them. |
 | **Command features are a heuristic.** `network`, `touches_secret_path` and `git_push_target` come from the command text. An encoded, aliased or downloaded command gets past them. | Treat these policies as a guard against accidents and plain injected lines, not a sandbox. |
+| **`discover` finds only what is in the files it knows, under the root you give it.** An MCP server passed with `--mcp-config`, added by a plugin or delivered from the console isn't found, and neither is another runtime's agent or anything under `.git` or `node_modules`. A setup it reports as having no hook may be covered by a hook in user or managed settings. A server is recognised by its name alone: one that reuses a registered server's name, or is named `a` beside a registered `a__b`, isn't reported. | Read an empty report as "nothing in these files", not "nothing on this machine". Confirm a reported setup with `ascc posture claude-code`. |
 | **`posture` reads files, on this machine, now.** It can't see a server-managed or MDM policy, either of which replaces the managed settings file, nor the permission mode or the Claude Code version. It looks for `ascc` on the `PATH` of whoever runs it, not of the agent's session, and it can't tell a real `ascc` from another program with that name. On WSL, `/etc/claude-code` is writable by the user. | Treat `enforced` as "the files on this machine say so". Where settings come from the console or MDM, check the hook there. |
 | **The audit log is evidence only as far as the agent can't write it.** Anyone who can run `ascc hook claude-code --agent <id>` against the log adds a decision line for that agent, which is what moves a label off `unmonitored`. The sample policies stop the agent doing it (`deny-ascc-state-changes` covers `ascc hook`, `kill` and `revive` from a shell), by reading the command text. | Keep the audit log where the agent's user can't write it, and read `enforced` together with the posture check, which that line can't fake. |
 | **`enforced` doesn't expire.** The label needs a decision in the audit log, however old, and a posture check that passes today. | Run `ascc posture claude-code` and `ascc inventory` on a schedule, on the machine the agent runs on. |
