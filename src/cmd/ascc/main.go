@@ -2,8 +2,8 @@
 // registry and the Cedar policies; `hook claude-code` does the same for every Claude Code tool call,
 // blocks the denied ones and records each decision in a hash-chained log; `audit verify` checks that
 // log; `kill` and `revive` suspend and restore an agent; `posture claude-code` checks that the hook is
-// registered so that it enforces; `inventory` writes the registry as an Agent Security Suite
-// inventory document.
+// registered so that it enforces; `discover` finds agent setups and MCP servers the registry doesn't
+// know; `inventory` writes the registry as an Agent Security Suite inventory document.
 package main
 
 import (
@@ -32,6 +32,7 @@ Usage:
   ascc kill <agent>                            suspend an agent: everything it asks for is denied
   ascc revive <agent>                          restore a suspended agent
   ascc posture claude-code [--agent <id>]      check the hook is registered so that it enforces
+  ascc discover [--root <dir>] [--out <file>]  report agent setups and MCP servers not in the registry
   ascc inventory [--out <file>]                write the agent inventory document
   ascc version
 
@@ -43,8 +44,8 @@ posture and inventory read the Claude Code settings, and never write them: --man
 --project <dir> (default the current folder).
 
 Exit codes: 0 done (for decide and hook, a decision was made, allow or deny); 1 audit verify found
-a broken log, or posture found a hook that doesn't enforce; 2 ascc couldn't run. hook blocks the
-tool call on 2 as well as on a deny.
+a broken log, posture found a hook that doesn't enforce, or discover couldn't read everything under
+its root; 2 ascc couldn't run. hook blocks the tool call on 2 as well as on a deny.
 `
 
 func main() {
@@ -94,6 +95,17 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) (code int) {
 			return 2
 		}
 		return fail(stderr, inventory(*registry, *policies, *auditLog, *out, sp, stdout, stderr))
+
+	case "discover":
+		root := fs.String("root", ".", "folder to search for agent config files")
+		out := fs.String("out", "", "write the document here instead of stdout")
+		if fs.Parse(rest) != nil {
+			return 2
+		}
+		if fs.NArg() > 0 {
+			return fail(stderr, errors.New("usage: ascc discover [--root <dir>] [--out <file>]"))
+		}
+		return discover(*registry, *policies, *auditLog, *root, *out, stdout, stderr)
 
 	case "posture":
 		agent := fs.String("agent", "", "check only this agent (default: every claude-code agent in the registry)")
@@ -269,9 +281,24 @@ func inventory(registry, policies, auditLog, out string, sp settingsPaths, stdou
 	if err != nil {
 		return err
 	}
-	doc := p.Inventory(version.Version, time.Now(), evidence(auditLog, sp, stderr))
+	return writeDoc(out, stdout, p.Inventory(version.Version, time.Now(), evidence(auditLog, sp, stderr)), registry, policies, auditLog)
+}
+
+// writeDoc prints a document, or writes it to out when that is given. It won't write over ascc's own
+// state (the registry, the audit log, anything in the policies folder): only store.go changes those.
+func writeDoc(out string, stdout io.Writer, doc any, state ...string) error {
 	if out == "" {
 		return writeJSON(stdout, doc)
+	}
+	same := func(a, b string) bool {
+		sa, errA := os.Stat(a)
+		sb, errB := os.Stat(b)
+		return errA == nil && errB == nil && os.SameFile(sa, sb)
+	}
+	for _, s := range state {
+		if same(out, s) || same(filepath.Dir(out), s) {
+			return errors.New("--out would write over ascc's own registry, policies or audit log; choose another file")
+		}
 	}
 	f, err := os.Create(out)
 	if err != nil {

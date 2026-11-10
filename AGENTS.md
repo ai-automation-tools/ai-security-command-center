@@ -19,6 +19,9 @@ AI Security Command Center (`ascc`) is a policy decision point for AI agents. Th
 - `posture claude-code` reads the Claude Code settings layers, never writes them, and reports per agent whether
   its hook is registered so that it enforces: in managed settings, matcher `*`, `"onFailure": "block"`, exec
   form, nothing switching it off, binary present.
+- `discover` searches a folder for the agent config files it knows and reports every Claude Code setup, hook
+  agent and MCP server the registry doesn't list as an `unmonitored` identity with an `ascc/unregistered`
+  finding, plus credential-looking variable names as candidate identities. Names only, never a value.
 - `inventory` writes the registry as an Agent Security Suite inventory document, each agent labelled
   `enforced`, `observed` or `unmonitored` from the audit log and the posture check.
 - A static demo on GitHub Pages runs the same Go core as WebAssembly on a planted setup and shows an injected
@@ -51,6 +54,9 @@ decision goes in as an ADR amendment there, never as a quiet code change.
 - `src/internal/claudecode/posture.go` is the posture check: settings bytes in, pass or reasons out. It matches
   JSON keys exactly, as Claude Code does, and anything it can't read counts against the agent.
   `src/cmd/ascc/posture.go` reads the settings files and gathers the evidence `inventory` labels from.
+- `src/internal/claudecode/discover.go` holds `Locations`, the versioned list of config files `discover` reads,
+  and builds its document from their bytes. A new location is added there and `LocationsVersion` changes with
+  it. `src/cmd/ascc/discover.go` walks the root.
 - `src/cmd/ascc/store.go` is the only place that locks, appends to the audit log or rewrites the registry.
   The lock is a lock file (`<log>.lock`, cleared after 30 s if a hook died holding it): the standard library
   has no portable file lock, and `golang.org/x/sys` isn't worth a dependency for it.
@@ -90,6 +96,10 @@ go build ./...
 - **Coverage labels are computed from evidence**, never read from the registry. With no hook decision for an
   agent in an audit log that verifies, it is `unmonitored`; with one but no passing posture check, `observed`;
   `enforced` needs both. A posture reason never repeats a settings value other than a matcher.
+- **Discovery reads names, never values.** `discover` puts server names, variable names, agent ids and paths
+  relative to its root in the document, and nothing else from a config file: no command, argument, URL or
+  variable value. A file it can't read is named on stderr and makes the exit code 1; it is never skipped
+  in silence.
 - **Policy decides, nothing else.** No model call, score or heuristic grants access (ADR-14).
 - **No secret at rest.** The audit line stores the tool name, parsed features and a SHA-256 of the raw input,
   never the raw input. A test asserts it.

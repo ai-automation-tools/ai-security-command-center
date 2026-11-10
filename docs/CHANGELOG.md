@@ -16,6 +16,7 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 ## Unreleased
 
 **Added**
+- `ascc discover [--root <dir>] [--out <file>]` searches a folder for the agent config files it knows (Claude Code settings, `.mcp.json`, `.claude.json`, `managed-settings.json`, `managed-mcp.json`; the list and its version are in the code and in the document) and writes an inventory document of what the registry doesn't list: a Claude Code setup with no ascc hook, a hook for an unregistered agent, and an MCP server none of whose tools is listed, each `unmonitored` with an `ascc/unregistered` finding. Credential-looking variable and header names in an MCP server's config become candidate identities. Only names are read, never a value; a file it can't read is named on stderr and the exit code is 1. *Slice 2b: Fleet and NHI inventory*
 - `ascc posture claude-code [--agent <id>]` reads the Claude Code settings files (`--managed`, `--user`, `--project`, and `managed-settings.d` drop-ins) and never writes them. An agent passes only when its hook is registered in managed settings in exec form with matcher `*` and `"onFailure": "block"`, nothing switches hooks off, and the binary is there; each failure names its reason, and a settings file ascc can't read is a failure. Exit 1 when any agent fails. *Slice 2b: Fleet and NHI inventory*
 - `ascc inventory` computes each agent's coverage label from evidence: `unmonitored` with no tool-call decision for it in an audit log that verifies, `observed` with one but no passing posture check, `enforced` only with both. *Slice 2b: Fleet and NHI inventory*
 - `ascc hook claude-code --agent <id>`: a Claude Code PreToolUse hook. It maps each tool call to a request (`path_in_repo`, `network`, `touches_secret_path`, `touches_ascc_state`, `git_push_target`, with `Bash` and `PowerShell` parsed alike and Windows paths normalised), blocks a policy deny with exit 0 and the deny JSON, prints nothing on an allow, and exits 2 on anything it can't do, which also blocks. Checked against a live Claude Code 2.1.321 session. *Slice 2: Enforce and record*
@@ -30,6 +31,7 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 - `examples/`: a sample registry, six policies and three requests with fictional agents. The policies permit Claude Code's internal tools so default deny under matcher `*` won't stall a session.
 
 **Changed**
+- `--out` on `inventory` and `discover` refuses to write over the registry, the audit log or anything in the policies folder.
 - `touches_ascc_state` now also covers `ascc hook` run from a shell, which could forge the audit lines the coverage label is computed from, and writes to `managed-settings.d` drop-in files.
 - `ascc hook claude-code` exits 2, blocking the call, when its registration carries a stray argument: Go's flag parsing would otherwise drop every flag after it, `--agent` included.
 - Every request context now needs `touches_ascc_state`; the sample requests carry it. `deny-push-to-main` also forbids a push to every branch at once (`--all`, `--mirror`, several refspecs).
@@ -38,6 +40,7 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 - A suspended agent is denied by the PDP itself, not by a `deny-suspended-agent` sample policy as the cedar-go check sketched, so deleting a rule can't undo the kill switch.
 
 **Docs**
+- The README quick start, the docs index and the threat-trace skill now cover `posture` and `discover`.
 - The roadmap and build plan now carry the requirements review: the four hardening rules are part of the Slice 2 item, and a new Slice 2b (fleet and NHI inventory: `posture`, `discover`, declared and imported identities) sits above the release line.
 - Requirements review against the stated purpose (enterprise agent management, and governing non-human accounts including AI agents). The public-MVP spec gains a fourth feature, an offline fleet and NHI inventory (`posture`, `discover`, declared and imported identities), plus agent groups, a `retired` status, a computed coverage label and criteria 9 to 17.
 - The same review found three holes in the MVP as specified and closed them in the spec: an agent could edit the registry or run `ascc revive` on itself, parallel hooks could fork the audit chain, and lines cut from the end of the log still verified.

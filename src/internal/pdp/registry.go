@@ -36,6 +36,9 @@ type Registry struct {
 
 var nameRE = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$`)
 
+// ValidName reports whether s could be an agent or group id in a registry.
+func ValidName(s string) bool { return nameRE.MatchString(s) }
+
 // ParseRegistry reads and checks a registry. Every error is one line naming the entry at fault.
 func ParseRegistry(data []byte) (*Registry, error) {
 	var r Registry

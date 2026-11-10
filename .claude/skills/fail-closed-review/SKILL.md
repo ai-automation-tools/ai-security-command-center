@@ -26,6 +26,7 @@ weakens a row, the fix is in the code, never in the test.
 | **The kill switch is not a policy.** | `TestKillAndRevive`, `TestRetiredAgentIsDenied` | The status check is in `Decide`, before the engine. `revive` still refuses a retired agent. |
 | **An agent can't switch ascc off.** | `TestAgentCantChangeAsccState` | A new state file or state-changing command is covered by `touches_ascc_state`. |
 | **Coverage is computed from evidence.** | `TestCoverageIsComputedFromEvidence`, `TestInventoryLabelsComeFromEvidence`, `TestCheckPosture`, `TestPostureCommand` | No label is read from the registry. No evidence means `unmonitored`; a settings file ascc can't read fails the posture check. A new posture condition only ever removes a pass. |
+| **Discovery reads names, never values**, and says what it couldn't read. | `TestDiscover`, `TestDiscoverCommand`, `TestDiscoverSaysWhatItCouldntRead` | A new field read from a config file is a key or a name, never a value, and has a planted value in the test. An unreadable file reaches `unreadable`. |
 | **Policy decides, nothing else** (ADR-14). | review | No score, model call or heuristic sits between the request and the decision. |
 
 ## Confirm

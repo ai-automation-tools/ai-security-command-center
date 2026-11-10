@@ -84,6 +84,18 @@ func CheckPosture(s Settings, agent string, resolves func(command string) bool) 
 // Keys are matched exactly, as Claude Code matches them: "onfailure" is not "onFailure".
 func registrations(doc map[string]any, agent string, resolves func(command string) bool) [][]string {
 	var out [][]string
+	asccHooks(doc, func(hookFor string, group, handler map[string]any, command string, exec bool) {
+		if hookFor != agent {
+			return
+		}
+		out = append(out, defects(agent, group, handler, command, exec, resolves))
+	})
+	return out
+}
+
+// asccHooks calls fn for every PreToolUse handler in one settings file that runs
+// `ascc hook claude-code`, with the agent it speaks for ("" when the hook would refuse its arguments).
+func asccHooks(doc map[string]any, fn func(agent string, group, handler map[string]any, command string, exec bool)) {
 	hooks, _ := doc["hooks"].(map[string]any)
 	groups, _ := hooks["PreToolUse"].([]any)
 	for _, g := range groups {
@@ -107,45 +119,46 @@ func registrations(doc map[string]any, agent string, resolves func(command strin
 					argv = append(argv, strings.Trim(tok, `"'`))
 				}
 			}
-			if len(argv) < 3 || program(strings.ReplaceAll(argv[0], `\`, "/")) != "ascc" || argv[1] != "hook" ||
-				argv[2] != "claude-code" || hookAgent(argv[3:]) != agent {
-				continue
+			if len(argv) >= 3 && program(strings.ReplaceAll(argv[0], `\`, "/")) == "ascc" && argv[1] == "hook" && argv[2] == "claude-code" {
+				fn(hookAgent(argv[3:]), group, handler, command, exec)
 			}
-
-			defects := []string{}
-			add := func(format string, a ...any) {
-				defects = append(defects, "the managed hook for agent \""+agent+"\": "+fmt.Sprintf(format, a...))
-			}
-			// "*", "" and no matcher at all fire on every tool; anything else is a list or a regex.
-			if m, set := group["matcher"]; set && m != "*" && m != "" {
-				if s, ok := m.(string); ok {
-					add(`its matcher is %q, not "*", so some tools never reach it`, s)
-				} else {
-					add(`its matcher isn't "*", so some tools never reach it`)
-				}
-			}
-			if handler["type"] != "command" {
-				add(`its type isn't "command"`)
-			}
-			if !exec {
-				add(`it is in shell form (no "args"), where the shell can swallow its exit code; register it with "args"`)
-			}
-			if handler["onFailure"] != "block" {
-				add(`"onFailure" isn't "block", so a crash, a timeout or a missing binary lets the call through`)
-			}
-			for _, key := range []string{"async", "asyncRewake"} {
-				if v, set := handler[key]; set && v != false {
-					add(`"%s" runs it in the background, where it can't block a call`, key)
-				}
-			}
-			if _, set := handler["if"]; set {
-				add(`it has an "if" filter, so it doesn't run on every call`)
-			}
-			if exec && resolves != nil && !resolves(command) {
-				add("its command doesn't resolve to an executable on this machine, so the hook can't start")
-			}
-			out = append(out, defects)
 		}
+	}
+}
+
+// defects lists what stops one registration enforcing; none means it does.
+func defects(agent string, group, handler map[string]any, command string, exec bool, resolves func(command string) bool) []string {
+	out := []string{}
+	add := func(format string, a ...any) {
+		out = append(out, "the managed hook for agent \""+agent+"\": "+fmt.Sprintf(format, a...))
+	}
+	// "*", "" and no matcher at all fire on every tool; anything else is a list or a regex.
+	if m, set := group["matcher"]; set && m != "*" && m != "" {
+		if s, ok := m.(string); ok {
+			add(`its matcher is %q, not "*", so some tools never reach it`, s)
+		} else {
+			add(`its matcher isn't "*", so some tools never reach it`)
+		}
+	}
+	if handler["type"] != "command" {
+		add(`its type isn't "command"`)
+	}
+	if !exec {
+		add(`it is in shell form (no "args"), where the shell can swallow its exit code; register it with "args"`)
+	}
+	if handler["onFailure"] != "block" {
+		add(`"onFailure" isn't "block", so a crash, a timeout or a missing binary lets the call through`)
+	}
+	for _, key := range []string{"async", "asyncRewake"} {
+		if v, set := handler[key]; set && v != false {
+			add(`"%s" runs it in the background, where it can't block a call`, key)
+		}
+	}
+	if _, set := handler["if"]; set {
+		add(`it has an "if" filter, so it doesn't run on every call`)
+	}
+	if exec && resolves != nil && !resolves(command) {
+		add("its command doesn't resolve to an executable on this machine, so the hook can't start")
 	}
 	return out
 }
