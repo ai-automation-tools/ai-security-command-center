@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/now-release_gates_ticked-F59E0B?style=for-the-badge" alt="Now: every release gate is ticked">
+  <img src="https://img.shields.io/badge/now-next_slices-F59E0B?style=for-the-badge" alt="Now: next slices, release gates all ticked">
   <img src="https://img.shields.io/badge/stage-incubating-2ea44f?style=for-the-badge" alt="Stage: incubating">
   <a href="README.md"><img src="https://img.shields.io/badge/↩-docs_home-6B7280?style=for-the-badge" alt="Back to docs"></a>
 </p>
@@ -25,6 +25,21 @@ the line). `small` marks docs or config a run can batch, up to six per PR (untag
 The slices come from [product/build-plan.md](product/build-plan.md), which marks Slices 0 to 3 (2b included) as the public MVP:
 a narrow cut of the plan's own MVP so the core loop ships first. Every slice is tested against fixtures this repo
 owns, with fictional agents and repos; no item needs a running service, a credential or network access.
+
+## 📍 Where things stand (2026-11-10)
+
+- **Every release gate is ticked.** Slices 0 to 3 are built and the demo is live at
+  `https://ai-automation-tools.dev/ai-security-command-center/`. Every push to `main` redeploys it.
+- **The repo stays private for now** (Mike, 2026-11-10). Going public is his call; `/release-gate` runs the
+  going-public checks and changes nothing. Until then the demo page's "View source" link returns 404 for
+  visitors, and `go install …@latest` in the README doesn't work.
+- **Next item for a run:** the `small` **[V] checks** under Next slices, then **Slice 4**. The five items above
+  them (K3, K7 to K10) are `🔒 Needs owner`. The two `small` items under Publish and promote
+  (`CONTRIBUTING.md`, the suite cross-links) can ride in the same batch.
+- **Known loose ends, none blocking:** `kill` and `revive` rewrite the registry without a lock, so two at once
+  can lose one; two `--import` files that disagree about an id are settled by order with no warning;
+  `actions/deploy-pages@v4` targets a Node version GitHub has deprecated; the demo's page test uses a stand-in
+  for the DOM, not a browser.
 
 ## 🧭 Slice 0: Contracts
 
