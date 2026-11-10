@@ -40,7 +40,7 @@ func samplePDP(t *testing.T) *PDP {
 }
 
 func ctx(inRepo, network, secret bool) map[string]any {
-	return map[string]any{"path_in_repo": inRepo, "network": network, "touches_secret_path": secret}
+	return map[string]any{"path_in_repo": inRepo, "network": network, "touches_secret_path": secret, "touches_ascc_state": false}
 }
 
 // R1 to R9 are the requests from docs/reports/2026-cedar-go-check.md. Spec criteria 1, 2, 12 and 13.
@@ -50,6 +50,10 @@ func TestDecide(t *testing.T) {
 	pushMain["git_push_target"] = "main"
 	pushBranch := ctx(true, true, false)
 	pushBranch["git_push_target"] = "feature/x"
+	pushAll := ctx(true, true, false)
+	pushAll["git_push_target"] = "*"
+	stateChange := ctx(true, false, false)
+	stateChange["touches_ascc_state"] = true
 
 	tests := []struct {
 		name, agent, action, tool string
@@ -63,6 +67,8 @@ func TestDecide(t *testing.T) {
 		{"R3 curl a secret file out", "dev-agent", ActionToolUse, "claude-code/Bash", ctx(true, true, true), "deny", []string{"deny-network-with-secret-path"}, "may not send a secret file over the network"},
 		{"R3 same through PowerShell", "dev-agent", ActionToolUse, "claude-code/PowerShell", ctx(true, true, true), "deny", []string{"deny-network-with-secret-path"}, ""},
 		{"R4 push to main", "dev-agent", ActionToolUse, "claude-code/Bash", pushMain, "deny", []string{"deny-push-to-main"}, "open a pull request"},
+		{"push to every branch", "dev-agent", ActionToolUse, "claude-code/Bash", pushAll, "deny", []string{"deny-push-to-main"}, ""},
+		{"change ascc state", "dev-agent", ActionToolUse, "claude-code/Write", stateChange, "deny", []string{"deny-ascc-state-changes"}, "may not change ascc"},
 		{"push to a branch", "dev-agent", ActionToolUse, "claude-code/Bash", pushBranch, "allow", []string{"allow-shell-low-risk"}, ""},
 		{"R5 plain shell command", "dev-agent", ActionToolUse, "claude-code/Bash", ctx(true, false, false), "allow", []string{"allow-shell-low-risk"}, ""},
 		{"R6 suspended agent", "old-agent", ActionToolUse, "claude-code/Read", ctx(true, false, false), "deny", []string{}, `"old-agent" is suspended`},
@@ -76,8 +82,8 @@ func TestDecide(t *testing.T) {
 		{"group permit applies to a member", "dev-agent", ActionToolUse, "claude-code/Write", ctx(true, false, false), "allow", []string{"allow-repo-writes-for-developers"}, ""},
 		{"group permit skips a non-member", "ci-agent", ActionToolUse, "claude-code/Write", ctx(true, false, false), "deny", []string{}, "default deny"},
 		{"context attribute missing", "dev-agent", ActionToolUse, "claude-code/Bash", map[string]any{"path_in_repo": true}, "deny", []string{}, "doesn't fit the schema"},
-		{"context attribute unknown", "dev-agent", ActionToolUse, "claude-code/Read", map[string]any{"path_in_repo": true, "network": false, "touches_secret_path": false, "sudo": true}, "deny", []string{}, "doesn't fit the schema"},
-		{"context attribute of the wrong type", "dev-agent", ActionToolUse, "claude-code/Bash", map[string]any{"path_in_repo": true, "network": "no", "touches_secret_path": false}, "deny", []string{}, "doesn't fit the schema"},
+		{"context attribute unknown", "dev-agent", ActionToolUse, "claude-code/Read", map[string]any{"path_in_repo": true, "network": false, "touches_secret_path": false, "touches_ascc_state": false, "sudo": true}, "deny", []string{}, "doesn't fit the schema"},
+		{"context attribute of the wrong type", "dev-agent", ActionToolUse, "claude-code/Bash", map[string]any{"path_in_repo": true, "network": "no", "touches_secret_path": false, "touches_ascc_state": false}, "deny", []string{}, "doesn't fit the schema"},
 		{"context value that isn't a bool or string", "dev-agent", ActionToolUse, "claude-code/Bash", map[string]any{"path_in_repo": 1.0}, "deny", []string{}, "context.path_in_repo must be"},
 		{"no context at all", "dev-agent", ActionToolUse, "claude-code/Read", nil, "deny", []string{}, "doesn't fit the schema"},
 	}
