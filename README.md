@@ -36,7 +36,7 @@
 > [!WARNING]
 > **Incubating.** The policy decision point, the Claude Code hook, the audit log, the kill switch and the posture
 > check, `discover` and the inventory of agents and the non-human identities they use work and are tested.
-> The browser demo isn't built yet, and nothing here has had an outside review. The [roadmap](docs/ROADMAP.md) says what's next.
+> The browser demo is built but not published yet, and nothing here has had an outside review. The [roadmap](docs/ROADMAP.md) says what's next.
 
 ## 🎯 What it's for
 
@@ -56,7 +56,10 @@ ASCC (`ascc`) puts one policy decision point in front of the agent:
 | **`discover`** | works | Searches a folder for the agent config files it knows (Claude Code settings, `.mcp.json`, `.claude.json` and the managed files) and reports what the registry doesn't list: a Claude Code setup with no ascc hook, a hook for an unregistered agent, an MCP server none of whose tools is listed. Variable names that look like credentials become candidate identities. It reads names only, never a value. [What it finds](docs/guides/claude-code-setup.md#discover). |
 | **`inventory`** | works | Writes the registry as an Agent Security Suite inventory document: the agents, and the service accounts, bots, CI jobs, OAuth apps and MCP servers they use. Findings name an agent with no owner or no policy, and an identity with no owner, an overdue credential, no agent using it, or a stopped agent still holding it. `--import <file>` merges identities from another suite tool's document. Each agent's label is computed from evidence, never declared: `unmonitored` when the hook has recorded nothing for it, `observed` when it has but the posture check doesn't pass, `enforced` only with both. [The identity list](docs/guides/claude-code-setup.md#identities). |
 
-The browser demo will run the same Go core as WebAssembly on a planted setup.
+The browser demo runs the same Go core as WebAssembly on a planted setup: the injected `curl` call shows as
+denied on first load, and you can edit the policy, replay the calls, edit the audit log and flip the kill switch.
+It isn't published yet. To see it, run `go run ./src/cmd/buildsite` and serve `_site/` with any static file
+server. The page makes no network call.
 
 That's the public MVP. The full design, a gateway for MCP and LLM traffic, a credential broker, default-deny
 egress, a plugin platform and NHI connectors, is in the [planning package](docs/product/plan/README.md) and gets
@@ -124,10 +127,10 @@ the schema doesn't have, stops ascc loading at all.
 | Folder | What's inside |
 |:---|:---|
 | [**📚 docs/**](docs/README.md) | The roadmap, the changelog, the public-MVP spec and build plan, the full planning package and the resource library. |
-| [**🧩 src/**](src/) | The Go code: `cmd/ascc` is the CLI, `internal/` holds the packages. Tests sit next to the code. |
-| [**🧪 examples/**](examples/) | A sample registry, Cedar policies and requests with fictional agents. The tests run these same files. |
+| [**🧩 src/**](src/) | The Go code: `cmd/ascc` is the CLI, `cmd/ascc-wasm` the browser build, `cmd/buildsite` the demo's build tool, and `internal/` holds the packages. Tests sit next to the code. |
+| [**🧪 examples/**](examples/) | A sample registry, Cedar policies, requests and hook payloads with fictional agents. The tests run these same files. |
 | [**📐 schemas/**](schemas/) | The Agent Security Suite inventory schema, v0.1, vendored from `ai-automation-tools.dev`. |
-| [**🖥️ site/**](site/) | The demo page and its favicon. A "coming soon" shell for now. |
+| [**🖥️ site/**](site/) | The browser demo: the page, its two scripts and the favicon. `go run ./src/cmd/buildsite` adds the WebAssembly and the fixtures and writes `_site/`. |
 
 ## 🛠️ Development
 
