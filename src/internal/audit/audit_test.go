@@ -78,3 +78,27 @@ func TestLastRefusesABrokenTail(t *testing.T) {
 		t.Fatal("want an error for an unparsable last line")
 	}
 }
+
+// Coverage evidence: only decisions the hook wrote count, and only from a log that verifies.
+func TestDecisionAgents(t *testing.T) {
+	log, head := chain(t, 2)
+	// Neither a kill nor a hook that failed before it mapped a tool call is evidence.
+	for i, e := range []Entry{{Event: EventKill, Agent: "old-agent"}, {Event: EventDecision, Agent: "ci-agent", Decision: "deny", Reason: "hook payload isn't valid JSON"}} {
+		line, hash, err := Seal(2+i, head, e)
+		if err != nil {
+			t.Fatal(err)
+		}
+		log, head = append(log, line...), hash
+	}
+	agents, err := DecisionAgents(log)
+	if err != nil || len(agents) != 1 || !agents["dev-agent"] {
+		t.Fatalf("agents %v, err %v", agents, err)
+	}
+	if agents, err := DecisionAgents(nil); err != nil || len(agents) != 0 {
+		t.Fatalf("empty log: %v, %v", agents, err)
+	}
+	tampered := bytes.Replace(log, []byte(`"deny"`), []byte(`"allow"`), 1)
+	if agents, err := DecisionAgents(tampered); err == nil || agents != nil {
+		t.Fatalf("a tampered log gave evidence: %v", agents)
+	}
+}

@@ -73,12 +73,16 @@ func TestDecideFailsClosed(t *testing.T) {
 
 func TestInventoryCommand(t *testing.T) {
 	out := filepath.Join(t.TempDir(), "inventory.json")
-	for _, args := range [][]string{append([]string{"inventory"}, sample...), append([]string{"inventory", "--out", out}, sample...)} {
+	// Point every evidence source at an empty folder, so the test never reads this machine's settings.
+	none := t.TempDir()
+	hermetic := append([]string{"--audit", filepath.Join(none, "audit.jsonl"), "--managed", filepath.Join(none, "managed-settings.json"),
+		"--user", filepath.Join(none, "settings.json"), "--project", none}, sample...)
+	for _, args := range [][]string{append([]string{"inventory"}, hermetic...), append([]string{"inventory", "--out", out}, hermetic...)} {
 		code, stdout, errOut := ascc(t, "", args...)
 		if code != 0 {
 			t.Fatalf("exit %d: %s", code, errOut)
 		}
-		if len(args) == 5 { // no --out: the document is on stdout
+		if args[1] != "--out" { // the document is on stdout
 			var inv pdp.Inventory
 			if err := json.Unmarshal([]byte(stdout), &inv); err != nil || len(inv.Identities) != 4 || inv.Producer.Name != "ascc" {
 				t.Fatalf("bad inventory (%v): %s", err, stdout)

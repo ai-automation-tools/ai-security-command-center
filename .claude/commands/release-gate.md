@@ -13,7 +13,8 @@ Check each and report pass or fail with the file and line of every hit:
 2. **Secrets in the tree:** tracked files matching `.env*` other than `.env.example`; anything that looks like
    a key, token or credential in code, fixtures, docs or workflow files.
 3. **Local paths:** drive-letter paths, home directories and user names in tracked files (search for
-   `[A-Za-z]:\\`, `/Users/`, `/home/` other than the fictional `/home/dev`, and `C:/`).
+   `[A-Za-z]:\\`, `/Users/`, `/home/` other than the fictional `/home/dev`, and `C:/`). Claude Code's own
+   documented system folder, `C:\Program Files\ClaudeCode`, is not a local path: `posture` reads it.
 4. **Personal data:** real names, email addresses, hostnames or account ids in tracked files and in commit
    author fields (`git log --format='%an <%ae>' | sort -u`). Authors must use a noreply address.
 5. **Fictional fixtures only:** every host in `examples/`, `site/` and the tests is `example.com`,

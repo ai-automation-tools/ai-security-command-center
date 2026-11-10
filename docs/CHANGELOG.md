@@ -16,6 +16,8 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 ## Unreleased
 
 **Added**
+- `ascc posture claude-code [--agent <id>]` reads the Claude Code settings files (`--managed`, `--user`, `--project`, and `managed-settings.d` drop-ins) and never writes them. An agent passes only when its hook is registered in managed settings in exec form with matcher `*` and `"onFailure": "block"`, nothing switches hooks off, and the binary is there; each failure names its reason, and a settings file ascc can't read is a failure. Exit 1 when any agent fails. *Slice 2b: Fleet and NHI inventory*
+- `ascc inventory` computes each agent's coverage label from evidence: `unmonitored` with no tool-call decision for it in an audit log that verifies, `observed` with one but no passing posture check, `enforced` only with both. *Slice 2b: Fleet and NHI inventory*
 - `ascc hook claude-code --agent <id>`: a Claude Code PreToolUse hook. It maps each tool call to a request (`path_in_repo`, `network`, `touches_secret_path`, `touches_ascc_state`, `git_push_target`, with `Bash` and `PowerShell` parsed alike and Windows paths normalised), blocks a policy deny with exit 0 and the deny JSON, prints nothing on an allow, and exits 2 on anything it can't do, which also blocks. Checked against a live Claude Code 2.1.321 session. *Slice 2: Enforce and record*
 - Hash-chained audit log (`.ascc/audit.jsonl`): one line per decision with the policy ids, the parsed features and a SHA-256 of the hook payload, never the payload. Appends take a lock, so twenty parallel hooks leave one chain; a call that can't be recorded is blocked. `ascc audit verify` names the first edited, removed or reordered line and exits 1, and `--expect-head <hash>` catches lines cut off the end. *Slice 2: Enforce and record*
 - `ascc kill <agent>` and `ascc revive <agent>` flip the registry status and are recorded. A retired agent can't be revived. *Slice 2: Enforce and record*
@@ -28,6 +30,8 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 - `examples/`: a sample registry, six policies and three requests with fictional agents. The policies permit Claude Code's internal tools so default deny under matcher `*` won't stall a session.
 
 **Changed**
+- `touches_ascc_state` now also covers `ascc hook` run from a shell, which could forge the audit lines the coverage label is computed from, and writes to `managed-settings.d` drop-in files.
+- `ascc hook claude-code` exits 2, blocking the call, when its registration carries a stray argument: Go's flag parsing would otherwise drop every flag after it, `--agent` included.
 - Every request context now needs `touches_ascc_state`; the sample requests carry it. `deny-push-to-main` also forbids a push to every branch at once (`--all`, `--mirror`, several refspecs).
 - Go 1.26, which cedar-go v1.9.0 requires. Two dependencies: cedar-go, and `santhosh-tekuri/jsonschema/v6` for the test that validates the inventory against the suite schema.
 - `ascc` with no arguments prints usage and exits 2; the version moved to `ascc version`.

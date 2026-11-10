@@ -97,7 +97,7 @@ func Map(raw []byte, o Options) (Call, error) {
 		inRepo = under(repo, cwd)
 		network = networkRE.MatchString(lower)
 		state = state || strings.Contains(lower, ".cedar") || strings.Contains(lower, ".claude/settings") ||
-			strings.Contains(lower, "managed-settings.json")
+			strings.Contains(lower, "managed-settings.") // the file, and the managed-settings.d drop-ins
 		for _, prot := range o.Protected {
 			state = state || strings.Contains(lower, path.Base(norm(prot, "")))
 		}
@@ -106,7 +106,9 @@ func Map(raw []byte, o Options) (Call, error) {
 			for i, tok := range tokens {
 				secret = secret || secretPath(strings.ToLower(tok))
 				if prog := program(tok); prog == "ascc" {
-					state = state || slices.ContainsFunc(tokens[i+1:], func(t string) bool { return t == "kill" || t == "revive" })
+					// kill and revive flip the registry; hook appends to the audit log, which is how an
+					// agent would forge the evidence the coverage label is computed from.
+					state = state || slices.ContainsFunc(tokens[i+1:], func(t string) bool { return t == "kill" || t == "revive" || t == "hook" })
 				} else if prog == "git" {
 					if t, ok := gitPushTarget(tokens[i+1:], o.Branch); ok {
 						ctx["git_push_target"], network = t, true
@@ -186,7 +188,8 @@ func secretPath(p string) bool {
 }
 
 func claudeSettings(p string) bool {
-	return strings.Contains(p, "/.claude/settings") || path.Base(p) == "managed-settings.json"
+	return strings.Contains(p, "/.claude/settings") || path.Base(p) == "managed-settings.json" ||
+		strings.Contains(p, "/managed-settings.d/")
 }
 
 // gitPushTarget reads the branch a `git push` would update from the tokens after `git`. It answers

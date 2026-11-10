@@ -60,14 +60,28 @@ const (
 	CoverageUnmonitored = "unmonitored"
 )
 
-// coverage is the evidence-based label for an agent. Until the hook writes audit lines (Slice 2) and
-// the posture check exists, ascc has no evidence about any agent, and saying otherwise would claim
-// coverage it doesn't have.
-func coverage(Agent) string { return CoverageUnmonitored }
+// Evidence is what ascc has seen about each agent, keyed by agent id. The caller gathers it, since
+// this package reads no files. The zero value is no evidence at all.
+type Evidence struct {
+	Audited     map[string]bool // the hook has written a decision for the agent to a log that verifies
+	PosturePass map[string]bool // the posture check passes for the agent's hook registration
+}
+
+// coverage is the evidence-based label for an agent. A passing posture check alone isn't enough: a
+// hook that has never recorded a call for the agent hasn't shown it runs.
+func coverage(a Agent, ev Evidence) string {
+	switch {
+	case !ev.Audited[a.ID]:
+		return CoverageUnmonitored
+	case !ev.PosturePass[a.ID]:
+		return CoverageObserved
+	}
+	return CoverageEnforced
+}
 
 // Inventory writes the registry as an inventory document. Agents are sorted by id, so the same
-// registry, policies, version and time always give the same bytes.
-func (p *PDP) Inventory(version string, generatedAt time.Time) Inventory {
+// registry, policies, version, time and evidence always give the same bytes.
+func (p *PDP) Inventory(version string, generatedAt time.Time, ev Evidence) Inventory {
 	inv := Inventory{
 		SchemaVersion: "0.1",
 		GeneratedAt:   generatedAt.UTC().Format(time.RFC3339),
@@ -84,7 +98,7 @@ func (p *PDP) Inventory(version string, generatedAt time.Time) Inventory {
 		ident := Identity{
 			ID: id, Kind: "ai-agent", Platform: "local", DisplayName: a.ID,
 			Status: map[string]string{StatusActive: "active", StatusSuspended: "disabled", StatusRetired: "retired"}[a.Status],
-			Tags:   []string{"coverage:" + coverage(a), "runtime:" + a.Runtime, fmt.Sprintf("risk-tier:%d", *a.RiskTier)},
+			Tags:   []string{"coverage:" + coverage(a, ev), "runtime:" + a.Runtime, fmt.Sprintf("risk-tier:%d", *a.RiskTier)},
 		}
 		for _, g := range a.Groups {
 			ident.Tags = append(ident.Tags, "group:"+g)

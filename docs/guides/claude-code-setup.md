@@ -1,7 +1,7 @@
 <h1 align="center">🪝 Wire ascc into Claude Code</h1>
 
 <p align="center">
-  <em>Register the hook, check it blocks, read the audit log, and stop an agent.</em>
+  <em>Register the hook, check it blocks, read the audit log, stop an agent, and check the registration enforces.</em>
 </p>
 
 <p align="center">
@@ -155,6 +155,49 @@ Both rewrite `ascc.registry.json` (in standard JSON formatting) and add a line t
 agent is denied by ascc itself, before any policy runs. A `retired` agent can't be revived: set that status by
 hand when an agent is offboarded.
 
+<a id="posture"></a>
+
+## 7. Check the registration enforces
+
+A hook in the repo's own settings is best effort: whoever can edit the file can remove it. `ascc posture
+claude-code` reads the settings files and says whether each agent's hook is registered so that it can't be
+removed or fail open. It only reads; it never writes a settings file.
+
+```bash
+ascc posture claude-code                    # every claude-code agent in the registry
+ascc posture claude-code --agent dev-agent  # one agent
+```
+
+```text
+posture: dev-agent: FAIL
+  - the hook for agent "dev-agent" is registered only in project settings, which the agent's user can edit or switch off; register it in managed settings
+posture: checked the managed settings files only. A server-managed or MDM policy replaces them, and ascc can't see one.
+```
+
+It exits 0 when every agent passes, 1 when one fails and 2 when it couldn't run. An agent passes only when all
+of these hold:
+
+| Check | Fails when |
+|:---|:---|
+| **Registered in managed settings** | The hook for that `--agent` is only in user, project or local settings, or nowhere. Managed means `managed-settings.json` and `managed-settings.d/*.json` in the system folder (`/etc/claude-code/`, `/Library/Application Support/ClaudeCode/`, `C:/Program Files/ClaudeCode/`). |
+| **Matcher covers every tool** | The matcher is anything but `*`, empty or absent. |
+| **Fails closed** | `"onFailure"` isn't `"block"`. |
+| **Can block** | The hook is in shell form (no `args`: a shell can swallow its exit code), is `async`, or has an `if` filter. |
+| **Not switched off** | `disableAllHooks` is set in a managed settings file. Set in user or project settings it can't switch a managed hook off, so it doesn't fail the check. |
+| **The binary is there** | `command` isn't an executable at its full path or on `PATH`. |
+| **Readable** | A managed settings file isn't a JSON object. |
+
+`--managed <file>`, `--user <file>` and `--project <dir>` point it at other locations, which is how the tests
+run it on fixtures.
+
+`ascc inventory` runs the same check and labels each agent from what it finds:
+
+| Label | Evidence |
+|:---|:---|
+| **`unmonitored`** | The audit log has no decision the hook recorded for this agent, or the log doesn't verify. |
+| **`observed`** | The hook has recorded decisions, but the posture check fails. |
+| **`enforced`** | The hook has recorded decisions and the posture check passes. |
+
 <a id="limits"></a>
 
 ## ⚠️ What this doesn't cover
@@ -163,8 +206,11 @@ hand when an agent is offboarded.
 |:---|:---|
 | **The agent id is asserted, not proven.** It comes from `--agent` in the registration. Anyone who can edit that file can claim another id. | Register the hook in managed settings with `allowManagedHooksOnly`. |
 | **Whoever can edit the settings can remove the hook**, or set `disableAllHooks`. | Same: managed settings. A hook in project or user settings is best effort. |
-| **The sample policies stop the agent editing ascc's files** (`deny-ascc-state-changes`: the registry, policies, audit log, Claude Code settings, and `ascc kill` or `revive`). They do it by reading the command's text, which can be dodged. | Keep the registry, the policies and the audit log where the agent's user can't write them. |
+| **The sample policies stop the agent editing ascc's files** (`deny-ascc-state-changes`: the registry, policies, audit log, Claude Code settings, and `ascc kill`, `revive` or `hook` from a shell). They do it by reading the command's text, which can be dodged. | Keep the registry, the policies and the audit log where the agent's user can't write them. |
 | **Command features are a heuristic.** `network`, `touches_secret_path` and `git_push_target` come from the command text. An encoded, aliased or downloaded command gets past them. | Treat these policies as a guard against accidents and plain injected lines, not a sandbox. |
+| **`posture` reads files, on this machine, now.** It can't see a server-managed or MDM policy, either of which replaces the managed settings file, nor the permission mode or the Claude Code version. It looks for `ascc` on the `PATH` of whoever runs it, not of the agent's session, and it can't tell a real `ascc` from another program with that name. On WSL, `/etc/claude-code` is writable by the user. | Treat `enforced` as "the files on this machine say so". Where settings come from the console or MDM, check the hook there. |
+| **The audit log is evidence only as far as the agent can't write it.** Anyone who can run `ascc hook claude-code --agent <id>` against the log adds a decision line for that agent, which is what moves a label off `unmonitored`. The sample policies stop the agent doing it (`deny-ascc-state-changes` covers `ascc hook`, `kill` and `revive` from a shell), by reading the command text. | Keep the audit log where the agent's user can't write it, and read `enforced` together with the posture check, which that line can't fake. |
+| **`enforced` doesn't expire.** The label needs a decision in the audit log, however old, and a posture check that passes today. | Run `ascc posture claude-code` and `ascc inventory` on a schedule, on the machine the agent runs on. |
 | **Files pulled in with `@` mentions** never reach the hook. | Set `CLAUDE_CODE_DISABLE_FILE_MENTIONS=1` (Claude Code 2.1.299 or newer). |
 | **`git push` with no branch named** is judged by the branch checked out in the session's working directory. When ascc can't read it (a worktree, a detached head), the target is `unknown` and `deny-push-to-main` doesn't fire. | Protect `main` on the remote as well. |
 | **Symlinks aren't resolved.** A link inside the repo that points outside it counts as inside. | Don't rely on `path_in_repo` alone for anything a link could reach. |
