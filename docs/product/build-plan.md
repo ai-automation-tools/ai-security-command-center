@@ -4,7 +4,8 @@
 > platform are in [plan/h-roadmap.md](plan/h-roadmap.md) and [plan/j-backlog.md](plan/j-backlog.md).
 
 **MVP = Slices 0 to 3, 2b included.** The repo goes public when Slice 3 is done and the release gates in
-[ROADMAP.md](../ROADMAP.md) are ticked. Everything after is built in public.
+[ROADMAP.md](../ROADMAP.md) are ticked. Everything after is built in public. As of 2026-11-10 both are true and
+the repo is still private by the owner's choice; the roadmap's "Where things stand" has the detail.
 
 | Slice | What | Plan reference | MVP |
 |:-:|:---|:---|:-:|
