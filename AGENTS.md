@@ -28,15 +28,20 @@ decision goes in as an ADR amendment there, never as a quiet code change.
 
 ## Stack
 
-- Go 1.25 (`go.mod`), standard library first. Module path
+- Go 1.26 (`go.mod`), standard library first. Module path
   `github.com/ai-automation-tools/ai-security-command-center`. Code lives under `src/`: the CLI in
   `src/cmd/ascc/`, packages in `src/internal/<name>/`. Tests are `_test.go` files next to the code, using
   `testing` only (table tests; no testify).
 - Cedar via `github.com/cedar-policy/cedar-go` **v1.9.0** (ADR-03), confirmed against the Rust reference in
-  `docs/reports/2026-cedar-go-check.md`. It needs Go 1.26: the PR that adds it raises `go.mod` and every "1.25"
-  in the docs. Load policies with `NewPolicyListFromBytes` and key each by its `@id` (reject missing or
-  duplicate ids). Its schema validator is experimental (`x/exp/schema/validate`): keep it behind one function.
-  A JSON Schema validator is fine as a test-only dependency for the inventory check.
+  `docs/reports/2026-cedar-go-check.md`. It is why `go.mod` says 1.26. Load policies with `NewPolicyListFromBytes` and key each by its `@id` (reject missing or
+  duplicate ids). Its schema validator is experimental (`x/exp/schema/validate`): it is called only from
+  `newValidator` and `checkPolicy` in `src/internal/pdp/pdp.go`. `santhosh-tekuri/jsonschema/v6` is a test-only
+  dependency for the inventory check.
+- `src/internal/pdp` is the decision point: `registry.go` parses `ascc.registry.json` (agents, and `tools` mapping
+  each tool id to its tool groups), `pdp.go` loads policies and decides, `inventory.go` writes the suite document.
+  `schema.cedar` there is the built-in Cedar schema: a new context feature or entity attribute is added to it
+  first, then to the fixtures. `examples/` holds the sample registry, policies and requests the tests and the
+  README both run.
 - **The PDP and audit packages do no I/O.** They take bytes and return values, so the WebAssembly demo
   (`GOOS=js GOARCH=wasm`) imports exactly the code the CLI runs. File, stdin and clock access live in
   `src/cmd/ascc` or a thin `src/internal/store` package.
@@ -68,6 +73,10 @@ go build ./...
   Claude Code's own permission rules still apply. The agent id comes from `--agent` in the hook's `args`, not
   the payload. Setup docs always show matcher `*`, `"timeout": 10` and `"onFailure": "block"`. Normalise
   Windows backslashes and parse `Bash` and `PowerShell` commands alike.
+- **The kill switch is not a policy.** `Decide` denies a suspended or retired agent before the engine runs, so
+  deleting a rule can't revive one. Don't move that check into a `.cedar` file.
+- **Coverage labels are computed from evidence**, never read from the registry. With no audit lines for an
+  agent it is `unmonitored`.
 - **Policy decides, nothing else.** No model call, score or heuristic grants access (ADR-14).
 - **No secret at rest.** The audit line stores the tool name, parsed features and a SHA-256 of the raw input,
   never the raw input. A test asserts it.

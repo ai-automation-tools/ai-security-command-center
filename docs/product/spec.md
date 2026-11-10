@@ -28,9 +28,9 @@ public MVP keeps the promise and drops the stack: **one Go binary, one runtime (
 
 ## MVP = four features
 
-Features 1 to 3 are built in Slices 1 to 3 of [build-plan.md](build-plan.md). Feature 4 and the hardening rules
-marked **[new]** were added in the 2026-11-09 requirements review; the build plan and the roadmap don't carry
-them yet.
+Features 1 to 3 are built in Slices 1 to 3 of [build-plan.md](build-plan.md), and feature 4 in Slice 2b. Feature 4
+and the rules marked **[new]** were added in the 2026-11-09 requirements review. Groups and the `retired` status
+shipped with Slice 1; the four hardening rules under feature 2 are part of the Slice 2 roadmap item.
 
 1. **Policy decision point.** An agent registry (`ascc.registry.json`: id, owner, runtime, risk tier, status,
    **groups** [new]) and Cedar policies (`policies/*.cedar`, ADR-03) evaluated with cedar-go. `ascc decide` takes
