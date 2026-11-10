@@ -23,6 +23,7 @@
 </p>
 
 <p align="center">
+  <a href="https://ai-automation-tools.dev/ai-security-command-center/"><img src="https://img.shields.io/badge/Live_Demo-open-c084fc?style=for-the-badge" alt="Live demo"></a>
   <img src="https://img.shields.io/badge/status-incubating-F59E0B?style=for-the-badge" alt="Status: incubating">
   <a href="docs/ROADMAP.md"><img src="https://img.shields.io/badge/plan-ROADMAP-8B5CF6?style=for-the-badge" alt="Roadmap"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge" alt="License: MIT"></a>
@@ -40,7 +41,7 @@
 > [!WARNING]
 > **Incubating.** The policy decision point, the Claude Code hook, the audit log, the kill switch and the posture
 > check, `discover` and the inventory of agents and the non-human identities they use work and are tested.
-> The browser demo is built but not published yet, and nothing here has had an outside review. The [roadmap](docs/ROADMAP.md) says what's next.
+> So does the [browser demo](https://ai-automation-tools.dev/ai-security-command-center/). Nothing here has had an outside review. The [roadmap](docs/ROADMAP.md) says what's next.
 
 ## 🎯 What it's for
 
@@ -62,7 +63,8 @@ ASCC (`ascc`) puts one policy decision point in front of the agent:
 
 The browser demo runs the same Go core as WebAssembly on a planted setup: the injected `curl` call shows as
 denied on first load, and you can edit the policy, replay the calls, edit the audit log and flip the kill switch.
-It isn't published yet. To see it, run `go run ./src/cmd/buildsite` and serve `_site/` with any static file
+It is live at [ai-automation-tools.dev/ai-security-command-center](https://ai-automation-tools.dev/ai-security-command-center/), published from `main` by the
+Pages workflow. To build it yourself, run `go run ./src/cmd/buildsite` and serve `_site/` with any static file
 server. The page makes no network call.
 
 That's the public MVP. The full design, a gateway for MCP and LLM traffic, a credential broker, default-deny

@@ -1,0 +1,63 @@
+name: Pages
+
+# Builds the browser demo and publishes it to GitHub Pages. The page is static, runs ascc as
+# WebAssembly on planted fixtures and makes no network call; this workflow is the only thing that
+# puts it on the internet.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build the demo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      # Nothing is published unless the built page renders the planted deny with the network stubbed off.
+      - name: Test the page
+        run: go test -count=1 ./src/cmd/buildsite ./src/internal/demo
+
+      - name: Build the site
+        run: go run ./src/cmd/buildsite -out _site
+
+      - name: Stamp the build
+        run: |
+          sed -i "s/__BUILD_SHA__/${GITHUB_SHA}/" _site/index.html
+          grep -q "<meta name=\"build\" content=\"${GITHUB_SHA}\">" _site/index.html
+
+      - name: Upload the site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: Publish to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
