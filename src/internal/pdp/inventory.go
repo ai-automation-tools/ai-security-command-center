@@ -30,17 +30,60 @@ type Producer struct {
 }
 
 type Identity struct {
-	ID          string   `json:"id"`
-	Kind        string   `json:"kind"`
-	Platform    string   `json:"platform"`
-	DisplayName string   `json:"displayName"`
-	Owner       *Owner   `json:"owner"` // null when the registry names none
-	Status      string   `json:"status"`
-	Tags        []string `json:"tags"`
+	ID          string       `json:"id"`
+	Kind        string       `json:"kind"`
+	Platform    string       `json:"platform"`
+	DisplayName string       `json:"displayName"`
+	Owner       *Owner       `json:"owner"` // null when nobody is named
+	Status      string       `json:"status"`
+	CreatedAt   string       `json:"createdAt,omitempty"`
+	LastUsedAt  string       `json:"lastUsedAt,omitempty"`
+	RetiredAt   string       `json:"retiredAt,omitempty"`
+	Credentials []Credential `json:"credentials,omitempty"`
+	Grants      []Grant      `json:"grants,omitempty"`
+	Tools       []Tool       `json:"tools,omitempty"`
+	Tags        []string     `json:"tags,omitempty"`
 }
 
 type Owner struct {
-	Name string `json:"name"`
+	Name       string `json:"name,omitempty"`
+	Email      string `json:"email,omitempty"`
+	Team       string `json:"team,omitempty"`
+	VerifiedAt string `json:"verifiedAt,omitempty"`
+}
+
+// Credential describes a credential without holding it: Fingerprint is a key id or the first 12 hex
+// characters of the secret's SHA-256.
+type Credential struct {
+	ID                 string `json:"id"`
+	Type               string `json:"type"`
+	Fingerprint        string `json:"fingerprint,omitempty"`
+	Location           string `json:"location,omitempty"`
+	CreatedAt          string `json:"createdAt,omitempty"`
+	ExpiresAt          string `json:"expiresAt,omitempty"`
+	RotatedAt          string `json:"rotatedAt,omitempty"`
+	RotateBy           string `json:"rotateBy,omitempty"` // registry only: the date rotation is due. Never written to a document.
+	LastUsedAt         string `json:"lastUsedAt,omitempty"`
+	RevokedAt          string `json:"revokedAt,omitempty"`
+	LastVerifiedDeadAt string `json:"lastVerifiedDeadAt,omitempty"`
+}
+
+type Grant struct {
+	ID              string `json:"id"`
+	Resource        string `json:"resource"`
+	Permission      string `json:"permission"`
+	Access          string `json:"access,omitempty"`
+	GrantedAt       string `json:"grantedAt,omitempty"`
+	GrantedBy       string `json:"grantedBy,omitempty"`
+	LastUsedAt      string `json:"lastUsedAt,omitempty"`
+	UsageKnown      bool   `json:"usageKnown,omitempty"`
+	ObservationDays *int64 `json:"observationDays,omitempty"`
+}
+
+type Tool struct {
+	Name         string   `json:"name"`
+	Server       string   `json:"server,omitempty"`
+	Capabilities []string `json:"capabilities,omitempty"`
 }
 
 type Finding struct {
@@ -80,9 +123,10 @@ func coverage(a Agent, ev Evidence) string {
 	return CoverageEnforced
 }
 
-// Inventory writes the registry as an inventory document. Agents are sorted by id, so the same
-// registry, policies, version, time and evidence always give the same bytes.
-func (p *PDP) Inventory(version string, generatedAt time.Time, ev Evidence) Inventory {
+// Inventory writes the registry as an inventory document: the agents, then the non-human identities
+// it declares and the ones in imports it doesn't already have. Each list is sorted by id, so the
+// same inputs always give the same bytes. generatedAt is also the "now" a credential is overdue against.
+func (p *PDP) Inventory(version string, generatedAt time.Time, ev Evidence, imports ...Inventory) Inventory {
 	inv := NewInventory(version, generatedAt)
 	agents := slices.Clone(p.registry.Agents)
 	slices.SortFunc(agents, func(a, b Agent) int { return strings.Compare(a.ID, b.ID) })
@@ -96,6 +140,9 @@ func (p *PDP) Inventory(version string, generatedAt time.Time, ev Evidence) Inve
 		}
 		for _, g := range a.Groups {
 			ident.Tags = append(ident.Tags, "group:"+g)
+		}
+		for _, u := range a.Uses {
+			ident.Tags = append(ident.Tags, "uses:"+u)
 		}
 		add := func(rule, severity, title, evidence, remediation string) {
 			inv.Findings = append(inv.Findings, Finding{
@@ -122,6 +169,7 @@ func (p *PDP) Inventory(version string, generatedAt time.Time, ev Evidence) Inve
 		}
 		inv.Identities = append(inv.Identities, ident)
 	}
+	p.addNHIs(&inv, generatedAt, imports)
 	return inv
 }
 

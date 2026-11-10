@@ -1,7 +1,6 @@
 package pdp
 
 import (
-	"encoding/json"
 	"go/parser"
 	"go/token"
 	"os"
@@ -11,8 +10,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/santhosh-tekuri/jsonschema/v6"
 )
 
 const examples = "../../../examples"
@@ -177,39 +174,19 @@ func TestParseRequestRejectsUnknownFields(t *testing.T) {
 func TestInventory(t *testing.T) {
 	inv := samplePDP(t).Inventory("0.0.0", time.Date(2026, 11, 9, 12, 0, 0, 0, time.UTC), Evidence{})
 
-	raw, err := json.Marshal(inv)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var doc any
-	if err := json.Unmarshal(raw, &doc); err != nil {
-		t.Fatal(err)
-	}
-	c := jsonschema.NewCompiler()
-	c.AssertFormat()
-	sch, err := c.Compile(filepath.Join("..", "..", "..", "schemas", "agent-inventory.schema.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := sch.Validate(doc); err != nil {
-		t.Fatalf("inventory doesn't validate against the suite schema: %v", err)
-	}
+	validates(t, inv)
 
-	if len(inv.Identities) != 4 {
-		t.Fatalf("got %d identities, want 4", len(inv.Identities))
+	if len(inv.Identities) != 8 { // four agents, then the four identities they use
+		t.Fatalf("got %d identities, want 8", len(inv.Identities))
 	}
-	for _, id := range inv.Identities {
+	for _, id := range inv.Identities[:4] {
 		// No hook evidence exists yet, so claiming anything above unmonitored would be a lie.
-		if id.Tags[0] != "coverage:"+CoverageUnmonitored {
-			t.Errorf("%s: coverage tag %q", id.ID, id.Tags[0])
+		if id.Kind != "ai-agent" || id.Tags[0] != "coverage:"+CoverageUnmonitored {
+			t.Errorf("%s: kind %s, coverage tag %q", id.ID, id.Kind, id.Tags[0])
 		}
 	}
-	var got []string
-	for _, f := range inv.Findings {
-		got = append(got, f.RuleID+" "+f.IdentityID)
-	}
 	want := []string{"ascc/suspended local:agent/old-agent", "ascc/no-owner local:agent/ownerless-agent"}
-	if !slices.Equal(got, want) {
+	if got := findings(inv)[:2]; !slices.Equal(got, want) {
 		t.Fatalf("findings %v, want %v", got, want)
 	}
 }
@@ -249,7 +226,7 @@ func TestCoverageIsComputedFromEvidence(t *testing.T) {
 		"old-agent":       CoverageUnmonitored, // a passing posture check, but the hook has recorded nothing
 		"ownerless-agent": CoverageUnmonitored,
 	}
-	for _, id := range samplePDP(t).Inventory("0.0.0", time.Unix(0, 0), ev).Identities {
+	for _, id := range samplePDP(t).Inventory("0.0.0", time.Unix(0, 0), ev).Identities[:4] {
 		if got := strings.TrimPrefix(id.Tags[0], "coverage:"); got != want[id.DisplayName] {
 			t.Errorf("%s: %s, want %s", id.DisplayName, got, want[id.DisplayName])
 		}

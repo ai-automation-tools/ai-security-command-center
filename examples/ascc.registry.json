@@ -1,9 +1,17 @@
 {
   "agents": [
-    { "id": "dev-agent", "owner": "platform-team", "runtime": "claude-code", "risk_tier": 1, "status": "active", "groups": ["developers"] },
-    { "id": "ci-agent", "owner": "release-team", "runtime": "claude-code", "risk_tier": 3, "status": "active", "groups": ["ci"] },
-    { "id": "old-agent", "owner": "platform-team", "runtime": "claude-code", "risk_tier": 2, "status": "suspended" },
+    { "id": "dev-agent", "owner": "platform-team", "runtime": "claude-code", "risk_tier": 1, "status": "active", "groups": ["developers"], "uses": ["github:app/release-bot"] },
+    { "id": "ci-agent", "owner": "release-team", "runtime": "claude-code", "risk_tier": 3, "status": "active", "groups": ["ci"], "uses": ["github:app/release-bot", "aws:arn:aws:iam::123456789012:role/ci-deploy"] },
+    { "id": "old-agent", "owner": "platform-team", "runtime": "claude-code", "risk_tier": 2, "status": "suspended", "uses": ["local:service-account/nightly-backup"] },
     { "id": "ownerless-agent", "owner": "", "runtime": "claude-code", "risk_tier": 2, "status": "active" }
+  ],
+  "identities": [
+    { "id": "github:app/release-bot", "kind": "bot", "platform": "github", "displayName": "release-bot", "owner": { "team": "release-team" }, "status": "active",
+      "credentials": [{ "id": "installation-key", "type": "api-key", "fingerprint": "3f9a1c0b7e2d", "location": "ci-secret", "createdAt": "2025-06-30T00:00:00Z", "rotateBy": "2026-06-30T00:00:00Z" }] },
+    { "id": "aws:arn:aws:iam::123456789012:role/ci-deploy", "kind": "service-account", "platform": "aws", "displayName": "ci-deploy", "owner": null, "status": "active" },
+    { "id": "okta:app/reporting-dashboard", "kind": "oauth-app", "platform": "okta", "displayName": "reporting-dashboard", "owner": { "team": "data-team" }, "status": "active",
+      "credentials": [{ "id": "client-secret", "type": "oauth-token", "fingerprint": "a41b9e77c0d2", "location": "vault", "expiresAt": "2099-01-01T00:00:00Z" }] },
+    { "id": "local:service-account/nightly-backup", "kind": "service-account", "platform": "local", "displayName": "nightly-backup", "owner": { "team": "platform-team" }, "status": "active" }
   ],
   "tools": {
     "claude-code/Read": ["read-only"],

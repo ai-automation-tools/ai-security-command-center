@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -91,7 +92,8 @@ func lock(path string) (unlock func(), err error) {
 }
 
 // setStatus is the kill switch: it flips one agent's status in the registry file and records it.
-// A retired agent stays retired: offboarding is one-way.
+// A retired agent stays retired: offboarding is one-way. A kill also names the identities the agent
+// uses, because suspending it in ascc leaves every one of them live.
 func setStatus(registryPath, auditPath, agentID, event string) (string, error) {
 	want := map[string]string{audit.EventKill: pdp.StatusSuspended, audit.EventRevive: pdp.StatusActive}[event]
 	data, err := os.ReadFile(registryPath)
@@ -103,6 +105,7 @@ func setStatus(registryPath, auditPath, agentID, event string) (string, error) {
 		return "", err
 	}
 	found := false
+	var uses []string
 	for i := range reg.Agents {
 		a := &reg.Agents[i]
 		if a.ID != agentID {
@@ -113,6 +116,7 @@ func setStatus(registryPath, auditPath, agentID, event string) (string, error) {
 			return "", fmt.Errorf("agent %q is retired, and a retired agent can't be %sd", agentID, event)
 		}
 		a.Status = want
+		uses = a.Uses
 	}
 	if !found {
 		return "", fmt.Errorf("agent %q is not in the registry", agentID)
@@ -131,11 +135,19 @@ func setStatus(registryPath, auditPath, agentID, event string) (string, error) {
 		os.Remove(tmp)
 		return "", fmt.Errorf("registry: %v", err)
 	}
-	msg := fmt.Sprintf("%s is %s", agentID, want)
-	if err := appendAudit(auditPath, audit.Entry{Event: event, Agent: agentID}); err != nil {
-		return "", fmt.Errorf("%s in the registry, but that couldn't be recorded: %v", msg, err)
+	msg, list := fmt.Sprintf("%s is %s", agentID, want), ""
+	if event == audit.EventKill && len(uses) > 0 {
+		list = fmt.Sprintf("\n%s uses the identities below, and stopping it here doesn't stop them. ascc holds no credential: rotate or revoke these yourself.", agentID)
+		for _, n := range reg.Identities {
+			if slices.Contains(uses, n.ID) {
+				list += fmt.Sprintf("\n  %s (%s on %s, %s)", n.ID, n.Kind, n.Platform, n.Status)
+			}
+		}
 	}
-	return msg, nil
+	if err := appendAudit(auditPath, audit.Entry{Event: event, Agent: agentID}); err != nil {
+		return "", fmt.Errorf("%s in the registry, but that couldn't be recorded: %v%s", msg, err, list)
+	}
+	return msg + list, nil
 }
 
 // verifyAudit checks the chain and, when expectHead is given, that the log still ends where it did

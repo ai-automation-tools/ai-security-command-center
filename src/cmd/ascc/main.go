@@ -3,7 +3,8 @@
 // blocks the denied ones and records each decision in a hash-chained log; `audit verify` checks that
 // log; `kill` and `revive` suspend and restore an agent; `posture claude-code` checks that the hook is
 // registered so that it enforces; `discover` finds agent setups and MCP servers the registry doesn't
-// know; `inventory` writes the registry as an Agent Security Suite inventory document.
+// know; `inventory` writes the registry, agents and the non-human identities they use, as an Agent
+// Security Suite inventory document, merging in other suite tools' documents with --import.
 package main
 
 import (
@@ -29,11 +30,15 @@ Usage:
   ascc hook claude-code --agent <id> [--repo <dir>]
                                                Claude Code PreToolUse hook: payload on stdin
   ascc audit verify [--expect-head <hash>]     check the audit log's hash chain
-  ascc kill <agent>                            suspend an agent: everything it asks for is denied
+  ascc kill <agent>                            suspend an agent: everything it asks for is denied.
+                                               Prints the identities it uses, for you to rotate
   ascc revive <agent>                          restore a suspended agent
   ascc posture claude-code [--agent <id>]      check the hook is registered so that it enforces
   ascc discover [--root <dir>] [--out <file>]  report agent setups and MCP servers not in the registry
-  ascc inventory [--out <file>]                write the agent inventory document
+  ascc inventory [--import <file>]... [--out <file>]
+                                               write the inventory document: agents and the identities
+                                               they use, plus identities (not findings) from other
+                                               suite documents
   ascc version
 
 Every command takes --registry <file> (default ascc.registry.json), --policies <dir> (default
@@ -90,11 +95,19 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) (code int) {
 
 	case "inventory":
 		out := fs.String("out", "", "write the document here instead of stdout")
+		var imports []string
+		fs.Func("import", "merge the identities of another suite inventory document (repeatable)", func(file string) error {
+			imports = append(imports, file)
+			return nil
+		})
 		sp := settingsFlags(fs)
 		if fs.Parse(rest) != nil {
 			return 2
 		}
-		return fail(stderr, inventory(*registry, *policies, *auditLog, *out, sp, stdout, stderr))
+		if fs.NArg() > 0 {
+			return fail(stderr, errors.New("usage: ascc inventory [--import <file>]... [--out <file>]"))
+		}
+		return fail(stderr, inventory(*registry, *policies, *auditLog, *out, imports, sp, stdout, stderr))
 
 	case "discover":
 		root := fs.String("root", ".", "folder to search for agent config files")
@@ -276,12 +289,30 @@ func decide(registry, policies, request string, stdin io.Reader) (pdp.Decision, 
 	return p.Decide(req), nil
 }
 
-func inventory(registry, policies, auditLog, out string, sp settingsPaths, stdout, stderr io.Writer) error {
+// inventory writes the document. An --import file that can't be read or isn't a valid suite document
+// stops it: a merged list with a silent hole in it would read as complete.
+func inventory(registry, policies, auditLog, out string, imports []string, sp settingsPaths, stdout, stderr io.Writer) error {
 	p, err := load(registry, policies)
 	if err != nil {
 		return err
 	}
-	return writeDoc(out, stdout, p.Inventory(version.Version, time.Now(), evidence(auditLog, sp, stderr)), registry, policies, auditLog)
+	var docs []pdp.Inventory
+	for _, file := range imports {
+		st, err := os.Stat(file)
+		if err != nil || !st.Mode().IsRegular() || st.Size() > maxConfigBytes {
+			return fmt.Errorf("--import %s: not a file ascc can read", file)
+		}
+		data, err := os.ReadFile(file)
+		if err != nil {
+			return fmt.Errorf("--import %s: not a file ascc can read", file)
+		}
+		doc, err := pdp.ParseInventory(data)
+		if err != nil {
+			return fmt.Errorf("--import %s: %v", file, err)
+		}
+		docs = append(docs, doc)
+	}
+	return writeDoc(out, stdout, p.Inventory(version.Version, time.Now(), evidence(auditLog, sp, stderr), docs...), registry, policies, auditLog)
 }
 
 // writeDoc prints a document, or writes it to out when that is given. It won't write over ascc's own

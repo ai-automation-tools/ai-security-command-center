@@ -39,7 +39,7 @@ func at(rel, loc string) bool {
 
 // Discover reads agent config files (slash-separated relative path to content) and reports what the
 // registry doesn't know: a Claude Code setup with no ascc hook that can enforce, a hook that names an
-// unregistered agent, and every MCP server none of whose tools is listed. Each is an
+// unregistered agent, and every MCP server the registry lists neither a tool nor an identity for. Each is an
 // unmonitored identity with an ascc/unregistered finding. A variable or header name in an MCP
 // server's config that looks like a credential becomes a candidate identity.
 //
@@ -58,6 +58,13 @@ func Discover(files map[string][]byte, reg *pdp.Registry, version string, when t
 	registered := map[string]bool{}
 	for _, a := range reg.Agents {
 		registered[a.ID] = true
+	}
+	// Identities the registry lists under the id discover would give them. A retired or disabled
+	// entry doesn't count: the config is still there, so the server is still live.
+	declared := map[string]bool{}
+	for _, n := range reg.Identities {
+		live := n.Status == "active" || n.Status == "unknown"
+		declared[n.ID] = live && (n.Kind == "mcp-server" || !strings.HasPrefix(n.ID, "local:mcp-server/"))
 	}
 	setups := map[string]*setup{}   // folder -> the Claude Code setup found there
 	agents := map[string][]string{} // unregistered agent id named by a hook -> the files naming it
@@ -179,13 +186,16 @@ func Discover(files map[string][]byte, reg *pdp.Registry, version string, when t
 		// server "a" beside a registered "a__b", counts as listed. The registry has no more to match on.
 		prefix := "claude-code/mcp__" + toolNameRE.ReplaceAllString(name, "_") + "__"
 		listed := slices.ContainsFunc(slices.Collect(maps.Keys(reg.Tools)), func(tool string) bool { return strings.HasPrefix(tool, prefix) })
-		if !listed {
+		if !listed && !declared[id] {
 			add(pdp.Identity{ID: id, Kind: "mcp-server", DisplayName: name, Tags: tags(sv.sources)},
 				fmt.Sprintf("MCP server %s isn't in the registry", name),
-				"The registry lists no tool of this server. "+found(sv.sources),
-				"List the tools an agent may use as "+prefix+"<tool> in the registry, or remove the server from the config.")
+				"The registry lists no tool of this server and no identity "+id+". "+found(sv.sources),
+				"List the tools an agent may use as "+prefix+"<tool> in the registry, declare the server under identities, or remove it from the config.")
 		}
 		for _, key := range slices.Sorted(maps.Keys(sv.credentials)) {
+			if declared["local:credential/"+name+"/"+key] {
+				continue
+			}
 			add(pdp.Identity{ID: "local:credential/" + name + "/" + key, Kind: "other",
 				DisplayName: key + " (used by MCP server " + name + ")", Tags: tags(sv.sources, "candidate", "used-by:"+id)}, "", "", "")
 		}
