@@ -3,7 +3,7 @@
 > Slices for the public MVP in [spec.md](spec.md). The full delivery plan, staffing and estimates for the
 > platform are in [plan/h-roadmap.md](plan/h-roadmap.md) and [plan/j-backlog.md](plan/j-backlog.md).
 
-**MVP = Slices 0 to 3.** The repo goes public when Slice 3 is done and the release gates in
+**MVP = Slices 0 to 3, 2b included.** The repo goes public when Slice 3 is done and the release gates in
 [ROADMAP.md](../ROADMAP.md) are ticked. Everything after is built in public.
 
 | Slice | What | Plan reference | MVP |
@@ -11,6 +11,7 @@
 | 0 | Scaffold, CI, demo shell (shipped with the repo); cedar-go check and Claude Code hook contract, written up | TKT-002, TKT-004 | ✅ |
 | 1 | Registry, Cedar PDP, `decide`, `inventory` | M1.1 (PDP only), ADR-03 | ✅ |
 | 2 | Claude Code hook, hash-chained audit, kill switch | M1.3 (adapter only), M1.5 (audit, kill), ADR-10, ADR-13 | ✅ |
+| 2b | Fleet and NHI inventory, offline: `posture`, `discover`, declared and imported identities (spec feature 4) | EP-24, FR-CON-15 to 18 (read-only, no connectors) | ✅ |
 | 3 | WebAssembly browser demo | — | ✅ |
 | 4 | Remaining Phase 0 spikes and ADR acceptance | TKT-001, TKT-003, TKT-031 | |
 | 5 | Schemas, Compose skeleton, STS and the PDP as a service | TKT-005, TKT-006, M1.1 | |

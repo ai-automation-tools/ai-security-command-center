@@ -15,8 +15,20 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 
 ## Unreleased
 
+**Added**
+- Policy decision point (`src/internal/pdp`) on cedar-go v1.9.0. `ascc decide --request <file|->` answers with `decision`, the determining `policy_ids` and a plain-English `reason` taken from each policy's `@reason`. Default deny, and denied before any policy runs: an agent or tool that isn't in the registry, a suspended or retired agent, a context that doesn't fit the built-in schema. A policy that errors while evaluating is a deny naming it. A registry typo, a policy with no `@id` or a duplicate one, or a policy that doesn't type-check against the schema stops ascc loading. *Slice 1: Policy decision point*
+- `ascc inventory` writes the registry as an Agent Security Suite inventory document (schema v0.1, vendored to `schemas/`), with findings `ascc/no-owner`, `ascc/no-policy` and `ascc/suspended`. Every agent is labelled `unmonitored` until the hook and the posture check give evidence for more. *Slice 1: Policy decision point*
+- Agent groups (`groups` in the registry become Cedar parents, so `principal in AgentGroup::"developers"` covers a team) and the `retired` status, both from the requirements review.
+- `examples/`: a sample registry, six policies and three requests with fictional agents. The policies permit Claude Code's internal tools so default deny under matcher `*` won't stall a session.
+
+**Changed**
+- Go 1.26, which cedar-go v1.9.0 requires. Two dependencies: cedar-go, and `santhosh-tekuri/jsonschema/v6` for the test that validates the inventory against the suite schema.
+- `ascc` with no arguments prints usage and exits 2; the version moved to `ascc version`.
+- A suspended agent is denied by the PDP itself, not by a `deny-suspended-agent` sample policy as the cedar-go check sketched, so deleting a rule can't undo the kill switch.
+
 **Docs**
-- Requirements review against the stated purpose (enterprise agent management, and governing non-human accounts including AI agents). The public-MVP spec gains a fourth feature, an offline fleet and NHI inventory (`posture`, `discover`, declared and imported identities), plus agent groups, a `retired` status, a computed coverage label and criteria 9 to 17. The build plan and roadmap don't carry these yet.
+- The roadmap and build plan now carry the requirements review: the four hardening rules are part of the Slice 2 item, and a new Slice 2b (fleet and NHI inventory: `posture`, `discover`, declared and imported identities) sits above the release line.
+- Requirements review against the stated purpose (enterprise agent management, and governing non-human accounts including AI agents). The public-MVP spec gains a fourth feature, an offline fleet and NHI inventory (`posture`, `discover`, declared and imported identities), plus agent groups, a `retired` status, a computed coverage label and criteria 9 to 17.
 - The same review found three holes in the MVP as specified and closed them in the spec: an agent could edit the registry or run `ascc revive` on itself, parallel hooks could fork the audit chain, and lines cut from the end of the log still verified.
 - Planning package v0.3: epic EP-24 (agent fleet management), FR-REG-12 to 15, FR-POL-11, FR-RT-05 to 07, FR-KS-08, FR-CON-15 to 18, threat T-28, abuse cases ABUSE-33 and 34, tickets TKT-041 and 042.
 - `AGENTS.md` carries the two reports' rules: cedar-go v1.9.0 and the Go 1.26 bump it brings, the fail-closed handling of erroring policies, and the hook contract. *Slice 0: Contracts*

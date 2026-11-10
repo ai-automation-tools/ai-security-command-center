@@ -1,0 +1,6 @@
+{
+  "principal": "dev-agent",
+  "action": "runtime.tool_use",
+  "resource": "claude-code/Bash",
+  "context": { "path_in_repo": true, "network": true, "touches_secret_path": true }
+}

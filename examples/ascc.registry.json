@@ -1,0 +1,22 @@
+{
+  "agents": [
+    { "id": "dev-agent", "owner": "platform-team", "runtime": "claude-code", "risk_tier": 1, "status": "active", "groups": ["developers"] },
+    { "id": "ci-agent", "owner": "release-team", "runtime": "claude-code", "risk_tier": 3, "status": "active", "groups": ["ci"] },
+    { "id": "old-agent", "owner": "platform-team", "runtime": "claude-code", "risk_tier": 2, "status": "suspended" },
+    { "id": "ownerless-agent", "owner": "", "runtime": "claude-code", "risk_tier": 2, "status": "active" }
+  ],
+  "tools": {
+    "claude-code/Read": ["read-only"],
+    "claude-code/Grep": ["read-only"],
+    "claude-code/Glob": ["read-only"],
+    "claude-code/Write": ["write"],
+    "claude-code/Edit": ["write"],
+    "claude-code/Bash": ["shell"],
+    "claude-code/PowerShell": ["shell"],
+    "claude-code/WebFetch": [],
+    "claude-code/TodoWrite": ["internal"],
+    "claude-code/AskUserQuestion": ["internal"],
+    "claude-code/EnterPlanMode": ["internal"],
+    "claude-code/ExitPlanMode": ["internal"]
+  }
+}
