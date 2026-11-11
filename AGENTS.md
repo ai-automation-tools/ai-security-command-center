@@ -77,6 +77,11 @@ decision goes in as an ADR amendment there, never as a quiet code change.
   WebAssembly in a script so the page never fetches it, and writes `fixtures.js` from `examples/`. `buildsite`
   uses `os/exec` to run `go build`; it is not part of the `ascc` binary. `site/` has no inline script and no
   load from another host, fonts included.
+- `src/spikes/pluginhost` is the TKT-031 prototype of the plugin host, **in a Go module of its own**. It uses
+  gRPC and `os/exec`, which the `ascc` binary may never link, so nothing under `src/cmd` or `src/internal`
+  imports it and the four verify commands skip it (`gofmt -l .` still covers it). CI runs `go vet ./...` and
+  `go test ./...` inside that folder. `pluginv1alpha1/` and `CONTRACT.md` there are generated from
+  `proto/plugin.proto`; its README has the command.
 - Must build and test on Windows and Linux (CI runs both). Use `path/filepath`, never hard-coded separators.
 - Settings live in `.env` at the repo root, names in `.env.example`; the real environment wins. There are none
   today. If one is ever needed, load it with a few lines of stdlib parsing and document it in `.env.example`.

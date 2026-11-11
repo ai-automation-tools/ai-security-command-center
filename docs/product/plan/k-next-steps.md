@@ -28,12 +28,21 @@
   - **wazero / Extism maturity for a later WASM plugin host** (Phase 3 spike)
   - **Licence and offline availability of the candidate local embedding model for workflow intelligence**
     (Phase 3)
-- [ ] **4. Run Phase 0 spikes** TKT-001 to TKT-004 **and TKT-031** together (about 4 weeks of focused work;
-      TKT-031 also records the connector scope verification above).
-- [ ] **5. Accept or amend ADR-01 to ADR-17** with spike results; ADR-15 may stay *Spike* until the first
-      connector runs on the real host (M1.4).
-- [ ] **6. Re-rate the threat model** (D) with the chosen runtimes, deployment and connector set, including
-      T-23 to T-27.
+- [x] **4. Run Phase 0 spikes** TKT-001 to TKT-004 **and TKT-031** together (about 4 weeks of focused work;
+      TKT-031 also records the connector scope verification above). Done 2026-11-10, each as a report:
+      [gateway build or adopt](../../reports/2026-gateway-build-vs-adopt.md) (TKT-001, a source read, not a run),
+      [cedar-go check](../../reports/2026-cedar-go-check.md) (TKT-002, cut down),
+      [proof of possession](../../reports/2026-proof-of-possession.md) (TKT-003),
+      [Claude Code hook contract](../../reports/2026-claude-code-hook-contract.md) (TKT-004, Claude Code only) and
+      [plugin contract spike](../../reports/2026-plugin-contract-spike.md) (TKT-031).
+- [-] **5. Accept or amend ADR-01 to ADR-17** with spike results; ADR-15 may stay *Spike* until the first
+      connector runs on the real host (M1.4). Amended 2026-11-10, **not yet accepted**: nine carry an amendment and
+      every one has its evidence and what it waits for in the [status table](e2-adrs.md). Two are Accepted
+      (ADR-12 and ADR-14, which the public MVP runs on); accepting the other fifteen is the owner's. ADR-04 waits on a run of agentgateway
+      and on K5: the spike found it meets the adopt rule, so "build in Go" is no longer the safe default.
+- [x] **6. Re-rate the threat model** (D) with the chosen runtimes, deployment and connector set, including
+      T-23 to T-27. Done 2026-11-10: [D §4.1](d-threat-model.md#41-re-rating-2026-11-10). T-03 goes up; T-23 and
+      T-24 come down for Phase 1 only.
 - [ ] **7. Re-estimate Phase 1** from the J tickets by whoever will build them; pick team path or solo path (H).
 - [ ] **8. Build the Compose skeleton** (TKT-006), the schemas (TKT-005) and the plugin contract draft
       (TKT-031); these are safe to start before ADRs land.

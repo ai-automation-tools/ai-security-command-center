@@ -2,30 +2,34 @@
 
 [Package index](README.md) · Back to [E. Architecture](e-architecture.md)
 
-Status values: **Proposed** (this package), **Spike** (needs a Phase 0 spike before acceptance), **Accepted**
-(after stakeholder review). Nothing is Accepted yet. ADR-01 to 14 carry the Claude run; where the DeepSeek run
-or the 2026-11-09 additions changed a decision, the change is marked **Amended 2026-11-09** inside the ADR.
-ADR-15 to 17 are new.
+Status values: **Accepted** (the decision stands, with its evidence linked), **Spike** (not accepted yet; the
+row says what it waits for: a proof, an owner's decision, or the owner's sign-off), **Replaced**. The statuses
+below were set on 2026-11-10 from the Slice 4 spikes and the
+[[V] checks](k-next-steps.md#11-v-check-results-2026-11-10). **Only two are Accepted, the two the public MVP
+already runs on and tests.** Accepting any other is the owner's call, not a run's: the evidence column is what
+there is to decide on, and the roadmap carries the sign-off as an owner item. Where a spike or a check changed
+a decision, the change is marked **Amended 2026-11-10** inside the ADR; earlier changes are marked
+**Amended 2026-11-09**. ADR-01 to 14 carry the Claude run; ADR-15 to 17 were new on 2026-11-09.
 
-| ADR | Decision | Status |
-|:--|:--|:--|
-| [01](#adr-01) | Hybrid enforcement with one PDP | Proposed |
-| [02](#adr-02) | Go for backend services and PEPs | Proposed |
-| [03](#adr-03) | Cedar as the authorization language | Spike |
-| [04](#adr-04) | Build the gateway in Go (unless the spike favours an existing project) | Spike |
-| [05](#adr-05) | PostgreSQL as the single MVP store | Proposed |
-| [06](#adr-06) | Token exchange + ASCC transaction tokens for delegation; SVIDs as server-side instance proof; gateway as OAuth 2.1 resource server | Spike |
-| [07](#adr-07) | OpenBao as the bundled secrets backend; Vault, cloud secret managers and PAM via connector plugins | Proposed |
-| [08](#adr-08) | Envoy forward proxy with ext_authz for egress | Proposed |
-| [09](#adr-09) | gRPC server-stream control channel; no message bus in MVP | Proposed |
-| [10](#adr-10) | Hash-chained audit in Postgres with checkpoints signed by customer-owned keys | Proposed |
-| [11](#adr-11) | Compose open-source scanners plus ASCC-specific rules | Proposed |
-| [12](#adr-12) | Metadata-only telemetry by default | Proposed |
-| [13](#adr-13) | Tiered fail-closed behaviour | Proposed |
-| [14](#adr-14) | Scores, model reviewers, plugin outputs and workflow findings are advisory only | Proposed |
-| [15](#adr-15) | **Plugin runtime: out-of-process gRPC plugins under a host with capability-scoped tokens; WASM later for hot-path detectors** | Spike |
-| [16](#adr-16) | **Connectors are plugins; NHI is a first-class registry type with cross-source reconciliation** | Proposed |
-| [17](#adr-17) | **Workflow intelligence is advisory, metadata-first, deterministic before semantic, batch** | Proposed |
+| ADR | Decision | Status | Evidence, and what it waits for |
+|:--|:--|:--|:--|
+| [01](#adr-01) | Hybrid enforcement with one PDP | **Spike** | Half proven: the public MVP is one PDP (`src/internal/pdp`) with a hook as its first enforcement point, checked against a live Claude Code session. The gateway and egress halves aren't built. Waits for sign-off |
+| [02](#adr-02) | Go for backend services and PEPs | **Spike** | The MVP is Go throughout and builds for Windows, Linux and WebAssembly. Amended: an adopted gateway would not be ASCC code, so this turns on K5. Waits for K5 and sign-off |
+| [03](#adr-03) | Cedar as the authorization language | **Spike** | [cedar-go check](../../reports/2026-cedar-go-check.md): 9 of 9 requests match the Rust reference. Waits for the timing at 500 policies and 5,000 entities (Slice 5) and for K4 |
+| [04](#adr-04) | Build the gateway in Go (unless the spike favours an existing project) | **Spike** | [Gateway report](../../reports/2026-gateway-build-vs-adopt.md): agentgateway meets the adopt rule on a source read. Waits for a run and for K5 |
+| [05](#adr-05) | PostgreSQL as the single MVP store | **Spike** | No evidence yet: nothing is built on it and no check touched it. First used in Slice 5. Waits for sign-off |
+| [06](#adr-06) | Token exchange + ASCC transaction tokens for delegation; SVIDs as server-side instance proof; gateway as OAuth 2.1 resource server | **Spike** | [Proof-of-possession report](../../reports/2026-proof-of-possession.md) settles TKT-003. Waits for the token service (Slice 5), the claim names (TKT-005) and K3 for the unbound-token rule |
+| [07](#adr-07) | OpenBao as the bundled secrets backend; Vault, cloud secret managers and PAM via connector plugins | **Spike** | [V] checks: OpenBao is MPL-2.0 and documents the KV v2, AppRole, transit and lease APIs. Read, not run. Waits for TKT-036's test and for K2 and K8 |
+| [08](#adr-08) | Envoy forward proxy with ext_authz for egress | **Spike** | No evidence yet; egress is Slice 7. Amended: the Smokescreen alternative was described wrongly. Waits for sign-off |
+| [09](#adr-09) | gRPC server-stream control channel; no message bus in MVP | **Spike** | No evidence yet: nothing is built on it and no check touched it. First used in Slice 5. Waits for sign-off |
+| [10](#adr-10) | Hash-chained audit in Postgres with checkpoints signed by customer-owned keys | **Spike** | Half proven: the hash chain runs in the MVP (`src/internal/audit`, `ascc audit verify`). Postgres storage and signed checkpoints aren't built. Waits for sign-off |
+| [11](#adr-11) | Compose open-source scanners plus ASCC-specific rules | **Spike** | [V] checks: Semgrep's engine is LGPL-2.1. Amended: its rules can't be redistributed at all. Nothing built. Waits for sign-off |
+| [12](#adr-12) | Metadata-only telemetry by default | **Accepted** | The MVP audit line keeps a hash of the tool input and never the input; a test asserts it, and it is an invariant in `AGENTS.md` |
+| [13](#adr-13) | Tiered fail-closed behaviour | **Spike** | Waits for K3, the owner's decision on tiers and break-glass. Until then the MVP hook denies on every error of its own, and blocks on a crash or timeout only when registered with `"onFailure": "block"` |
+| [14](#adr-14) | Scores, model reviewers, plugin outputs and workflow findings are advisory only | **Accepted** | The MVP decides on policy alone, with no score or model on the path; it is an invariant in `AGENTS.md` |
+| [15](#adr-15) | **Plugin runtime: out-of-process gRPC plugins under a host with capability-scoped tokens; WASM later for hot-path detectors** | **Spike** | [Plugin contract spike](../../reports/2026-plugin-contract-spike.md): the model is proven by a prototype. Waits for K7. Amended: a laptop process isn't confined |
+| [16](#adr-16) | **Connectors are plugins; NHI is a first-class registry type with cross-source reconciliation** | **Spike** | Waits for K8, the owner's decision on connector scope. Amended with the verified GitHub and OpenBao scopes |
+| [17](#adr-17) | **Workflow intelligence is advisory, metadata-first, deterministic before semantic, batch** | **Spike** | Waits for K9, the owner's decision on inputs and audience. Nothing built; Phase 3 |
 
 ---
 
@@ -56,6 +60,8 @@ ADR-15 to 17 are new.
   a small team; reconsider for the PDP if ADR-03's spike finds Go Cedar gaps. *Python*: easiest for ML detectors
   but weak for the gateway hot path; detectors may run as separate Python services later, and the plugin
   contract lets a detector plugin be Python anyway (ADR-15). *Node*: fine, but single-binary distribution is weaker.
+- **Amended 2026-11-10:** This covers the code ASCC writes. If [ADR-04](#adr-04) ends in adopting agentgateway, the
+  proxy itself is Rust and is not ASCC code; the service behind its callout, where ASCC's logic lives, is Go.
 
 <a id="adr-03"></a>
 ## ADR-03 Cedar as the authorization language
@@ -76,6 +82,13 @@ ADR-15 to 17 are new.
   reference **[V]**. If not: run the PDP as a Rust sidecar/library via FFI, or fall back to OPA.
 - **Consequences:** Argument constraints (path prefixes, host allowlists) need helper attributes computed by the
   PEP before evaluation, since Cedar has limited string functions; that pre-processing is part of the PEP contract.
+- **Amended 2026-11-10:** The parity half of the spike is done in the
+  [cedar-go check](../../reports/2026-cedar-go-check.md): cedar-go v1.9.0 gave the Rust reference's answer on 9 of 9 requests and on schema validation. Two things the full TKT-002
+  asked for were cut from that check and are still owed: a comparison with OPA (dropped; the MVP runs on Cedar)
+  and the timing at 500 policies and 5,000 entities, which is measured when the PDP becomes a service in
+  Slice 5. The check also found that a `forbid` that errors is skipped, so the PDP denies unknown entities and
+  any evaluation error itself. The analysis tools the **[V]** refers to exist (`cedar-policy-symcc`,
+  `cedar-lean-cli`) but are Rust and need an SMT solver, so they run in CI or by hand, not in the Go binary.
 
 <a id="adr-04"></a>
 ## ADR-04 Build the gateway in Go (unless the spike favours an existing project)
@@ -91,6 +104,13 @@ ADR-15 to 17 are new.
 - **Rejected:** *LiteLLM as core*: strong LLM routing, but Python hot path and an open-core split where some
   governance features are enterprise-licensed **[V]**; may be supported *behind* ASCC as an upstream. *Kong AI
   Gateway*: key AI features in the commercial edition **[V]**.
+- **Amended 2026-11-10:** The spike is done as a source read, not a run:
+  [gateway report](../../reports/2026-gateway-build-vs-adopt.md). **agentgateway passes four of the five criteria
+  without a fork**, which is this ADR's rule for adopting; Agent Router (the renamed Envoy AI Gateway) passes
+  none and ContextForge three. The decision is not changed here. It waits for the run the report lists and for
+  decision K5. Two corrections to the text above: Envoy AI Gateway is now Agent Router, an Agentic AI Foundation
+  project; and MCP revision 2026-07-28 has no protocol sessions, so "session termination API" and "kill
+  confirmation per session" mean cutting off one caller, by a PDP deny on its next request.
 
 <a id="adr-05"></a>
 ## ADR-05 PostgreSQL as the single MVP store
@@ -133,6 +153,23 @@ ADR-15 to 17 are new.
     metadata, and remains the OAuth *client* to upstream MCP servers through the broker [DS] **[V]** (OAuth 2.1
     is still a draft, `draft-ietf-oauth-v2-1-16` as of 2026-09; no "OAuth 2.1 certification" exists, so none is
     claimed).
+- **Amended 2026-11-10:**
+  - **Proof of possession is per client** ([report](../../reports/2026-proof-of-possession.md), TKT-003). The
+    platform's own clients (the stdio wrapper, the gateway-era hook adapter and CLI, the plugin host; not the
+    public MVP's `ascc` binary, which makes no network call) use DPoP (RFC 9449) and the token
+    carries `cnf.jkt`. Claude Code presents a client certificate to the LLM gateway (RFC 8705), and the token
+    carries `cnf.x5t#S256`. **Claude Code's connection to a remote MCP server can't be bound today:** it sends
+    no DPoP proof and the MCP specification names no binding, so that token has no `cnf`. Signed HTTP requests
+    (RFC 9421) are not used: no published OAuth profile binds a token to such a key.
+  - **A token with no `cnf` should not be enough for a tier 2 or 3 action.** That is a tiering rule and goes to
+    decision K3 with [ADR-13](#adr-13).
+  - **Claim names.** The transaction-tokens draft is at `-11`, past working-group consensus, and uses `txn`,
+    `scope`, `req_wl`, `tctx` and `rctx`. This ADR's token uses `task_id`, `purpose`, `depth` and `budget_ref`.
+    TKT-005 decides the mapping when it writes the schema; until then F §3 stands as written.
+  - **Corrections.** OAuth 2.1 is at `draft-ietf-oauth-v2-1-17`, still a draft. MCP revision 2026-07-28 did not
+    add transport-level authorization; it removed sessions and replaced server-initiated requests with results
+    the client answers on a retry. The gateway as an OAuth 2.1 resource server with RFC 9728 metadata, and the
+    ban on passing a client's token through, are both confirmed in that revision.
 
 <a id="adr-07"></a>
 ## ADR-07 OpenBao as the bundled secrets backend; Vault supported
@@ -147,6 +184,10 @@ ADR-15 to 17 are new.
   (CyberArk and peers) arrive as **connector plugins** (ADR-16): the same plugin both inventories the NHIs the
   secret store knows about and, where the broker needs it, provides the backend adapter. The broker's own
   backend interface stays small (read by reference, lease, revoke); connectors supply the platform-specific part.
+- **Amended 2026-11-10:** The **[V]** items are checked. OpenBao is MPL-2.0 and its API documents KV v2, AppRole,
+  transit and lease lookup; that was read, not run against both servers, and TKT-036 tests it. Vault's licence
+  (BUSL 1.1, now IBM's) bars offering it hosted or embedded in a competing product; it doesn't bar all
+  redistribution, so "needs legal review" is the accurate wording and the OpenBao default stands.
 
 <a id="adr-08"></a>
 ## ADR-08 Envoy forward proxy with ext_authz for egress
@@ -160,6 +201,9 @@ ADR-15 to 17 are new.
   firewall must block direct egress for the agent process, or B5 in E §6 stays open. That's an endpoint
   management dependency, called out in the coverage panel. Plugin containers get the same treatment with no
   endpoint-management caveat: the host owns their network namespace.
+- **Amended 2026-11-10:** The Smokescreen alternative above is described wrongly. It does per-client rules,
+  keyed by the client certificate's name. Its limit is that a rule is a host allowlist and nothing more, with
+  no callout to a policy engine, which is why Envoy with `ext_authz` is still the choice.
 
 <a id="adr-09"></a>
 ## ADR-09 gRPC server-stream control channel; no message bus in MVP
@@ -206,6 +250,9 @@ ADR-15 to 17 are new.
   (ADR-14).
 - **Amended 2026-11-09:** from Phase 2 the ASCC analyzers move onto the plugin contract as `scanner` plugins
   (FR-PLG-15, FR-SC-10), so a third party can add a scanner the same way. The gate semantics do not change.
+- **Amended 2026-11-10:** The licence note is stricter than written. Semgrep's engine is LGPL-2.1, and the
+  `semgrep-rules` licence allows internal use only: the rules can't be shipped with ASCC or offered as a
+  service. "Write our own rules" is therefore a requirement, not a preference.
 
 <a id="adr-12"></a>
 ## ADR-12 Metadata-only telemetry by default
@@ -282,6 +329,25 @@ ADR-15 to 17 are new.
   a proto service, a template, a harness fixture set and conformance tests before it is "supported". Latency-
   sensitive extensions wait for the WASM spike. The developer programme (FR-PLG-13) is a product commitment,
   not a side effect: contract stability (NFR-19) binds the core team from `v1` onward.
+- **Amended 2026-11-10:** The half of the spike that TKT-031 owns is done:
+  [plugin contract spike](../../reports/2026-plugin-contract-spike.md), code in `src/spikes/pluginhost/`. A
+  connector on the `v1alpha1` contract runs as a separate process, holds no credential, is refused a call
+  outside its grant, and every event carries its id, set by the host. What it changes:
+  - **A process is not a sandbox.** The host checks what a plugin asks it for. On a laptop, run as a plain
+    process, a plugin can still open its own connections and read its user's files. "Confines egress to the
+    manifest's hosts" and the resource limits hold only under a container or an OS sandbox, so a laptop
+    adapter needs one of those too, or the plugin there is reported as unconfined.
+  - **Write the host; don't depend on go-plugin.** Its two-way calls need a broker protocol every non-Go SDK
+    would have to implement, and it starts child processes where Compose and Kubernetes run containers. Plain
+    gRPC on two endpoints, one per direction, works for both. go-plugin itself was not prototyped.
+  - **The contract carries no identity fields, and no call returns the host's credential.** Who is asking
+    comes from the token, so there is nothing for a plugin to forge. A platform's answer can still hold a
+    secret (reading an OpenBao KV value is a `GET`): the prototype limits the host a plugin may call, not
+    the path, so what a connector can read is set by its platform credential's scope. TKT-032 adds path limits.
+  - **The token needs a renewal path.** A one-hour token with no renew call ends a long-running plugin.
+  - **NFR-20:** one host round trip measured 0.34 ms mean and 1.0 ms p95 on one machine, inside the 2 ms target.
+
+  The status stays Spike: the runtime model, the SDK licence and the library's home are decision K7.
 
 <a id="adr-16"></a>
 ## ADR-16 Connectors are plugins; NHI is a first-class registry type with cross-source reconciliation
@@ -318,6 +384,13 @@ ADR-15 to 17 are new.
   (FR-CON-12). Every connector needs a documented, verified scope list (**[V]** per platform, R13), which is
   real work per platform and the reason Phase 2 lists eight of them, not thirty. The inventory itself is a
   high-value asset (T-26) and gets its own role and audited reads.
+- **Amended 2026-11-10:** The first two connectors' scopes are checked against the platforms' documentation
+  (the table is in the
+  [plugin contract spike](../../reports/2026-plugin-contract-spike.md#connector-scopes-v-recorded-for-tkt-036-and-tkt-037)).
+  Two things differ from the plan. GitHub's organization token lists can be read only by a GitHub App, and no
+  endpoint reads the organization's token *policy*, so the GitHub connector authenticates as an App and reports
+  that setting as not readable. And listing OpenBao leases needs `sudo` on the lease-lookup path, so that
+  connector's "read-only" credential is not read-only in OpenBao's own terms; its scope list must say so.
 
 <a id="adr-17"></a>
 ## ADR-17 Workflow intelligence is advisory, metadata-first, deterministic before semantic, and runs as a batch

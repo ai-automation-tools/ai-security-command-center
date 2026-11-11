@@ -1,0 +1,116 @@
+// The ASCC plugin contract, v1alpha1 (FR-PLG-01, ADR-15). A spike: nothing here is stable yet.
+//
+// Two directions. The host calls the plugin (Plugin, Connector). The plugin calls the host (Host),
+// presenting the capability token the host gave it at start. No call returns the credential the host
+// uses, and no field lets a plugin say who it is: the host takes that from the token.
+//
+// Field tags are never reused. A removed field is reserved.
+syntax = "proto3";
+
+package ascc.plugin.v1alpha1;
+
+option go_package = "github.com/ai-automation-tools/ai-security-command-center/src/spikes/pluginhost/pluginv1alpha1";
+
+// Plugin is served by every plugin, whatever its type.
+service Plugin {
+  // Describe is the first call the host makes. Until the answer matches what was approved, the
+  // plugin's token is refused; a plugin whose answer doesn't match is stopped.
+  rpc Describe(DescribeRequest) returns (DescribeResponse);
+  // Health says whether the plugin can do its work right now.
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+// Connector is served by a plugin of type "connector": it reads the non-human identities of one platform.
+service Connector {
+  // Sync reads the platform from the cursor on. The plugin reports what it finds by calling Host.
+  rpc Sync(SyncRequest) returns (SyncResponse);
+}
+
+// Host is served by the plugin host, one endpoint per plugin. Every call needs the capability token
+// in the "authorization" metadata as "Bearer <token>", and is refused unless the token grants it.
+service Host {
+  // UpsertNhi records a non-human identity in the plugin's own namespace. Needs scope "nhi:write@self".
+  rpc UpsertNhi(UpsertNhiRequest) returns (UpsertNhiResponse);
+  // ReportFinding records a finding in the plugin's own namespace. Needs scope "findings:write@self".
+  rpc ReportFinding(ReportFindingRequest) returns (ReportFindingResponse);
+  // PlatformCall asks the host to call the platform with a credential the plugin never sees. The URL
+  // must be https on one of the plugin's approved hosts and the credential kind one it was approved for.
+  rpc PlatformCall(PlatformCallRequest) returns (PlatformCallResponse);
+}
+
+message DescribeRequest {}
+
+message DescribeResponse {
+  // The plugin's id, as in its manifest.
+  string plugin_id = 1;
+  // The plugin's own version.
+  string version = 2;
+  // The plugin type. Only "connector" exists in v1alpha1.
+  string type = 3;
+  // The contract version the plugin was built against, for example "v1alpha1".
+  string contract_version = 4;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  // True when the plugin can do its work.
+  bool ok = 1;
+  // One line for a person. Never a secret.
+  string detail = 2;
+}
+
+message SyncRequest {
+  // Where the last sync stopped. Empty on the first one.
+  string cursor = 1;
+}
+
+message SyncResponse {
+  // Where this sync stopped, to pass to the next one.
+  string cursor = 1;
+  // How many identities the host accepted.
+  int32 upserted = 2;
+  // How many calls to the host were refused.
+  int32 refused = 3;
+}
+
+// Nhi is a non-human identity as a connector sees it. There is no field for a secret value.
+message Nhi {
+  // The platform's own id for the identity.
+  string external_id = 1;
+  // service_account, bot, ci_job, oauth_app or mcp_server.
+  string kind = 2;
+  string display_name = 3;
+  // Empty when the platform names no owner.
+  string owner = 4;
+}
+
+message UpsertNhiRequest {
+  Nhi nhi = 1;
+}
+
+message UpsertNhiResponse {}
+
+message ReportFindingRequest {
+  // The rule that fired, for example "nhi-no-owner".
+  string rule_id = 1;
+  // The external_id of the identity it is about.
+  string subject = 2;
+  // One line for a person. Never a secret.
+  string message = 3;
+}
+
+message ReportFindingResponse {}
+
+message PlatformCallRequest {
+  // The kind of credential the host should use, for example "github_app".
+  string credential_kind = 1;
+  // Only GET in v1alpha1: connectors are read-only (ADR-16).
+  string method = 2;
+  string url = 3;
+}
+
+message PlatformCallResponse {
+  int32 status = 1;
+  bytes body = 2;
+}
