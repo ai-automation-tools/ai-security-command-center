@@ -1,0 +1,9 @@
+{
+  "realm": "ascc-dev",
+  "displayName": "ASCC development",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "bruteForceProtected": true
+}

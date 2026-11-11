@@ -44,8 +44,9 @@
       T-23 to T-27. Done 2026-11-10: [D §4.1](d-threat-model.md#41-re-rating-2026-11-10). T-03 goes up; T-23 and
       T-24 come down for Phase 1 only.
 - [ ] **7. Re-estimate Phase 1** from the J tickets by whoever will build them; pick team path or solo path (H).
-- [ ] **8. Build the Compose skeleton** (TKT-006), the schemas (TKT-005) and the plugin contract draft
-      (TKT-031); these are safe to start before ADRs land.
+- [x] **8. Build the Compose skeleton** (TKT-006), the schemas (TKT-005) and the plugin contract draft
+      (TKT-031); these are safe to start before ADRs land. Done 2026-11-10: `deploy/compose/`,
+      `schemas/platform/v1alpha1/` and `src/spikes/pluginhost/`.
 - [ ] **9. Decide where the code lives** (Q-K6) before the first commit; this folder is a non-git Draft. The plugin
       SDK and template repo need their own homes and licence headers from day one (K7).
 - [ ] **10. Book the MVP exit review:** a criteria owner, a second person to run the demo script cold, and an

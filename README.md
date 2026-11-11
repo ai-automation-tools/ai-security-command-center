@@ -223,6 +223,7 @@ never replaces what the registry declares.
 | [**📚 docs/**](docs/README.md) | The roadmap, the changelog, the public-MVP spec and build plan, the full planning package and the resource library. |
 | [**🧩 src/**](src/) | The Go code: `cmd/ascc` is the CLI, `cmd/ascc-wasm` the browser build, `cmd/buildsite` the demo's build tool, and `internal/` holds the packages. Tests sit next to the code. `cmd/ascc-pdp` is the decision point as a service and `cmd/ascc-schema` the schema validator, both binaries of their own for the platform still being built. `spikes/pluginhost` is a prototype in a Go module of its own. None of the three is part of `ascc`. |
 | [**🧪 examples/**](examples/) | A sample registry, Cedar policies, requests and hook payloads with fictional agents. The tests run these same files. |
+| [**🧱 deploy/**](deploy/compose/README.md) | The development stack for the platform still being built: a Compose file that starts Postgres, Keycloak, OpenBao, Jaeger, `ascc-pdp` and an egress placeholder on loopback. `ascc` needs none of it. |
 | [**📐 schemas/**](schemas/) | The Agent Security Suite inventory schema, v0.1, vendored from `ai-automation-tools.dev`, and under [`platform/`](schemas/platform/README.md) the schemas for the platform still being built, with the `ascc-schema` validator. |
 | [**🖥️ site/**](site/) | The browser demo: the page, its two scripts and the favicon. `go run ./src/cmd/buildsite` adds the WebAssembly and the fixtures and writes `_site/`. |
 

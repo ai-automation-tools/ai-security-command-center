@@ -1,0 +1,157 @@
+# The ASCC development stack. For one machine, never for production: see README.md in this folder.
+#
+#   docker compose --env-file .env -f deploy/compose/compose.yaml up -d --build --wait
+#
+# Rules this file keeps, each checked by stack_test.go:
+#   - every published port is bound to 127.0.0.1;
+#   - every image is pinned by digest, the ones a Dockerfile builds from included;
+#   - every secret comes from .env at the repository root (names in .env.example) and from nowhere else: no
+#     value is written here, no URL carries one, and a missing one stops the stack from starting;
+#   - no service is privileged, adds a capability, shares the host's namespaces or mounts anything from
+#     outside this repository, and the sandbox network stays internal.
+name: ascc-dev
+
+x-common: &common
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  # ADR-05's store. An empty database named ascc: the tables arrive with the registry service (5d).
+  postgres:
+    <<: *common
+    image: postgres:18.6-alpine@sha256:123b17998ccaf47e53b502e8c6a1e79afd8f579c6f3eec83c563da026f957395
+    environment:
+      POSTGRES_USER: ascc
+      POSTGRES_DB: ascc
+      POSTGRES_PASSWORD: ${ASCC_POSTGRES_PASSWORD:?set ASCC_POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    ports:
+      - "127.0.0.1:15432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "ascc", "-d", "ascc"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # The development identity provider, with the ascc-dev realm imported on first start.
+  # ponytail: dev mode on its own embedded database; give it Postgres when a second Keycloak node is needed.
+  keycloak:
+    <<: *common
+    image: quay.io/keycloak/keycloak:26.8.2@sha256:723b1d6e254c0fc96d5cffec860c7e0744d6a3277822b865bb538cf891575e41
+    command: ["start-dev", "--import-realm"]
+    cap_drop:
+      - ALL
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${ASCC_KEYCLOAK_ADMIN_PASSWORD:?set ASCC_KEYCLOAK_ADMIN_PASSWORD in .env}
+      KC_HEALTH_ENABLED: "true"
+    healthcheck:
+      # The image has no curl. Ready is a 200 from the management port.
+      test:
+        - CMD
+        - /bin/bash
+        - -c
+        - exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.0\r\n\r\n' >&3 && read -r line <&3 && [[ $$line == *" 200 "* ]]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+      start_period: 20s
+    volumes:
+      - keycloak-data:/opt/keycloak/data
+      - ./keycloak/ascc-dev-realm.json:/opt/keycloak/data/import/ascc-dev-realm.json:ro
+    ports:
+      - "127.0.0.1:18080:8080"
+
+  # ADR-07's secrets backend. It unseals itself with the key from .env, and dev-init.sh initialises it once
+  # and makes the root token the one from .env.
+  openbao:
+    <<: *common
+    image: openbao/openbao:2.7.2@sha256:5046911075e137e154ce49ab051502f4ec7cf367d484ae4a4dce665d9b90561f
+    user: openbao
+    cap_drop:
+      - ALL
+    entrypoint: ["/bin/sh", "/ascc/dev-init.sh"]
+    environment:
+      ASCC_OPENBAO_SEAL_KEY: ${ASCC_OPENBAO_SEAL_KEY:?set ASCC_OPENBAO_SEAL_KEY in .env}
+      ASCC_OPENBAO_ROOT_TOKEN: ${ASCC_OPENBAO_ROOT_TOKEN:?set ASCC_OPENBAO_ROOT_TOKEN in .env}
+    volumes:
+      - openbao-data:/openbao/file
+      - ./openbao/config.hcl:/ascc/config.hcl:ro
+      - ./openbao/dev-init.sh:/ascc/dev-init.sh:ro
+    ports:
+      - "127.0.0.1:18200:8200"
+    healthcheck:
+      # Healthy only when it is unsealed and dev-init.sh has mounted both engines.
+      test: ["CMD", "/bin/sh", "-c", "test -f /tmp/ascc-ready && bao status -address=http://127.0.0.1:8200"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Traces. Nothing sends any yet; the OTLP ports are where the services will.
+  jaeger:
+    <<: *common
+    image: jaegertracing/jaeger:2.23.0@sha256:3823829974ccfc2485d2e48b165579091f32295022ae80ca49704e2f4834116e
+    cap_drop:
+      - ALL
+    ports:
+      - "127.0.0.1:16686:16686"
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
+
+  # The policy decision point, on the sample registry and policies. It has to listen on every address inside
+  # its container to be reachable at all, so it runs with --allow-remote: every container on this network
+  # may ask it, and the host reaches it on loopback only.
+  pdp:
+    <<: *common
+    build:
+      context: ../..
+      dockerfile: deploy/compose/pdp.Dockerfile
+    command: ["--listen", "0.0.0.0:8181", "--allow-remote", "--registry", "/data/ascc.registry.json", "--policies", "/data/policies"]
+    read_only: true
+    cap_drop:
+      - ALL
+    volumes:
+      - ../../examples:/data:ro
+    ports:
+      - "127.0.0.1:8181:8181"
+
+  # Placeholder for ADR-08's egress proxy: Envoy with no upstream at all, answering 403 to every request and
+  # every CONNECT. Default deny is the whole of it until Slice 7 adds the allowlist and ext_authz.
+  egress:
+    <<: *common
+    image: envoyproxy/envoy:distroless-v1.40.2@sha256:09ca6f2140a61ad8df11779a4a30d52b48433d444466328494f9188c9c35eded
+    command: ["-c", "/ascc/envoy.yaml"]
+    read_only: true
+    cap_drop:
+      - ALL
+    volumes:
+      - ./envoy/envoy.yaml:/ascc/envoy.yaml:ro
+    networks:
+      - default
+      - sandbox
+    ports:
+      - "127.0.0.1:15001:15001"
+
+  # Placeholder for the plugin host (Slice 8). There is no image to run yet: the prototype in
+  # src/spikes/pluginhost is a library and its tests. When there is one it goes here, on the sandbox network
+  # only, so that the egress proxy is its one way out:
+  #
+  # plugin-host:
+  #   <<: *common
+  #   build: ...
+  #   networks:
+  #     - sandbox
+  #   environment:
+  #     HTTPS_PROXY: http://egress:15001
+
+networks:
+  # No route off the machine. What runs here reaches the outside through the egress proxy or not at all.
+  sandbox:
+    internal: true
+
+volumes:
+  postgres-data:
+  keycloak-data:
+  openbao-data:
