@@ -38,6 +38,9 @@ cd examples
 | **`--registry`** | `ascc.registry.json` | The agent registry. |
 | **`--policies`** | `policies` | The folder of `*.cedar` files. |
 
+The [development stack](../../deploy/compose/README.md) runs it in a container next to the other platform
+services, on the same sample files.
+
 It exits 2 if it can't listen or the flags are wrong. It starts even when the registry or policies don't load:
 it then denies everything, which is safer than leaving an enforcement point with nothing to ask.
 
