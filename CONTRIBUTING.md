@@ -20,6 +20,11 @@ go test ./...
 go build ./...
 ```
 
+`go test ./...` also checks the rules of the development stack's Compose file. That test needs `docker compose`
+and is skipped without it. The stack itself is optional, for work on the platform services:
+[`deploy/compose/README.md`](deploy/compose/README.md) says how to start it and where its secrets go (`.env`,
+which git ignores).
+
 All four must pass before a pull request opens. CI runs them on Linux and Windows, plus a WebAssembly build of
 the core packages, so use `path/filepath` and never a hard-coded separator.
 

@@ -36,12 +36,20 @@ Slice 5 on the items build the platform's services, which may use the network; `
   going-public checks and changes nothing. Until then the demo page's "View source" link returns 404 for
   visitors, and `go install …@latest` in the README doesn't work.
 - **Next item for a run:** the **gateway run**. 5a (schemas), 5b (the PDP as a service) and 5c (the Compose
-  skeleton) are done; 5d and 5e wait on the ADR sign-off. Slice 4 is
+  skeleton) are done and merged; 5d and 5e wait on the ADR sign-off.
+- **The development stack needs a `.env`.** [`deploy/compose/`](../deploy/compose/README.md) takes its four
+  secrets from `.env` at the repo root (names in `.env.example`) and won't start without them. A run that
+  needs the stack and finds no `.env` makes one with random values, as that README shows; it never prints
+  or commits one. The stack's own test makes throwaway secrets and needs none. Slice 4 is
   done: three spike reports, a plugin-host prototype, the ADR statuses and the threat re-rating.
 - **Waiting on Mike:** K3 (tiers, and whether a token with no key binding may do a tier 2 or 3 action), K5
   (build the gateway or adopt agentgateway, after the gateway run), K7 to K10, and the ADR sign-off: the
   [status table](product/plan/e2-adrs.md) has the evidence for each, and only two are Accepted so far.
-- **Known loose ends, none blocking:** `kill` and `revive` rewrite the registry without a lock, so two at once
+- **Known loose ends, none blocking:** the change that moved the stack's secrets into `.env` merged without a
+  `security-reviewer` pass, so the next run that touches `deploy/compose/` starts with one; that README's
+  "Docker Engine 28 or newer" is from memory and wants checking against Docker's release notes; `ascc-pdp`
+  handles an interrupt but not the terminate signal `docker stop` sends, so it ends without draining;
+  `kill` and `revive` rewrite the registry without a lock, so two at once
   can lose one; two `--import` files that disagree about an id are settled by order with no warning;
   `actions/deploy-pages@v4` targets a Node version GitHub has deprecated; the demo's page test uses a stand-in
   for the DOM, not a browser.
