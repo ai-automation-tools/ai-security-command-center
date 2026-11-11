@@ -44,7 +44,7 @@ is the owner's.
 | | `TestPlatformCallOutsideTheGrantNeverReachesTheBroker` | A host or credential kind that wasn't approved is refused before any platform call is made |
 | Its events carry `plugin_id` | `TestHelloConnectorRunsUnderTheHost` | Every event has the plugin id, the connector id and the contract version, set by the host |
 
-It was run on Windows 11 with Go 1.26. CI runs it on Linux and Windows.
+It was run on Windows 11 with Go 1.26, and CI ran it on Linux and Windows on the pull request that added it.
 
 ## What fails closed
 
@@ -149,7 +149,6 @@ expect it.
 - **The real broker and the management API:** platform calls go to a function the test supplies, and reported
   identities are counted, not stored.
 - **Other SDKs, other plugin types, streaming,** and a second machine for the timing.
-- **Linux** until CI has run it.
 
 ---
 
