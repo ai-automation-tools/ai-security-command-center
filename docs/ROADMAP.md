@@ -33,9 +33,10 @@ owns, with fictional agents and repos; no item needs a running service, a creden
 - **The repo stays private for now** (Mike, 2026-11-10). Going public is his call; `/release-gate` runs the
   going-public checks and changes nothing. Until then the demo page's "View source" link returns 404 for
   visitors, and `go install …@latest` in the README doesn't work.
-- **Next item for a run:** the `small` **[V] checks** under Next slices, then **Slice 4**. The five items above
-  them (K3, K7 to K10) are `🔒 Needs owner`. The two `small` items under Publish and promote
-  (`CONTRIBUTING.md`, the suite cross-links) can ride in the same batch.
+- **Next item for a run:** **Slice 4**, the remaining Phase 0 spikes. The five items above it (K3, K7 to K10)
+  are `🔒 Needs owner`. Start from the [V] check results in
+  [k-next-steps §1.1](product/plan/k-next-steps.md#11-v-check-results-2026-11-10): nine of the plan's claims had
+  changed, and each spike amends the ADR it owns.
 - **Known loose ends, none blocking:** `kill` and `revive` rewrite the registry without a lock, so two at once
   can lose one; two `--import` files that disagree about an id are settled by order with no warning;
   `actions/deploy-pages@v4` targets a Node version GitHub has deprecated; the demo's page test uses a stand-in
@@ -91,7 +92,7 @@ The plan's Phase 1 ([plan/h-roadmap.md](product/plan/h-roadmap.md)), in its own 
 - [ ] K8 NHI connector scope decided (default: every NHI, read-only first, OpenBao and GitHub first) 🔒 Needs owner
 - [ ] K9 workflow-intelligence inputs and audience decided 🔒 Needs owner
 - [ ] K10 developer-programme incentives decided (default: none) 🔒 Needs owner
-- [ ] `small` **[V] checks.** Every [V] item an ADR or Phase 1 ticket depends on checked against its current source, results written into `plan/k-next-steps.md` §1.
+- [x] `small` **[V] checks.** Every [V] item an ADR or Phase 1 ticket depends on checked against its current source, results written into `plan/k-next-steps.md` §1. — done 2026-11-10: [k-next-steps §1.1](product/plan/k-next-steps.md#11-v-check-results-2026-11-10) has a row per item with its source. Nine claims had changed. The ones Slice 4 must pick up: MCP revision 2026-07-28 removed sessions and server-initiated requests instead of adding transport auth (TKT-016), Envoy AI Gateway is now Agent Router and does MCP (TKT-001), GitHub's organization PAT lists are open to a GitHub App only and the PAT policy has no read endpoint (TKT-037), cosign has no `--offline` flag (TKT-033), and the transaction-tokens draft's claim names differ from ADR-06's (taken with TKT-003, which amends that ADR). The ADRs are left as written; each spike amends its own. Not covered: everything was read from documentation, nothing was run; OpenBao parity, cosign with the network blocked and the GitHub scopes still need a test in their tickets, and *A2ABreak* was found but not read against the design
 - [ ] **Slice 4: remaining Phase 0 spikes.** TKT-001 gateway build-vs-adopt (agentgateway, Envoy AI Gateway, ContextForge on the five criteria, tested commit hashes), TKT-003 proof-of-possession tokens, TKT-031 plugin contract `v1alpha1` and host prototype. ADR-01 to ADR-17 each marked Accepted, Spike or Replaced with evidence linked; threat model re-rated, T-23 to T-27 included.
 - [ ] **Slice 5: schemas and Compose skeleton.** TKT-005 schemas and TKT-006 Compose stack running with one command; registry, STS and the PDP as a service with policy unit tests (M1.1).
 - [ ] **Slice 6: MCP and LLM gateway** enforcing allow and deny, Anthropic and OpenAI-compatible adapters, gateway latency measured against NFR-02 (M1.2).
@@ -106,8 +107,8 @@ The plan's Phase 1 ([plan/h-roadmap.md](product/plan/h-roadmap.md)), in its own 
 
 ### 📣 Publish and promote
 
-- [ ] `small` `CONTRIBUTING.md` saying how to run the checks and add a policy with its allow and deny fixtures.
-- [ ] `small` Cross-link mcp-frisk, mcp-tool-rugpull-gate and scope-drift-trimmer in the README: they inspect and inventory, ASCC enforces.
+- [x] `small` `CONTRIBUTING.md` saying how to run the checks and add a policy with its allow and deny fixtures. — done 2026-11-10: `CONTRIBUTING.md` at the repo root, linked from the README's Development section. It also says what a policy can't do and the pull-request rules
+- [x] `small` Cross-link mcp-frisk, mcp-tool-rugpull-gate and scope-drift-trimmer in the README: they inspect and inventory, ASCC enforces. — done 2026-11-10: the README's "The rest of the suite" section, with what each tool does and where ASCC picks up or doesn't. All three tools are early and their repos private today, so the section says to read each one's README for what works, and the links return 404 for visitors until they go public
 - [ ] Tag v0.1 and publish release binaries for Windows, macOS and Linux 🔒 Needs owner
 - [ ] "Build a plugin" pages, a template repo per plugin type and the wanted-connectors list (FR-PLG-13), once Slice 8 lands.
 - [ ] Launch post built on the demo ("watch the injected curl get denied"), sent where agent-security practitioners read 🔒 Needs owner

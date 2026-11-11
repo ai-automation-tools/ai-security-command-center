@@ -199,6 +199,23 @@ ascc is a defensive tool.
 - **The demo and the samples are planted.** Every agent, host and account in `examples/` and on the demo page is
   fictional.
 
+## 🧰 The rest of the suite
+
+ASCC is the enforcing part of the Agent Security Suite. Its sibling tools inspect and inventory; none of them
+blocks a tool call, and ASCC doesn't do their job. All three are early: each one's own README says what works
+today, and the table says what it is for.
+
+| Tool | What it does | Where ASCC picks up |
+|:---|:---|:---|
+| [**mcp-frisk**](https://github.com/ai-automation-tools/mcp-frisk) | Lints MCP configs offline for shell-injection shapes and plaintext secrets, without starting a server. | `discover` reports the MCP servers the registry doesn't list; the hook denies a call to a tool that isn't registered. |
+| [**mcp-tool-rugpull-gate**](https://github.com/ai-automation-tools/mcp-tool-rugpull-gate) | Locks the MCP tool definitions you approved and shows what changed since. | ASCC decides on the tool's id, not its definition: a tool that changed under the same name is still allowed. ASCC doesn't close that gap; the gate is the tool meant to. |
+| [**scope-drift-trimmer**](https://github.com/ai-automation-tools/scope-drift-trimmer) | Lists what each non-human identity was granted next to what it used, and drafts the trim for a person to run. | `inventory` lists the identities each agent uses and flags the ownerless, overdue and unlinked ones. It doesn't know what an identity was granted. |
+
+Where one of them writes the suite's
+[agent inventory document](schemas/agent-inventory.schema.json), `ascc inventory --import <file>` merges it. An
+imported file adds identities. It can mark its own entries `unmonitored`, never `observed` or `enforced`, and it
+never replaces what the registry declares.
+
 ## 🗂️ What's in here
 
 | Folder | What's inside |
@@ -218,6 +235,7 @@ go test ./...
 go build ./...
 ```
 
+[CONTRIBUTING.md](CONTRIBUTING.md) says how to add a policy with its allow and deny fixtures.
 Agents working this repo read [AGENTS.md](AGENTS.md) first. Security reports go through
 [SECURITY.md](SECURITY.md), not public issues.
 
