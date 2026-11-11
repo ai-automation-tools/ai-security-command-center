@@ -15,6 +15,9 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 
 ## Unreleased
 
+**Security**
+- `.gitleaksignore` suppresses the two gitleaks hits on the planted fake credentials in `discover_test.go`, so the weekly secret scan stays quiet.
+
 **Added**
 - A development stack in `deploy/compose/`: one `docker compose` command starts Postgres, Keycloak with an `ascc-dev` realm, OpenBao (unsealed and initialised with no step by hand), Jaeger, `ascc-pdp` on the sample policies, and an egress proxy placeholder that refuses everything. Every port is on `127.0.0.1`, every image is pinned by digest, and every secret comes from `.env`, so none is in the repository and a missing one stops the start. For one developer's machine only. *Next slices*
 - `ascc-pdp`, the policy decision point as a service: `POST /pdp/v1/decide` gives the same answer as `ascc decide`, in the platform's request and response shape. It listens on loopback, re-reads the registry and policies on every request so the kill switch needs no restart, and answers a deny for anything it can't evaluate or can't log. It doesn't authenticate callers or keep an audit chain yet. Guide: `docs/guides/pdp-service.md`. *Next slices*
