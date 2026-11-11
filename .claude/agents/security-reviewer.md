@@ -30,7 +30,7 @@ Work through these in order. A finding needs a concrete input that produces the 
 | **Input handling** | Unknown JSON fields, duplicate keys, huge input, invalid UTF-8, path traversal with `..`, a sibling folder sharing the repo's prefix, symlinks. |
 | **Claims** | Does any doc, reason string or coverage label now say more than the code enforces? An unenforceable tool is `observed`, never `enforced`. |
 | **Going public** | Real hosts, people, repos, tokens, or a local path such as a drive letter or a home directory in code, fixtures or docs. |
-| **Scope** | Does the change need something on the Won't list (a network call, a proxy, a model deciding, a second runtime)? That is a stop, not a finding to fix. |
+| **Scope** | Does the change need something on the Won't list (a network call from `ascc` or the demo, a platform service that `ascc` imports or that isn't built on its ADR, a model deciding, a second runtime)? That is a stop, not a finding to fix. |
 
 ## Check, don't guess
 

@@ -142,12 +142,28 @@ go build ./...
 - **Never claim coverage it doesn't have.** If the hook can't block a tool, that tool is `observed`, and the
   README's coverage section says so.
 
-## Won't (this version)
+## Won't
 
-Carried from the spec. If a roadmap item seems to need one of these, stop and flag it.
+If a roadmap item seems to need one of these, stop and flag it.
 
-- **A gateway, proxy or broker in the network path.** Those are Next slices, each behind an ADR spike.
-- **Any network access**, accounts, telemetry, a hosted service or a paid tier.
+**The `ascc` binary and the demo, always.** These carried from the public-MVP spec and still hold for them:
+
+- **Any network access.** `ascc` and the demo page never open a connection; the two tests under Zero network
+  guard it. `ascc` is not a gateway, proxy or broker and never becomes one.
+
+**The platform services, from Slice 5 on** (Mike, 2026-11-10: the public MVP is built, so the Next slices may
+use the network). A PDP service, token service, gateway, broker or plugin host is a binary of its own that may
+listen and connect. Each one:
+
+- is built on its ADR in `docs/product/plan/e2-adrs.md`, and on an ADR still marked Spike only for the part its
+  evidence covers;
+- lives outside `src/cmd/ascc` and is never imported by it, by `src/internal/pdp`, `audit`, `claudecode` or
+  `demo`, so those keep building for WebAssembly;
+- listens on loopback or a private Compose network by default, and fails closed like the hook does.
+
+**Everything, always:**
+
+- **Accounts, telemetry, a hosted service or a paid tier.**
 - **Holding or printing a secret.**
 - **Model-based or score-based decisions.**
 - **Runtimes other than Claude Code.**
