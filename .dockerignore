@@ -1,0 +1,5 @@
+# The only image built from this repository is ascc-pdp, and it needs the module files and src/.
+*
+!go.mod
+!go.sum
+!src

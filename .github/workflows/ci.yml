@@ -65,3 +65,23 @@ jobs:
       - name: Build the core and the demo for WebAssembly
         shell: bash
         run: GOOS=js GOARCH=wasm go build ./src/internal/... ./src/cmd/ascc-wasm
+
+  # Starts the development stack from nothing and checks each service, the egress deny and that no secret
+  # reached a log. Linux only: the stack is Linux containers.
+  compose:
+    name: Development stack comes up
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Start the stack and check it
+        env:
+          ASCC_COMPOSE_SMOKE: "1"
+        run: go test -count=1 -v ./deploy/compose

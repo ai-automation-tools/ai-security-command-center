@@ -15,6 +15,10 @@ Run these from the repo root, in order, and report each as pass or fail with the
 6. The plugin host prototype, a module of its own: `go vet ./...` and `go test ./...` run inside
    `src/spikes/pluginhost`.
 
+`go test ./...` also runs the development stack's rule test (`TestComposeFileKeepsItsRules` in
+`deploy/compose`), which needs `docker compose` and is skipped without it; report that skip too. It doesn't
+start the stack: `ASCC_COMPOSE_SMOKE=1 go test -count=1 ./deploy/compose` does, and takes about a minute.
+
 `go test ./...` includes the demo's page test (`TestBuiltPageRendersWithNoNetwork`), which needs `node` on
 `PATH`. Without it the test is skipped locally and fails in CI; report a skip as a skip, not a pass.
 

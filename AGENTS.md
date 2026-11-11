@@ -89,6 +89,15 @@ decision goes in as an ADR amendment there, never as a quiet code change.
   the engine said allow: a bad request, a repeated or miscased key, a file that won't load, a panic and a log
   line that can't be written are all denies, each with a test. It reads the files on every request so the
   kill switch needs no restart. It has no caller authentication and no audit chain yet; its guide says so.
+- `deploy/compose/` is the development stack (TKT-006): Postgres, Keycloak, OpenBao, Jaeger, `ascc-pdp` and a
+  deny-everything Envoy as the egress placeholder. It is for one developer's machine and its README says so.
+  `stack_test.go` there holds its rules and `go test ./...` runs them: every port on `127.0.0.1`, every image
+  pinned by digest (a Dockerfile's included), no secret-named variable and no password in a URL, no added
+  privilege, nothing mounted from outside the repo, the `sandbox` network internal. A new rule gets a row in
+  `TestRulesCatchABrokenFile`. The rule test needs `docker compose`: it skips without it locally and fails
+  without it in CI on Linux. `ASCC_COMPOSE_SMOKE=1` starts the stack; CI does, in its own job. Each service
+  generates its own secret on first start into its own volume; never write one into a file here, print one,
+  or pass one as a process argument.
 - `src/spikes/pluginhost` is the TKT-031 prototype of the plugin host, **in a Go module of its own**. It uses
   gRPC and `os/exec`, which the `ascc` binary may never link, so nothing under `src/cmd` or `src/internal`
   imports it and the four verify commands skip it (`gofmt -l .` still covers it). CI runs `go vet ./...` and
