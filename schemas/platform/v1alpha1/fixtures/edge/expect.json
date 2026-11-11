@@ -1,0 +1,34 @@
+{
+  "attrs-on-a-relation-without-any.json": {
+    "pointer": "/attrs",
+    "rule": "maxProperties"
+  },
+  "instance-of-from-an-agent.json": {
+    "pointer": "/from_id",
+    "rule": "pattern"
+  },
+  "missing-tenant-id.json": {
+    "pointer": "",
+    "rule": "required"
+  },
+  "missing-to-id.json": {
+    "pointer": "",
+    "rule": "required"
+  },
+  "observed-at-without-milliseconds.json": {
+    "pointer": "/attrs/observed_at",
+    "rule": "pattern"
+  },
+  "unknown-field.json": {
+    "pointer": "/weight",
+    "rule": "additionalProperties"
+  },
+  "unknown-relation.json": {
+    "pointer": "/relation",
+    "rule": "enum"
+  },
+  "uses-nhi-unknown-derived-from.json": {
+    "pointer": "/attrs/derived_from",
+    "rule": "enum"
+  }
+}

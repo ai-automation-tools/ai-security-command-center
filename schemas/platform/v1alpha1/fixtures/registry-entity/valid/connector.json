@@ -1,0 +1,48 @@
+{
+  "id": "con_01JC8Y7Q5W3M2N4P6R8T000001",
+  "tenant_id": "tnt_lab",
+  "type": "connector",
+  "name": "github-lab-org",
+  "lifecycle": "approved",
+  "owner": "usr:kc01:5f1c0000",
+  "backup_owner": "usr:kc01:9a2e0000",
+  "version": 1,
+  "created_at": "2026-10-30T09:00:00.000Z",
+  "updated_at": "2026-11-06T16:40:03.551Z",
+  "updated_by": "usr:kc01:5f1c0000",
+  "spec": {
+    "plugin_id": "plg_01JC8Y7Q5W3M2N4P6R8T000001",
+    "platform": "github",
+    "estate_entry": "git.example.com/lab-org",
+    "credential_ref_read": "crd_01JC8Y7Q5W3M2N4P6R8T000002",
+    "credential_ref_write": null,
+    "scopes_needed": [
+      "read:org",
+      "read:enterprise",
+      "admin:org_hook(read)"
+    ],
+    "scopes_granted": [
+      "read:org"
+    ],
+    "schedule": {
+      "incremental": "0 * * * *",
+      "full": "0 3 * * *",
+      "events": false
+    },
+    "cursor": "c42",
+    "last_sync": {
+      "at": "2026-11-09T03:00:12.000Z",
+      "status": "ok",
+      "objects": 214,
+      "errors": 0,
+      "duration_ms": 9120
+    },
+    "coverage": {
+      "scopes_pct": 33,
+      "freshness_seconds": 1840,
+      "state": "fresh"
+    },
+    "actions_enabled": [],
+    "rate_limit_actions_per_hour": 50
+  }
+}

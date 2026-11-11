@@ -1,0 +1,6 @@
+{
+  "tenant_id": "tnt_lab",
+  "from_id": "ain_01JC8Y7Q5W3M2N4P6R8T000001",
+  "relation": "instance_of",
+  "to_id": "agt_01JC8Y7Q5W3M2N4P6R8T000001"
+}

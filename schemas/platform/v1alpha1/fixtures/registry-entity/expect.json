@@ -1,0 +1,158 @@
+{
+  "agent-without-workflow-id.json": {
+    "pointer": "/spec",
+    "rule": "required"
+  },
+  "connector-action-not-a-slug.json": {
+    "pointer": "/spec/actions_enabled/0",
+    "rule": "pattern"
+  },
+  "containment-unknown-action.json": {
+    "pointer": "/spec/action",
+    "rule": "enum"
+  },
+  "coverage-not-a-label.json": {
+    "pointer": "/coverage",
+    "rule": "enum"
+  },
+  "credential-ref-with-value.json": {
+    "pointer": "/spec/value",
+    "rule": "additionalProperties"
+  },
+  "delegation-depth-over-32.json": {
+    "pointer": "/spec/max_delegation_depth",
+    "rule": "maximum"
+  },
+  "digest-not-sha256.json": {
+    "pointer": "/provenance/digest",
+    "rule": "pattern"
+  },
+  "egress-host-is-a-url.json": {
+    "pointer": "/spec/egress_hosts/0",
+    "rule": "pattern"
+  },
+  "egress-host-wildcard.json": {
+    "pointer": "/spec/egress_hosts/0",
+    "rule": "pattern"
+  },
+  "egress-hosts-repeated.json": {
+    "pointer": "/spec/egress_hosts",
+    "rule": "uniqueItems"
+  },
+  "grant-with-asset-lifecycle.json": {
+    "pointer": "/lifecycle",
+    "rule": "enum"
+  },
+  "id-not-a-ulid.json": {
+    "pointer": "/id",
+    "rule": "pattern"
+  },
+  "id-prefix-does-not-match-type.json": {
+    "pointer": "/id",
+    "rule": "pattern"
+  },
+  "instance-jwk-with-private-member.json": {
+    "pointer": "/spec/public_key_jwk/d",
+    "rule": "additionalProperties"
+  },
+  "instance-jwk-without-x.json": {
+    "pointer": "/spec/public_key_jwk",
+    "rule": "required"
+  },
+  "mcp-upstream-url-with-query.json": {
+    "pointer": "/spec/upstream_url",
+    "rule": "pattern"
+  },
+  "mcp-upstream-url-with-userinfo.json": {
+    "pointer": "/spec/upstream_url",
+    "rule": "pattern"
+  },
+  "missing-id.json": {
+    "pointer": "",
+    "rule": "required"
+  },
+  "missing-tenant-id.json": {
+    "pointer": "",
+    "rule": "required"
+  },
+  "missing-version.json": {
+    "pointer": "",
+    "rule": "required"
+  },
+  "negative-counter.json": {
+    "pointer": "/spec/default_task_budget/tokens",
+    "rule": "minimum"
+  },
+  "negative-version.json": {
+    "pointer": "/version",
+    "rule": "minimum"
+  },
+  "nhi-enforced.json": {
+    "pointer": "/coverage",
+    "rule": "enum"
+  },
+  "nhi-unknown-kind.json": {
+    "pointer": "/spec/kind",
+    "rule": "enum"
+  },
+  "owner-not-an-idp-subject.json": {
+    "pointer": "/owner",
+    "rule": "pattern"
+  },
+  "plugin-approved-host-with-port.json": {
+    "pointer": "/spec/capabilities_approved/network_hosts/0",
+    "rule": "pattern"
+  },
+  "plugin-approved-scope-without-self.json": {
+    "pointer": "/spec/capabilities_approved/api_scopes/0",
+    "rule": "pattern"
+  },
+  "plugin-library-ref-not-https.json": {
+    "pointer": "/spec/library_ref",
+    "rule": "pattern"
+  },
+  "risk-tier-above-3.json": {
+    "pointer": "/risk_tier",
+    "rule": "maximum"
+  },
+  "risk-tier-below-1.json": {
+    "pointer": "/risk_tier",
+    "rule": "minimum"
+  },
+  "spiffe-id-with-whitespace.json": {
+    "pointer": "/spec/spiffe_id",
+    "rule": "pattern"
+  },
+  "time-with-month-13.json": {
+    "pointer": "/created_at",
+    "rule": "pattern"
+  },
+  "time-without-milliseconds.json": {
+    "pointer": "/created_at",
+    "rule": "pattern"
+  },
+  "tool-tier-above-3.json": {
+    "pointer": "/spec/tier",
+    "rule": "maximum"
+  },
+  "unknown-entity-type.json": {
+    "pointer": "/type",
+    "rule": "enum"
+  },
+  "unknown-envelope-field.json": {
+    "pointer": "/notes",
+    "rule": "additionalProperties"
+  },
+  "unknown-lifecycle.json": {
+    "pointer": "/lifecycle",
+    "rule": "enum"
+  },
+  "unknown-spec-field.json": {
+    "pointer": "/spec/api_key_env",
+    "rule": "additionalProperties"
+  },
+  "vendor-hosted-agent-enforced.json": {
+    "pointer": "/coverage",
+    "rule": "enum"
+  }
+}

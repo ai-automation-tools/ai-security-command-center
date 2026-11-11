@@ -1,0 +1,400 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-automation-tools.dev/schemas/ascc/v1alpha1/edge.json",
+  "title": "ASCC relationship edge",
+  "description": "v1alpha1. One row of the relationship graph (data contracts section 2.4): tenant_id, from_id, relation, to_id and attrs. Where the relation fixes a type that has an id prefix, from_id and to_id must carry it; attrs is empty except for the two relations that define some.",
+  "type": "object",
+  "required": [
+    "tenant_id",
+    "from_id",
+    "relation",
+    "to_id"
+  ],
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "from_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "relation": {
+      "type": "string",
+      "enum": [
+        "owns",
+        "may_invoke",
+        "uses_model",
+        "connects_to",
+        "exposes",
+        "may_delegate_to",
+        "uses_credential",
+        "reaches",
+        "instance_of",
+        "enforced_by",
+        "uses_nhi",
+        "observed_by",
+        "provided_by",
+        "member_of_workflow"
+      ]
+    },
+    "to_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "attrs": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "relation"
+        ],
+        "properties": {
+          "relation": {
+            "const": "owns"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "attrs": {
+            "maxProperties": 0
+          },
+          "from_id": {
+            "pattern": "^usr:[^:]+:.+$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "relation"
+        ],
+        "properties": {
+          "relation": {
+            "const": "may_invoke"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "attrs": {
+            "maxProperties": 0
+          },
+          "to_id": {
+            "pattern": "^agt_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "relation"
+        ],
+        "properties": {
+          "relation": {
+            "const": "uses_model"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "attrs": {
+            "maxProperties": 0
+          },
+          "from_id": {
+            "pattern": "^agt_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "relation"
+        ],
+        "properties": {
+          "relation": {
+            "const": "connects_to"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "attrs": {
+            "maxProperties": 0
+          },
+          "from_id": {
+            "pattern": "^agt_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "relation"
+        ],
+        "properties": {
+          "relation": {
+            "const": "exposes"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "attrs": {
+            "maxProperties": 0
+          },
+          "from_id": {
+            "pattern": "^mcs_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "to_id": {
+            "pattern": "^tol_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "relation"
+        ],
+        "properties": {
+          "relation": {
+            "const": "may_delegate_to"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "attrs": {
+            "maxProperties": 0
+          },
+          "from_id": {
+            "pattern": "^agt_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "to_id": {
+            "pattern": "^agt_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "relation"
+        ],
+        "properties": {
+          "relation": {
+            "const": "uses_credential"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "attrs": {
+            "maxProperties": 0
+          },
+          "from_id": {
+            "pattern": "^(mcs|tol)_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "to_id": {
+            "pattern": "^crd_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "relation"
+        ],
+        "properties": {
+          "relation": {
+            "const": "reaches"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "attrs": {
+            "maxProperties": 0
+          },
+          "from_id": {
+            "pattern": "^crd_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "relation"
+        ],
+        "properties": {
+          "relation": {
+            "const": "instance_of"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "attrs": {
+            "maxProperties": 0
+          },
+          "from_id": {
+            "pattern": "^ain_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "to_id": {
+            "pattern": "^agt_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "relation"
+        ],
+        "properties": {
+          "relation": {
+            "const": "enforced_by"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "attrs": {
+            "maxProperties": 0
+          },
+          "from_id": {
+            "pattern": "^(ain|mcs)_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "to_id": {
+            "pattern": "^pep_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "relation"
+        ],
+        "properties": {
+          "relation": {
+            "const": "uses_nhi"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "attrs": {
+            "properties": {
+              "derived_from": {
+                "type": "string",
+                "enum": [
+                  "credential_ref",
+                  "broker",
+                  "gateway_auth",
+                  "config",
+                  "connector",
+                  "telemetry"
+                ]
+              }
+            },
+            "additionalProperties": false
+          },
+          "from_id": {
+            "pattern": "^(agt|wfl|mcs)_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "to_id": {
+            "pattern": "^nhi_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "relation"
+        ],
+        "properties": {
+          "relation": {
+            "const": "observed_by"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "attrs": {
+            "properties": {
+              "external_ref": {
+                "type": "string"
+              },
+              "observed_at": {
+                "type": "string",
+                "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+              }
+            },
+            "additionalProperties": false
+          },
+          "to_id": {
+            "pattern": "^con_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "relation"
+        ],
+        "properties": {
+          "relation": {
+            "const": "provided_by"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "attrs": {
+            "maxProperties": 0
+          },
+          "to_id": {
+            "pattern": "^plg_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "relation"
+        ],
+        "properties": {
+          "relation": {
+            "const": "member_of_workflow"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "attrs": {
+            "maxProperties": 0
+          },
+          "to_id": {
+            "pattern": "^wfl_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "tenant_id": "tnt_lab",
+  "from_id": "usr:kc01:5f1c0000",
+  "relation": "owns",
+  "to_id": "agt_01JC8Y7Q5W3M2N4P6R8T000001",
+  "attrs": {}
+}

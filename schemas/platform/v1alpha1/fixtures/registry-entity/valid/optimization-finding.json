@@ -1,0 +1,57 @@
+{
+  "id": "opt_01JC8Y7Q5W3M2N4P6R8T000001",
+  "tenant_id": "tnt_lab",
+  "type": "optimization_finding",
+  "name": "redundant-issue-workflows",
+  "lifecycle": "approved",
+  "owner": "usr:kc01:5f1c0000",
+  "backup_owner": "usr:kc01:9a2e0000",
+  "version": 1,
+  "created_at": "2026-10-30T09:00:00.000Z",
+  "updated_at": "2026-11-06T16:40:03.551Z",
+  "updated_by": "usr:kc01:5f1c0000",
+  "spec": {
+    "class": "redundant_workflows",
+    "workflows": [
+      "wfl_01JC8Y7Q5W3M2N4P6R8T000001",
+      "wfl_01JC8Y7Q5W3M2N4P6R8T000002",
+      "wfl_01JC8Y7Q5W3M2N4P6R8T000003"
+    ],
+    "evidence": {
+      "shared_tools": [
+        "github:issues.list",
+        "github:issues.addLabels"
+      ],
+      "shared_sources": [
+        "github:repo:example-org/*:issues"
+      ],
+      "shared_destinations": [
+        "api.example.com",
+        "chat:#eng-triage"
+      ],
+      "schedule_overlap": "all run within 15 min of issue creation",
+      "shared_nhis": [
+        "nhi_01JC8Y7Q5W3M2N4P6R8T000001"
+      ],
+      "overlap_score": 0.74,
+      "purpose_similarity": null
+    },
+    "estimate": {
+      "cost_usd_month": 48.0,
+      "nhis_removable": 1,
+      "permissions_removable": 3,
+      "destinations_removable": 0,
+      "method": "sum of rollups of workflows other than the one with the highest success rate"
+    },
+    "confidence": "medium",
+    "status": "proposed",
+    "owners": [
+      "usr:kc01:5f1c0000",
+      "usr:kc01:automation0000"
+    ],
+    "decision": null,
+    "verification": null,
+    "first_seen": "2026-11-09T04:00:00.000Z",
+    "run_id": "wfirun_01JC8Y7Q5W3M2N4P6R8T000001"
+  }
+}

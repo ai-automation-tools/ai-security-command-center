@@ -146,6 +146,11 @@ ownership rule is adopted in §8 [DS].
 
 ### 2.3 Governance entities
 
+> **Amended 2026-11-10 (TKT-005).** The examples in this section and the optimization finding in §2.5 are
+> printed flat, for reading. On the wire each one is the §2.1 envelope with these fields under `spec`, like
+> every other entity, with `type` set to `grant`, `finding`, `exemption`, `containment` or
+> `optimization_finding`. That is what [the schemas](../../../schemas/platform/README.md) check.
+
 ```jsonc
 // grant: who may do what, possibly time-bound
 {
@@ -432,6 +437,14 @@ sbom: sbom/github-connector-1.2.0.spdx.json
 ```
 
 ## 3. Identity and delegation token
+
+> **Amended 2026-11-10 (TKT-005).** The `v1alpha1` token schema keeps the claim names below. The IETF
+> transaction-tokens draft is not an RFC, so its names (`txn`, `req_wl`, `tctx`, `rctx`) are not adopted; the
+> mapping is recorded beside [the schemas](../../../schemas/platform/README.md) for a later version. `may_act`
+> is named here but has no shape yet, so the schema refuses a token that carries it until one is specified.
+> Both tokens take an optional `ascc.v`, the version §8 refers to. `cnf` holds exactly one of `jkt` (DPoP) or
+> `x5t#S256` (a client certificate), per the
+> [proof-of-possession report](../../reports/2026-proof-of-possession.md).
 
 ASCC transaction token (JWT, EdDSA, `typ: "txn+jwt"`). Claim names follow RFC 8693 for `act` and `may_act`;
 other claims are ASCC-namespaced until a standard (e.g. the IETF transaction-tokens draft **[V]**) is adopted.

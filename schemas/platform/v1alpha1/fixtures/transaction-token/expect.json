@@ -1,0 +1,78 @@
+{
+  "act-without-agent.json": {
+    "pointer": "/act",
+    "rule": "required"
+  },
+  "cnf-with-both-bindings.json": {
+    "pointer": "/cnf",
+    "rule": "not"
+  },
+  "cnf-with-no-binding.json": {
+    "pointer": "/cnf",
+    "rule": "minProperties"
+  },
+  "depth-over-32.json": {
+    "pointer": "/ascc/depth",
+    "rule": "maximum"
+  },
+  "exp-beyond-range.json": {
+    "pointer": "/exp",
+    "rule": "maximum"
+  },
+  "ietf-txn-claim-not-adopted.json": {
+    "pointer": "/txn",
+    "rule": "additionalProperties"
+  },
+  "jkt-not-a-sha256-thumbprint.json": {
+    "pointer": "/cnf/jkt",
+    "rule": "pattern"
+  },
+  "missing-act.json": {
+    "pointer": "",
+    "rule": "required"
+  },
+  "missing-exp.json": {
+    "pointer": "",
+    "rule": "required"
+  },
+  "negative-depth.json": {
+    "pointer": "/ascc/depth",
+    "rule": "minimum"
+  },
+  "negative-epoch-min.json": {
+    "pointer": "/ascc/epoch_min",
+    "rule": "minimum"
+  },
+  "negative-iat.json": {
+    "pointer": "/iat",
+    "rule": "minimum"
+  },
+  "negative-version.json": {
+    "pointer": "/ascc/v",
+    "rule": "minimum"
+  },
+  "unknown-authority.json": {
+    "pointer": "/ascc/authority",
+    "rule": "enum"
+  },
+  "unknown-claim.json": {
+    "pointer": "/roles",
+    "rule": "additionalProperties"
+  },
+  "unknown-claim-in-ascc.json": {
+    "pointer": "/ascc/tier",
+    "rule": "additionalProperties"
+  },
+  "unknown-claim-in-cnf.json": {
+    "pointer": "/cnf/kid",
+    "rule": "additionalProperties"
+  },
+  "unknown-claim-in-nested-act.json": {
+    "pointer": "/act/act/role",
+    "rule": "additionalProperties"
+  },
+  "version-not-an-integer.json": {
+    "pointer": "/ascc/v",
+    "rule": "type"
+  }
+}

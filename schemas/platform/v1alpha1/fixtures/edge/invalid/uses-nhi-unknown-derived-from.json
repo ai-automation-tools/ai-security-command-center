@@ -1,0 +1,9 @@
+{
+  "tenant_id": "tnt_lab",
+  "from_id": "agt_01JC8Y7Q5W3M2N4P6R8T000001",
+  "relation": "uses_nhi",
+  "to_id": "nhi_01JC8Y7Q5W3M2N4P6R8T000001",
+  "attrs": {
+    "derived_from": "guess"
+  }
+}

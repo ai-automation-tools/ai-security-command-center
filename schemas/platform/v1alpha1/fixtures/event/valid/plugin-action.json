@@ -1,0 +1,48 @@
+{
+  "schema": "ascc.event/v1alpha1",
+  "event_id": "evt_01JC8Y7Q5W3M2N4P6R8T000002",
+  "tenant_id": "tnt_lab",
+  "time": "2026-11-09T03:00:12.000Z",
+  "type": "plugin.action",
+  "pep": {
+    "id": "pep_01JC8Y7Q5W3M2N4P6R8T000003",
+    "kind": "plugin_host",
+    "version": "0.1.0",
+    "bundle_epoch": 1841
+  },
+  "plugin": {
+    "plugin_id": "plg_01JC8Y7Q5W3M2N4P6R8T000001",
+    "connector_id": "con_01JC8Y7Q5W3M2N4P6R8T000001",
+    "contract_version": "v1alpha1"
+  },
+  "action": {
+    "name": "plugin.platform_call",
+    "tier": 1
+  },
+  "decision": {
+    "result": "allow",
+    "policy_version": "pol-2026-11-07.3",
+    "policy_ids": [
+      "permit-connector-read"
+    ],
+    "reasons": [
+      "scope nhi:write@self covers the route"
+    ],
+    "obligations": [],
+    "latency_ms": 0.8,
+    "degraded": false
+  },
+  "outcome": {
+    "status": "success",
+    "duration_ms": 120,
+    "error_code": null,
+    "result_bytes": 512
+  },
+  "coverage_class": "observed",
+  "incident_id": null,
+  "audit": {
+    "seq": 1029385,
+    "prev_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "hash": "sha256:0101010101010101010101010101010101010101010101010101010101010101"
+  }
+}

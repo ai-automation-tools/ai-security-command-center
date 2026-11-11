@@ -1,0 +1,74 @@
+{
+  "connector-id-not-a-connector.json": {
+    "pointer": "/ascc/connector_id",
+    "rule": "pattern"
+  },
+  "contract-version-not-a-version.json": {
+    "pointer": "/ascc/contract_version",
+    "rule": "pattern"
+  },
+  "credential-kind-not-a-slug.json": {
+    "pointer": "/ascc/credential_kinds/0",
+    "rule": "pattern"
+  },
+  "exp-beyond-range.json": {
+    "pointer": "/exp",
+    "rule": "maximum"
+  },
+  "missing-exp.json": {
+    "pointer": "",
+    "rule": "required"
+  },
+  "missing-scopes.json": {
+    "pointer": "/ascc",
+    "rule": "required"
+  },
+  "negative-epoch-min.json": {
+    "pointer": "/ascc/epoch_min",
+    "rule": "minimum"
+  },
+  "negative-iat.json": {
+    "pointer": "/iat",
+    "rule": "minimum"
+  },
+  "negative-version.json": {
+    "pointer": "/ascc/v",
+    "rule": "minimum"
+  },
+  "network-host-wildcard.json": {
+    "pointer": "/ascc/network_hosts/0",
+    "rule": "pattern"
+  },
+  "network-host-with-port.json": {
+    "pointer": "/ascc/network_hosts/0",
+    "rule": "pattern"
+  },
+  "scope-naming-another-plugin.json": {
+    "pointer": "/ascc/scopes/0",
+    "rule": "pattern"
+  },
+  "scope-wildcard.json": {
+    "pointer": "/ascc/scopes/0",
+    "rule": "pattern"
+  },
+  "scope-without-self.json": {
+    "pointer": "/ascc/scopes/0",
+    "rule": "pattern"
+  },
+  "scopes-repeated.json": {
+    "pointer": "/ascc/scopes",
+    "rule": "uniqueItems"
+  },
+  "sub-not-a-plugin-id.json": {
+    "pointer": "/sub",
+    "rule": "pattern"
+  },
+  "unknown-claim.json": {
+    "pointer": "/act",
+    "rule": "additionalProperties"
+  },
+  "unknown-claim-in-ascc.json": {
+    "pointer": "/ascc/admin",
+    "rule": "additionalProperties"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "decision": "allow",
+  "policy_version": "pol-2026-11-07.3",
+  "determining_policies": [
+    "permit-deploy-staging"
+  ],
+  "reasons": [
+    "delegated scope deploy:staging covers namespace staging"
+  ],
+  "obligations": [
+    "redact"
+  ],
+  "degraded": false
+}

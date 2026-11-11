@@ -1,0 +1,33 @@
+{
+  "iss": "https://ascc.lab.internal/sts",
+  "aud": "ascc-pep",
+  "sub": "usr:kc01:5f1c0000",
+  "tenant": "tnt_lab",
+  "iat": -1,
+  "exp": 1762524900,
+  "jti": "tok_01JC8Y7Q5W3M2N4P6R8T000001",
+  "act": {
+    "sub": "ain_01JC8Y7Q5W3M2N4P6R8T000002",
+    "agent": "agt_01JC8Y7Q5W3M2N4P6R8T000002",
+    "act": {
+      "sub": "ain_01JC8Y7Q5W3M2N4P6R8T000003",
+      "agent": "agt_01JC8Y7Q5W3M2N4P6R8T000003"
+    }
+  },
+  "ascc": {
+    "task_id": "tsk_01JC8Y7Q5W3M2N4P6R8T000001",
+    "session_id": "ses_01JC8Y7Q5W3M2N4P6R8T000001",
+    "purpose": "deploy staging fix for issue #42",
+    "scope": [
+      "deploy:staging",
+      "repo:read"
+    ],
+    "depth": 2,
+    "budget_ref": "bdg_01JC8Y7Q5W3M2N4P6R8T000001",
+    "authority": "delegated",
+    "epoch_min": 1841
+  },
+  "cnf": {
+    "jkt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+  }
+}

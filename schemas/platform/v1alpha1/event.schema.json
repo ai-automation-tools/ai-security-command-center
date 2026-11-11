@@ -1,0 +1,375 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-automation-tools.dev/schemas/ascc/v1alpha1/event.json",
+  "title": "ASCC event envelope",
+  "description": "v1alpha1. The one envelope for decisions, lifecycle changes, containment, scans, connector syncs and plugin actions (data contracts section 4). Consumers must ignore unknown fields, so no object here is closed. The event is meant to carry ids, hashes and metadata, not content: args_hash is an HMAC and credential_use names a reference. args_preview is free-form, and the schema can't check what an emitter puts in it.",
+  "type": "object",
+  "required": [
+    "schema",
+    "event_id",
+    "tenant_id",
+    "time",
+    "type"
+  ],
+  "properties": {
+    "schema": {
+      "const": "ascc.event/v1alpha1"
+    },
+    "event_id": {
+      "type": "string",
+      "pattern": "^evt_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "tenant_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "time": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "llm.request",
+        "mcp.list_tools",
+        "mcp.tool_call",
+        "runtime.tool_use",
+        "egress.connect",
+        "credential.inject",
+        "token.exchange",
+        "asset.lifecycle",
+        "grant.change",
+        "policy.publish",
+        "scan.completed",
+        "finding.status",
+        "containment.requested",
+        "containment.ack",
+        "pep.heartbeat",
+        "break_glass.enabled",
+        "a2a.observed",
+        "connector.sync",
+        "nhi.lifecycle",
+        "nhi.finding",
+        "plugin.install",
+        "plugin.health",
+        "plugin.action",
+        "wfi.finding",
+        "wfi.proposal"
+      ]
+    },
+    "pep": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^pep_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "bundle_epoch": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "plugin": {
+      "description": "Null for PEP events; set on events the host emits for a plugin.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "plugin_id"
+      ],
+      "properties": {
+        "plugin_id": {
+          "type": "string",
+          "pattern": "^plg_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "connector_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^con_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "contract_version": {
+          "type": "string"
+        }
+      }
+    },
+    "trace": {
+      "type": "object",
+      "properties": {
+        "trace_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "span_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16}$"
+        },
+        "parent_span_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{16}$"
+        }
+      }
+    },
+    "session_id": {
+      "type": "string",
+      "pattern": "^ses_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "task_id": {
+      "type": "string",
+      "pattern": "^tsk_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "identity": {
+      "type": "object",
+      "properties": {
+        "subject": {
+          "type": "string"
+        },
+        "actor_chain": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^agt_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          }
+        },
+        "agent_instance": {
+          "type": "string",
+          "pattern": "^ain_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "depth": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 32
+        },
+        "authority": {
+          "type": "string",
+          "enum": [
+            "delegated",
+            "service_grant"
+          ]
+        },
+        "token_jti": {
+          "type": "string"
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "tier": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "properties": {
+        "asset_id": {
+          "type": "string",
+          "pattern": "^(agt|ain|mcs|tol|skl|crd|grt|fnd|exm|apr|cnt|pep|evt|tsk|ses|nhi|con|plg|wfl|opt)_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "server_id": {
+          "type": "string",
+          "pattern": "^mcs_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "tool": {
+          "type": "string"
+        },
+        "args_hash": {
+          "type": "string",
+          "pattern": "^hmac-sha256:[0-9a-f]{64}$"
+        },
+        "args_preview": {
+          "type": "object"
+        }
+      }
+    },
+    "model": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "provider": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "stream": {
+          "type": "boolean"
+        }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "string",
+          "enum": [
+            "allow",
+            "deny"
+          ]
+        },
+        "policy_version": {
+          "type": "string"
+        },
+        "policy_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "obligations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "latency_ms": {
+          "type": "number"
+        },
+        "degraded": {
+          "type": "boolean"
+        }
+      }
+    },
+    "credential_use": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "credential_ref": {
+            "type": "string",
+            "pattern": "^crd_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "lease_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "usage": {
+      "type": "object",
+      "properties": {
+        "input_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "output_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "cost_usd": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "duration_ms": {
+          "type": "number"
+        },
+        "error_code": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "result_bytes": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "classes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "untrusted_ingested": {
+          "type": "boolean"
+        },
+        "content_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "redaction": {
+          "type": "string"
+        }
+      }
+    },
+    "coverage_class": {
+      "type": "string",
+      "enum": [
+        "enforced",
+        "observed",
+        "unmonitored"
+      ]
+    },
+    "incident_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "audit": {
+      "type": "object",
+      "properties": {
+        "seq": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "prev_hash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "hash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    }
+  }
+}

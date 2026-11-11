@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-automation-tools.dev/schemas/ascc/v1alpha1/plugin-manifest.json",
+  "title": "ASCC plugin manifest",
+  "description": "v1alpha1. plugin.yaml, the manifest shipped inside a plugin artifact, as its JSON data model (data contracts section 2.5, requirement FR-PLG-03). It is checked at install, and an unknown field is refused at every level: this is a security-relevant surface with no forward-compatible leniency. Capabilities are deny by default, so a list left out asks for nothing.",
+  "type": "object",
+  "required": [
+    "id",
+    "version",
+    "type",
+    "publisher",
+    "licence",
+    "docs_url",
+    "compat",
+    "capabilities",
+    "signature",
+    "sbom"
+  ],
+  "properties": {
+    "manifest_version": {
+      "description": "This schema describes manifest version 1.",
+      "type": "integer",
+      "const": 1,
+      "default": 1
+    },
+    "id": {
+      "description": "Lowercase letters, digits and hyphens.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "connector",
+        "scanner",
+        "detector",
+        "notification",
+        "console_panel",
+        "policy_pack",
+        "runtime_adapter",
+        "report_template"
+      ]
+    },
+    "publisher": {
+      "type": "object",
+      "required": [
+        "name",
+        "security_contact"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^https://[^/?#@\\s]+([/?#]\\S*)?$"
+        },
+        "security_contact": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "licence": {
+      "type": "string",
+      "minLength": 1
+    },
+    "docs_url": {
+      "type": "string",
+      "pattern": "^https://[^/?#@\\s]+([/?#]\\S*)?$"
+    },
+    "compat": {
+      "type": "object",
+      "required": [
+        "contract"
+      ],
+      "properties": {
+        "contract": {
+          "description": "Range of the ascc.plugin contract the plugin runs on.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "capabilities": {
+      "type": "object",
+      "properties": {
+        "api_scopes": {
+          "description": "Each scope ends in @self: the plugin's own namespace.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z_]+:[a-z_]+@self$"
+          },
+          "uniqueItems": true,
+          "maxItems": 64
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$"
+          },
+          "uniqueItems": true,
+          "maxItems": 64
+        },
+        "network_hosts": {
+          "description": "Lowercase DNS names: no scheme, port, userinfo, path, wildcard or IP literal.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 253,
+            "pattern": "^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]([a-z0-9-]{0,61}[a-z0-9])?$"
+          },
+          "uniqueItems": true,
+          "maxItems": 64
+        },
+        "credential_kinds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$"
+          },
+          "uniqueItems": true,
+          "maxItems": 64
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "disable",
+              "enable",
+              "rotate",
+              "revoke",
+              "set_owner_tag",
+              "delete"
+            ]
+          },
+          "uniqueItems": true,
+          "maxItems": 64
+        }
+      },
+      "additionalProperties": false
+    },
+    "platform": {
+      "type": "string"
+    },
+    "signature": {
+      "type": "object",
+      "required": [
+        "method",
+        "identity"
+      ],
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": [
+            "sigstore-keyless"
+          ]
+        },
+        "identity": {
+          "type": "string",
+          "pattern": "^https://[^/?#@\\s]+([/?#]\\S*)?$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sbom": {
+      "description": "Path of the SBOM inside the artifact: relative, forward slashes, and no segment starts with a dot.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_][A-Za-z0-9._-]*(/[A-Za-z0-9_][A-Za-z0-9._-]*)*$"
+    }
+  },
+  "additionalProperties": false
+}

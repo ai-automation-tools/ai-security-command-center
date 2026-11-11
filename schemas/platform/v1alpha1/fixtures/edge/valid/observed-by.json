@@ -1,0 +1,10 @@
+{
+  "tenant_id": "tnt_lab",
+  "from_id": "nhi_01JC8Y7Q5W3M2N4P6R8T000001",
+  "relation": "observed_by",
+  "to_id": "con_01JC8Y7Q5W3M2N4P6R8T000001",
+  "attrs": {
+    "external_ref": "installations/98765",
+    "observed_at": "2026-11-09T03:00:12.000Z"
+  }
+}

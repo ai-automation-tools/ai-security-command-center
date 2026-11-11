@@ -1,0 +1,142 @@
+{
+  "api-scope-naming-another-plugin.json": {
+    "pointer": "/capabilities/api_scopes/0",
+    "rule": "pattern"
+  },
+  "api-scope-wildcard.json": {
+    "pointer": "/capabilities/api_scopes/0",
+    "rule": "pattern"
+  },
+  "api-scope-without-self.json": {
+    "pointer": "/capabilities/api_scopes/0",
+    "rule": "pattern"
+  },
+  "credential-kind-not-a-slug.json": {
+    "pointer": "/capabilities/credential_kinds/0",
+    "rule": "pattern"
+  },
+  "docs-url-not-https.json": {
+    "pointer": "/docs_url",
+    "rule": "pattern"
+  },
+  "event-name-not-a-slug.json": {
+    "pointer": "/capabilities/events/0",
+    "rule": "pattern"
+  },
+  "id-not-a-slug.json": {
+    "pointer": "/id",
+    "rule": "pattern"
+  },
+  "missing-compat.json": {
+    "pointer": "",
+    "rule": "required"
+  },
+  "missing-security-contact.json": {
+    "pointer": "/publisher",
+    "rule": "required"
+  },
+  "missing-signature.json": {
+    "pointer": "",
+    "rule": "required"
+  },
+  "network-host-empty.json": {
+    "pointer": "/capabilities/network_hosts/0",
+    "rule": "pattern"
+  },
+  "network-host-is-a-url.json": {
+    "pointer": "/capabilities/network_hosts/0",
+    "rule": "pattern"
+  },
+  "network-host-is-an-ip-literal.json": {
+    "pointer": "/capabilities/network_hosts/0",
+    "rule": "pattern"
+  },
+  "network-host-over-253-characters.json": {
+    "pointer": "/capabilities/network_hosts/0",
+    "rule": "maxLength"
+  },
+  "network-host-uppercase.json": {
+    "pointer": "/capabilities/network_hosts/0",
+    "rule": "pattern"
+  },
+  "network-host-wildcard.json": {
+    "pointer": "/capabilities/network_hosts/0",
+    "rule": "pattern"
+  },
+  "network-host-with-port.json": {
+    "pointer": "/capabilities/network_hosts/0",
+    "rule": "pattern"
+  },
+  "network-host-with-trailing-dot.json": {
+    "pointer": "/capabilities/network_hosts/0",
+    "rule": "pattern"
+  },
+  "network-host-with-userinfo.json": {
+    "pointer": "/capabilities/network_hosts/0",
+    "rule": "pattern"
+  },
+  "network-host-without-a-dot.json": {
+    "pointer": "/capabilities/network_hosts/0",
+    "rule": "pattern"
+  },
+  "network-hosts-over-64.json": {
+    "pointer": "/capabilities/network_hosts",
+    "rule": "maxItems"
+  },
+  "network-hosts-repeated.json": {
+    "pointer": "/capabilities/network_hosts",
+    "rule": "uniqueItems"
+  },
+  "publisher-url-with-userinfo.json": {
+    "pointer": "/publisher/url",
+    "rule": "pattern"
+  },
+  "sbom-absolute-path.json": {
+    "pointer": "/sbom",
+    "rule": "pattern"
+  },
+  "sbom-with-backslash.json": {
+    "pointer": "/sbom",
+    "rule": "pattern"
+  },
+  "sbom-with-dot-dot.json": {
+    "pointer": "/sbom",
+    "rule": "pattern"
+  },
+  "sbom-with-drive-letter.json": {
+    "pointer": "/sbom",
+    "rule": "pattern"
+  },
+  "signature-identity-not-https.json": {
+    "pointer": "/signature/identity",
+    "rule": "pattern"
+  },
+  "unknown-action.json": {
+    "pointer": "/capabilities/actions/0",
+    "rule": "enum"
+  },
+  "unknown-capability.json": {
+    "pointer": "/capabilities/filesystem",
+    "rule": "additionalProperties"
+  },
+  "unknown-field.json": {
+    "pointer": "/post_install",
+    "rule": "additionalProperties"
+  },
+  "unknown-plugin-type.json": {
+    "pointer": "/type",
+    "rule": "enum"
+  },
+  "unknown-publisher-field.json": {
+    "pointer": "/publisher/verified",
+    "rule": "additionalProperties"
+  },
+  "unknown-signature-method.json": {
+    "pointer": "/signature/method",
+    "rule": "enum"
+  },
+  "unsupported-manifest-version.json": {
+    "pointer": "/manifest_version",
+    "rule": "const"
+  }
+}

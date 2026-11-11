@@ -48,7 +48,14 @@ decision goes in as an ADR amendment there, never as a quiet code change.
   `docs/reports/2026-cedar-go-check.md`. It is why `go.mod` says 1.26. Load policies with `NewPolicyListFromBytes` and key each by its `@id` (reject missing or
   duplicate ids). Its schema validator is experimental (`x/exp/schema/validate`): it is called only from
   `newValidator` and `checkPolicy` in `src/internal/pdp/pdp.go`. `santhosh-tekuri/jsonschema/v6` is a test-only
-  dependency for the inventory check.
+  dependency for the inventory check everywhere except `src/cmd/ascc-schema`, the one place that imports it
+  outside a test.
+- `schemas/platform/v1alpha1/` holds the platform's JSON Schemas (registry entities, edges, the event envelope,
+  both tokens' claims, the plugin manifest, the PDP request and response), written from
+  `docs/product/plan/f-data-contracts.md`. `src/cmd/ascc-schema` validates a document against one; it is a
+  binary of its own, loads no `$ref` from outside the schema file, refuses duplicate keys and never prints a
+  value from the document. A contract change is made in F, then the schema, then its fixtures: every rule has
+  an invalid fixture under `fixtures/<schema>/invalid/` named for it, and `go test ./...` runs them all.
 - `src/internal/pdp` is the decision point: `registry.go` parses `ascc.registry.json` (agents, and `tools` mapping
   each tool id to its tool groups), `pdp.go` loads policies and decides, `inventory.go` writes the suite document.
   `nhi.go` holds non-human identities: `checkIdentity` is the one check for a registry entry and an imported
