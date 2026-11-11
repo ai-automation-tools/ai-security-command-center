@@ -15,7 +15,7 @@ a decision, the change is marked **Amended 2026-11-10** inside the ADR; earlier 
 |:--|:--|:--|:--|
 | [01](#adr-01) | Hybrid enforcement with one PDP | **Spike** | Half proven: the public MVP is one PDP (`src/internal/pdp`) with a hook as its first enforcement point, checked against a live Claude Code session. The gateway and egress halves aren't built. Waits for sign-off |
 | [02](#adr-02) | Go for backend services and PEPs | **Spike** | The MVP is Go throughout and builds for Windows, Linux and WebAssembly. Amended: an adopted gateway would not be ASCC code, so this turns on K5. Waits for K5 and sign-off |
-| [03](#adr-03) | Cedar as the authorization language | **Spike** | [cedar-go check](../../reports/2026-cedar-go-check.md): 9 of 9 requests match the Rust reference. Waits for the timing at 500 policies and 5,000 entities (Slice 5) and for K4 |
+| [03](#adr-03) | Cedar as the authorization language | **Spike** | [cedar-go check](../../reports/2026-cedar-go-check.md): 9 of 9 requests match the Rust reference. Timed at 500 policies and 5,000 entities: 1.0 ms p99 ([service guide](../../guides/pdp-service.md#how-fast)). Waits for K4 |
 | [04](#adr-04) | Build the gateway in Go (unless the spike favours an existing project) | **Spike** | [Gateway report](../../reports/2026-gateway-build-vs-adopt.md): agentgateway meets the adopt rule on a source read. Waits for a run and for K5 |
 | [05](#adr-05) | PostgreSQL as the single MVP store | **Spike** | No evidence yet: nothing is built on it and no check touched it. First used in Slice 5. Waits for sign-off |
 | [06](#adr-06) | Token exchange + ASCC transaction tokens for delegation; SVIDs as server-side instance proof; gateway as OAuth 2.1 resource server | **Spike** | [Proof-of-possession report](../../reports/2026-proof-of-possession.md) settles TKT-003. Waits for the token service (Slice 5), the claim names (TKT-005) and K3 for the unbound-token rule |
@@ -86,7 +86,9 @@ a decision, the change is marked **Amended 2026-11-10** inside the ADR; earlier 
   [cedar-go check](../../reports/2026-cedar-go-check.md): cedar-go v1.9.0 gave the Rust reference's answer on 9 of 9 requests and on schema validation. Two things the full TKT-002
   asked for were cut from that check and are still owed: a comparison with OPA (dropped; the MVP runs on Cedar)
   and the timing at 500 policies and 5,000 entities, which is measured when the PDP becomes a service in
-  Slice 5. The check also found that a `forbid` that errors is skipped, so the PDP denies unknown entities and
+  Slice 5 (measured 2026-11-10 with `ascc-pdp`: 0.04 ms mean and 1.0 ms p99 for a decision in the engine,
+  inside NFR-01's 2 ms, on one quiet machine; the [service guide](../../guides/pdp-service.md#how-fast) has
+  the run). The check also found that a `forbid` that errors is skipped, so the PDP denies unknown entities and
   any evaluation error itself. The analysis tools the **[V]** refers to exist (`cedar-policy-symcc`,
   `cedar-lean-cli`) but are Rust and need an SMT solver, so they run in CI or by hand, not in the Go binary.
 

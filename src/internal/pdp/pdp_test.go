@@ -81,7 +81,7 @@ func TestDecide(t *testing.T) {
 		{"context attribute missing", "dev-agent", ActionToolUse, "claude-code/Bash", map[string]any{"path_in_repo": true}, "deny", []string{}, "doesn't fit the schema"},
 		{"context attribute unknown", "dev-agent", ActionToolUse, "claude-code/Read", map[string]any{"path_in_repo": true, "network": false, "touches_secret_path": false, "touches_ascc_state": false, "sudo": true}, "deny", []string{}, "doesn't fit the schema"},
 		{"context attribute of the wrong type", "dev-agent", ActionToolUse, "claude-code/Bash", map[string]any{"path_in_repo": true, "network": "no", "touches_secret_path": false, "touches_ascc_state": false}, "deny", []string{}, "doesn't fit the schema"},
-		{"context value that isn't a bool or string", "dev-agent", ActionToolUse, "claude-code/Bash", map[string]any{"path_in_repo": 1.0}, "deny", []string{}, "context.path_in_repo must be"},
+		{"context value that isn't a bool or string", "dev-agent", ActionToolUse, "claude-code/Bash", map[string]any{"path_in_repo": 1.0}, "deny", []string{}, "every context attribute must be"},
 		{"no context at all", "dev-agent", ActionToolUse, "claude-code/Read", nil, "deny", []string{}, "doesn't fit the schema"},
 	}
 	for _, tt := range tests {
@@ -98,6 +98,23 @@ const (
 	okRegistry = `{"agents":[{"id":"a","owner":"o","runtime":"claude-code","risk_tier":1,"status":"active"}],"tools":{"claude-code/Read":[]}}`
 	okPolicy   = `@id("p") permit (principal, action, resource);`
 )
+
+// A context can hold anything the caller put there. The reason is shown to the agent and kept in the
+// audit log, so it never repeats a context value.
+func TestReasonNeverRepeatsAContextValue(t *testing.T) {
+	p := samplePDP(t)
+	const marker = "MARKER-not-a-real-secret"
+	for _, ctx := range []map[string]any{
+		{"path_in_repo": true, "network": false, "touches_secret_path": false, "touches_ascc_state": false, "note": marker},
+		{"path_in_repo": marker},
+		{"path_in_repo": true, "network": false, "touches_secret_path": false, "touches_ascc_state": false, "git_push_target": marker, "extra": true},
+	} {
+		d := p.Decide(Request{Principal: "dev-agent", Action: ActionToolUse, Resource: "claude-code/Bash", Context: ctx})
+		if d.Decision != "deny" || strings.Contains(d.Reason, marker) {
+			t.Errorf("%+v", d)
+		}
+	}
+}
 
 func TestRetiredAgentIsDenied(t *testing.T) {
 	reg := strings.Replace(okRegistry, `"active"`, `"retired"`, 1)
@@ -140,7 +157,7 @@ func TestLoadFailsClosed(t *testing.T) {
 		{"agent listed twice", `{"agents":[{"id":"a","runtime":"r","risk_tier":1,"status":"active"},{"id":"a","runtime":"r","risk_tier":1,"status":"active"}]}`, okPolicy, "listed twice"},
 		{"no agents", `{"agents":[]}`, okPolicy, `"agents" is empty`},
 		{"bad group name", agent(`"id":"a","runtime":"r","risk_tier":1,"status":"active","groups":["x y"]`), okPolicy, `group "x y"`},
-		{"no policy", okRegistry, "", "none loaded"},
+		{"no policy", okRegistry, "", "no policy in this file"},
 		{"policy syntax error", okRegistry, `permit (principal`, "policies: p.cedar:"},
 		{"policy with no @id", okRegistry, `permit (principal, action, resource);`, "has no @id"},
 		{"policy @id used twice", okRegistry, okPolicy + okPolicy, `@id "p" is used twice`},

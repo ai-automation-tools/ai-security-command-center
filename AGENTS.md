@@ -84,6 +84,11 @@ decision goes in as an ADR amendment there, never as a quiet code change.
   WebAssembly in a script so the page never fetches it, and writes `fixtures.js` from `examples/`. `buildsite`
   uses `os/exec` to run `go build`; it is not part of the `ascc` binary. `site/` has no inline script and no
   load from another host, fonts included.
+- `src/cmd/ascc-pdp` is the first platform service: `pdp.Decide` behind `POST /pdp/v1/decide`, in the F §6
+  shape. It adds no decision logic. Every answer on any path but `/healthz` is a decision, and a deny unless
+  the engine said allow: a bad request, a repeated or miscased key, a file that won't load, a panic and a log
+  line that can't be written are all denies, each with a test. It reads the files on every request so the
+  kill switch needs no restart. It has no caller authentication and no audit chain yet; its guide says so.
 - `src/spikes/pluginhost` is the TKT-031 prototype of the plugin host, **in a Go module of its own**. It uses
   gRPC and `os/exec`, which the `ascc` binary may never link, so nothing under `src/cmd` or `src/internal`
   imports it and the four verify commands skip it (`gofmt -l .` still covers it). CI runs `go vet ./...` and
