@@ -60,6 +60,7 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 - A suspended agent is denied by the PDP itself, not by a `deny-suspended-agent` sample policy as the cedar-go check sketched, so deleting a rule can't undo the kill switch.
 
 **Docs**
+- Roadmap rechecked against the org's 2026-11 requirements: the intro names the roadmap routine instead of its days, 5d and 5e are marked blocked on the ADR sign-off, the Slice 5 umbrella is open rather than claimed, and four items after the gateway run turn the known loose ends into work (the new demo URL with HTTPS enforced, `small` loose ends, a hardening pass, a browser page test).
 - The roadmap opens with "Where things stand": every release gate ticked, the repo kept private for now, the next item for a run and the known loose ends.
 - The docs index lists the browser demo, the setup guide names all five sample hook payloads, and the reviewer agent and the skills that list the core packages and the WebAssembly build now include `demo` and `ascc-wasm`.
 - README: an install line, a table of every command, flag and exit code, a sample run with output from a fresh build, a coverage section on what the hook sees and doesn't, the Won't list as the spec states it, and a responsible-use section.
