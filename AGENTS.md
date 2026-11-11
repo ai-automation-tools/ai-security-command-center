@@ -48,7 +48,14 @@ decision goes in as an ADR amendment there, never as a quiet code change.
   `docs/reports/2026-cedar-go-check.md`. It is why `go.mod` says 1.26. Load policies with `NewPolicyListFromBytes` and key each by its `@id` (reject missing or
   duplicate ids). Its schema validator is experimental (`x/exp/schema/validate`): it is called only from
   `newValidator` and `checkPolicy` in `src/internal/pdp/pdp.go`. `santhosh-tekuri/jsonschema/v6` is a test-only
-  dependency for the inventory check.
+  dependency for the inventory check everywhere except `src/cmd/ascc-schema`, the one place that imports it
+  outside a test.
+- `schemas/platform/v1alpha1/` holds the platform's JSON Schemas (registry entities, edges, the event envelope,
+  both tokens' claims, the plugin manifest, the PDP request and response), written from
+  `docs/product/plan/f-data-contracts.md`. `src/cmd/ascc-schema` validates a document against one; it is a
+  binary of its own, loads no `$ref` from outside the schema file, refuses duplicate keys and never prints a
+  value from the document. A contract change is made in F, then the schema, then its fixtures: every rule has
+  an invalid fixture under `fixtures/<schema>/invalid/` named for it, and `go test ./...` runs them all.
 - `src/internal/pdp` is the decision point: `registry.go` parses `ascc.registry.json` (agents, and `tools` mapping
   each tool id to its tool groups), `pdp.go` loads policies and decides, `inventory.go` writes the suite document.
   `nhi.go` holds non-human identities: `checkIdentity` is the one check for a registry entry and an imported
@@ -77,6 +84,11 @@ decision goes in as an ADR amendment there, never as a quiet code change.
   WebAssembly in a script so the page never fetches it, and writes `fixtures.js` from `examples/`. `buildsite`
   uses `os/exec` to run `go build`; it is not part of the `ascc` binary. `site/` has no inline script and no
   load from another host, fonts included.
+- `src/cmd/ascc-pdp` is the first platform service: `pdp.Decide` behind `POST /pdp/v1/decide`, in the F §6
+  shape. It adds no decision logic. Every answer on any path but `/healthz` is a decision, and a deny unless
+  the engine said allow: a bad request, a repeated or miscased key, a file that won't load, a panic and a log
+  line that can't be written are all denies, each with a test. It reads the files on every request so the
+  kill switch needs no restart. It has no caller authentication and no audit chain yet; its guide says so.
 - `src/spikes/pluginhost` is the TKT-031 prototype of the plugin host, **in a Go module of its own**. It uses
   gRPC and `os/exec`, which the `ascc` binary may never link, so nothing under `src/cmd` or `src/internal`
   imports it and the four verify commands skip it (`gofmt -l .` still covers it). CI runs `go vet ./...` and
@@ -142,12 +154,28 @@ go build ./...
 - **Never claim coverage it doesn't have.** If the hook can't block a tool, that tool is `observed`, and the
   README's coverage section says so.
 
-## Won't (this version)
+## Won't
 
-Carried from the spec. If a roadmap item seems to need one of these, stop and flag it.
+If a roadmap item seems to need one of these, stop and flag it.
 
-- **A gateway, proxy or broker in the network path.** Those are Next slices, each behind an ADR spike.
-- **Any network access**, accounts, telemetry, a hosted service or a paid tier.
+**The `ascc` binary and the demo, always.** These carried from the public-MVP spec and still hold for them:
+
+- **Any network access.** `ascc` and the demo page never open a connection; the two tests under Zero network
+  guard it. `ascc` is not a gateway, proxy or broker and never becomes one.
+
+**The platform services, from Slice 5 on** (Mike, 2026-11-10: the public MVP is built, so the Next slices may
+use the network). A PDP service, token service, gateway, broker or plugin host is a binary of its own that may
+listen and connect. Each one:
+
+- is built on its ADR in `docs/product/plan/e2-adrs.md`, and on an ADR still marked Spike only for the part its
+  evidence covers;
+- lives outside `src/cmd/ascc` and is never imported by it, by `src/internal/pdp`, `audit`, `claudecode` or
+  `demo`, so those keep building for WebAssembly;
+- listens on loopback or a private Compose network by default, and fails closed like the hook does.
+
+**Everything, always:**
+
+- **Accounts, telemetry, a hosted service or a paid tier.**
 - **Holding or printing a secret.**
 - **Model-based or score-based decisions.**
 - **Runtimes other than Claude Code.**

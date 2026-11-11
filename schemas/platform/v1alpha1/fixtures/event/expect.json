@@ -1,0 +1,54 @@
+{
+  "action-tier-above-3.json": {
+    "pointer": "/action/tier",
+    "rule": "maximum"
+  },
+  "args-hash-not-hmac-sha256.json": {
+    "pointer": "/target/args_hash",
+    "rule": "pattern"
+  },
+  "audit-hash-not-sha256.json": {
+    "pointer": "/audit/hash",
+    "rule": "pattern"
+  },
+  "decision-result-not-allow-or-deny.json": {
+    "pointer": "/decision/result",
+    "rule": "enum"
+  },
+  "missing-event-id.json": {
+    "pointer": "",
+    "rule": "required"
+  },
+  "missing-tenant-id.json": {
+    "pointer": "",
+    "rule": "required"
+  },
+  "negative-audit-seq.json": {
+    "pointer": "/audit/seq",
+    "rule": "minimum"
+  },
+  "negative-depth.json": {
+    "pointer": "/identity/depth",
+    "rule": "minimum"
+  },
+  "plugin-without-plugin-id.json": {
+    "pointer": "/plugin",
+    "rule": "required"
+  },
+  "time-with-hour-24.json": {
+    "pointer": "/time",
+    "rule": "pattern"
+  },
+  "time-without-milliseconds.json": {
+    "pointer": "/time",
+    "rule": "pattern"
+  },
+  "unknown-event-type.json": {
+    "pointer": "/type",
+    "rule": "enum"
+  },
+  "wrong-schema-version.json": {
+    "pointer": "/schema",
+    "rule": "const"
+  }
+}

@@ -33,6 +33,8 @@
 | [**🚪 Gateway: build or adopt**](reports/2026-gateway-build-vs-adopt.md) | Slice 4. agentgateway, Agent Router and ContextForge read at a commit each against ADR-04's criteria. agentgateway meets the adopt rule; a run has to confirm it. |
 | [**🔑 Proof of possession**](reports/2026-proof-of-possession.md) | Slice 4. Which way of binding a token to a key each client can use, and the one path that can't be bound yet. |
 | [**🧩 Plugin contract spike**](reports/2026-plugin-contract-spike.md) | Slice 4. The `v1alpha1` contract and a prototype host: what it proves, what fails closed, and why a laptop plugin isn't confined. |
+| [**⚖️ The PDP as a service**](guides/pdp-service.md) | Slice 5b. `ascc-pdp`: how to run it, what it answers when something is wrong, how fast it is, and what it doesn't cover yet. |
+| [**📐 Platform schemas**](../schemas/platform/README.md) | Slice 5a. JSON Schemas for the platform's contracts, their fixtures, and the `ascc-schema` validator. |
 | [**🧰 resources/**](resources/README.md) | Specs, tools and standards grouped by the part of ASCC they feed. Look here before adding a dependency. |
 
 <p align="right">(<a href="#docs-top">back to top</a>)</p>

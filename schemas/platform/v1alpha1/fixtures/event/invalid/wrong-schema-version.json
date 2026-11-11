@@ -1,0 +1,94 @@
+{
+  "schema": "ascc.event/v2",
+  "event_id": "evt_01JC8Y7Q5W3M2N4P6R8T000001",
+  "tenant_id": "tnt_lab",
+  "time": "2026-11-07T14:02:11.120Z",
+  "type": "mcp.tool_call",
+  "pep": {
+    "id": "pep_01JC8Y7Q5W3M2N4P6R8T000001",
+    "kind": "gateway",
+    "version": "0.3.0",
+    "bundle_epoch": 1841
+  },
+  "plugin": null,
+  "trace": {
+    "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+    "span_id": "00f067aa0ba902b7",
+    "parent_span_id": "00f067aa0ba902b6"
+  },
+  "session_id": "ses_01JC8Y7Q5W3M2N4P6R8T000001",
+  "task_id": "tsk_01JC8Y7Q5W3M2N4P6R8T000001",
+  "identity": {
+    "subject": "usr:kc01:5f1c0000",
+    "actor_chain": [
+      "agt_01JC8Y7Q5W3M2N4P6R8T000003",
+      "agt_01JC8Y7Q5W3M2N4P6R8T000002"
+    ],
+    "agent_instance": "ain_01JC8Y7Q5W3M2N4P6R8T000002",
+    "depth": 2,
+    "authority": "delegated",
+    "token_jti": "tok_01JC8Y7Q5W3M2N4P6R8T000001"
+  },
+  "action": {
+    "name": "mcp.call",
+    "tier": 2
+  },
+  "target": {
+    "asset_id": "tol_01JC8Y7Q5W3M2N4P6R8T000003",
+    "server_id": "mcs_01JC8Y7Q5W3M2N4P6R8T000003",
+    "tool": "k8s_apply",
+    "args_hash": "hmac-sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "args_preview": {
+      "namespace": "staging"
+    }
+  },
+  "model": null,
+  "decision": {
+    "result": "allow",
+    "policy_version": "pol-2026-11-07.3",
+    "policy_ids": [
+      "permit-deploy-staging",
+      "forbid-unapproved-assets"
+    ],
+    "reasons": [
+      "delegated scope deploy:staging covers namespace staging"
+    ],
+    "obligations": [
+      "inject_credential:crd_01JC8Y7Q5W3M2N4P6R8T000003"
+    ],
+    "latency_ms": 1.4,
+    "degraded": false
+  },
+  "credential_use": [
+    {
+      "credential_ref": "crd_01JC8Y7Q5W3M2N4P6R8T000003",
+      "lease_id": "lease-000001"
+    }
+  ],
+  "usage": {
+    "input_tokens": null,
+    "output_tokens": null,
+    "cost_usd": null
+  },
+  "outcome": {
+    "status": "success",
+    "duration_ms": 412,
+    "error_code": null,
+    "result_bytes": 2310
+  },
+  "data": {
+    "classes": [
+      "internal"
+    ],
+    "untrusted_ingested": true,
+    "content_ref": null,
+    "redaction": "metadata_only"
+  },
+  "coverage_class": "enforced",
+  "incident_id": null,
+  "audit": {
+    "seq": 1029384,
+    "prev_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+  }
+}

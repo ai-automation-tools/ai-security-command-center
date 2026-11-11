@@ -1,0 +1,17 @@
+{
+  "tenant_id": "tnt_lab",
+  "principal": {
+    "type": "Agent",
+    "id": "repo-assistant"
+  },
+  "action": "runtime.tool_use",
+  "resource": {
+    "type": "Tool",
+    "id": "claude-code/Bash"
+  },
+  "context": {
+    "network": true,
+    "touches_secret_path": true,
+    "path_in_repo": false
+  }
+}

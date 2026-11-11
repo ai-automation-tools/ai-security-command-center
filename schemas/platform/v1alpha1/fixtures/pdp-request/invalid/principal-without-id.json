@@ -1,0 +1,27 @@
+{
+  "tenant_id": "tnt_lab",
+  "principal": {
+    "type": "Agent"
+  },
+  "action": "mcp.call",
+  "resource": {
+    "type": "Tool",
+    "id": "tol_01JC_create_issue"
+  },
+  "context": {
+    "subject": "usr:kc01:5f1c0000",
+    "depth": 1,
+    "scope": [
+      "repo:write:example-org"
+    ],
+    "args": {
+      "owner": "example-org",
+      "repo": "triage-test"
+    },
+    "untrusted_ingested": true,
+    "approved": false,
+    "now": 1762524131
+  },
+  "token_jti": "tok_01JC8Y7Q5W3M2N4P6R8T000001",
+  "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736"
+}

@@ -114,6 +114,10 @@ func New(registryJSON []byte, policyFiles map[string][]byte) (*PDP, error) {
 		if err != nil {
 			return nil, fmt.Errorf("policies: %s: %s", name, oneLine(err))
 		}
+		// A file emptied by a half-finished save would otherwise drop its forbids in silence.
+		if len(list) == 0 {
+			return nil, fmt.Errorf("policies: %s: no policy in this file; remove the file if that is meant", name)
+		}
 		for _, pol := range list {
 			id := string(pol.Annotations()["id"])
 			if id == "" {
@@ -168,7 +172,7 @@ func (p *PDP) addEntity(typ, id, groupType string, groups []string, attrs types.
 func (p *PDP) Decide(req Request) (d Decision) {
 	defer func() {
 		if r := recover(); r != nil {
-			d = Deny(fmt.Sprintf("internal error while deciding: %v", r))
+			d = Deny("internal error while deciding")
 		}
 	}()
 
@@ -199,7 +203,9 @@ func (p *PDP) Decide(req Request) (d Decision) {
 		Context:   ctx,
 	}
 	if err := p.validator.Request(creq); err != nil {
-		return Deny("request doesn't fit the schema: " + oneLine(err))
+		// The validator's own message prints the whole context, values included. A context can carry
+		// anything a caller put there, and the reason goes to the audit log and back to the agent.
+		return Deny("request doesn't fit the schema: the context is missing an attribute, has one the schema lacks, or has one of the wrong type")
 	}
 
 	decision, diag := cedar.Authorize(p.policies, p.entities, creq)
@@ -253,7 +259,7 @@ func contextRecord(ctx map[string]any) (types.Record, error) {
 		case string:
 			m[types.String(k)] = types.String(x)
 		default:
-			return types.Record{}, fmt.Errorf("context.%s must be true, false or a string", k)
+			return types.Record{}, fmt.Errorf("every context attribute must be true, false or a string")
 		}
 	}
 	return types.NewRecord(m), nil

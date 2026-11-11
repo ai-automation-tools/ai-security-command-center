@@ -1,0 +1,29 @@
+{
+  "manifest_version": 2,
+  "id": "chat-notifier",
+  "version": "0.4.0",
+  "type": "notification",
+  "publisher": {
+    "name": "ai-automation-tools",
+    "security_contact": "security@example.com"
+  },
+  "licence": "Apache-2.0",
+  "docs_url": "https://plugins.example.com/chat-notifier",
+  "compat": {
+    "contract": ">=1.0.0-alpha.1 <2.0.0"
+  },
+  "capabilities": {
+    "events": [
+      "containment.requested",
+      "nhi.finding"
+    ],
+    "network_hosts": [
+      "example.com"
+    ]
+  },
+  "signature": {
+    "method": "sigstore-keyless",
+    "identity": "https://example.com/ai-automation-tools/ascc-plugin-chat/.github/workflows/release.yml@refs/tags/v0.4.0"
+  },
+  "sbom": "sbom/chat-notifier-0.4.0.spdx.json"
+}

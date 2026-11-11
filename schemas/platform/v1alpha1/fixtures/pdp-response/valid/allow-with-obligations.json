@@ -1,0 +1,18 @@
+{
+  "decision": "allow",
+  "policy_version": "pol-2026-11-07.3",
+  "determining_policies": [
+    "permit-deploy-staging"
+  ],
+  "reasons": [
+    "delegated scope deploy:staging covers namespace staging"
+  ],
+  "obligations": [
+    "inject_credential(crd_01JC8Y7Q5W3M2N4P6R8T000003)",
+    "deduct_budget(bdg_01JC8Y7Q5W3M2N4P6R8T000001)",
+    "rate_limit(tenant, 100)",
+    "log_content(30)",
+    "inject_credential:crd_01JC8Y7Q5W3M2N4P6R8T000003"
+  ],
+  "degraded": false
+}

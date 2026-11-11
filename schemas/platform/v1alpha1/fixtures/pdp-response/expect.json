@@ -1,0 +1,58 @@
+{
+  "decision-not-allow-or-deny.json": {
+    "pointer": "/decision",
+    "rule": "enum"
+  },
+  "degraded-not-a-boolean.json": {
+    "pointer": "/degraded",
+    "rule": "type"
+  },
+  "missing-decision.json": {
+    "pointer": "",
+    "rule": "required"
+  },
+  "missing-determining-policies.json": {
+    "pointer": "",
+    "rule": "required"
+  },
+  "missing-obligations.json": {
+    "pointer": "",
+    "rule": "required"
+  },
+  "missing-policy-version.json": {
+    "pointer": "",
+    "rule": "required"
+  },
+  "missing-reasons.json": {
+    "pointer": "",
+    "rule": "required"
+  },
+  "obligation-with-empty-argument.json": {
+    "pointer": "/obligations/0",
+    "rule": "pattern"
+  },
+  "obligation-with-text-after-argument.json": {
+    "pointer": "/obligations/0",
+    "rule": "pattern"
+  },
+  "obligation-with-unclosed-argument.json": {
+    "pointer": "/obligations/0",
+    "rule": "pattern"
+  },
+  "obligation-without-argument.json": {
+    "pointer": "/obligations/0",
+    "rule": "pattern"
+  },
+  "unknown-field.json": {
+    "pointer": "/score",
+    "rule": "additionalProperties"
+  },
+  "unknown-obligation.json": {
+    "pointer": "/obligations/0",
+    "rule": "pattern"
+  },
+  "unknown-remedy-field.json": {
+    "pointer": "/remedy/bypass_url",
+    "rule": "additionalProperties"
+  }
+}

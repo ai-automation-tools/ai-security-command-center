@@ -1,0 +1,44 @@
+{
+  "id": "ain_01JC8Y7Q5W3M2N4P6R8T000004",
+  "tenant_id": "tnt_lab",
+  "type": "agent_instance",
+  "name": "triage-server",
+  "lifecycle": "approved",
+  "owner": "usr:kc01:5f1c0000",
+  "backup_owner": "usr:kc01:9a2e0000",
+  "version": 1,
+  "created_at": "2026-10-30T09:00:00.000Z",
+  "updated_at": "2026-11-06T16:40:03.551Z",
+  "updated_by": "usr:kc01:5f1c0000",
+  "spec": {
+    "agent_id": "agt_01JC8Y7Q5W3M2N4P6R8T000001",
+    "host": {
+      "hostname": "dev-box-01",
+      "os": "windows",
+      "managed": true
+    },
+    "public_key_jwk": {
+      "kty": "OKP",
+      "crv": "Ed25519",
+      "x": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    "spiffe_id": "spiffe://lab.internal/ns/prod/sa/triage",
+    "adapter_version": "0.3.1",
+    "posture": {
+      "checked_at": "2026-11-09T03:20:00.000Z",
+      "runtime_version": "2.1.301",
+      "pass": false,
+      "checks": {
+        "hook_managed": true,
+        "fail_closed": false,
+        "matcher_all": true,
+        "hooks_enabled": true,
+        "bypass_modes_off": true
+      },
+      "managed_config_digest": "sha256:0101010101010101010101010101010101010101010101010101010101010101"
+    },
+    "pep_id": "pep_01JC8Y7Q5W3M2N4P6R8T000001",
+    "enrolled_at": "2026-11-01T10:00:00.000Z",
+    "expires_at": "2026-12-01T10:00:00.000Z"
+  }
+}

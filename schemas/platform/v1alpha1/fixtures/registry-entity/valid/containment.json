@@ -1,0 +1,42 @@
+{
+  "id": "cnt_01JC8Y7Q5W3M2N4P6R8T000001",
+  "tenant_id": "tnt_lab",
+  "type": "containment",
+  "name": "suspend-issue-triage",
+  "lifecycle": "approved",
+  "owner": "usr:kc01:5f1c0000",
+  "backup_owner": "usr:kc01:9a2e0000",
+  "version": 1,
+  "created_at": "2026-10-30T09:00:00.000Z",
+  "updated_at": "2026-11-06T16:40:03.551Z",
+  "updated_by": "usr:kc01:5f1c0000",
+  "spec": {
+    "action": "suspend_agent",
+    "target": "agt_01JC8Y7Q5W3M2N4P6R8T000001",
+    "reason": "INC-2026-114 suspected injection",
+    "requested_by": [
+      "usr:kc01:soc10000"
+    ],
+    "epoch": 1842,
+    "status": "partially_acknowledged",
+    "peps": [
+      {
+        "pep_id": "pep_01JC8Y7Q5W3M2N4P6R8T000001",
+        "status": "acknowledged",
+        "at": "2026-11-07T14:03:01.200Z",
+        "sessions_closed": 2
+      },
+      {
+        "pep_id": "pep_01JC8Y7Q5W3M2N4P6R8T000002",
+        "status": "unconfirmed",
+        "last_heartbeat": "2026-11-07T13:40:00.000Z"
+      },
+      {
+        "pep_id": "pep_01JC8Y7Q5W3M2N4P6R8T000003",
+        "status": "acknowledged",
+        "at": "2026-11-07T14:03:00.900Z",
+        "plugins_stopped": 0
+      }
+    ]
+  }
+}

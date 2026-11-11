@@ -1,0 +1,2217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-automation-tools.dev/schemas/ascc/v1alpha1/registry-entity.json",
+  "title": "ASCC registry entity",
+  "description": "v1alpha1. One registry entity: the common envelope (data contracts section 2.1) and, under spec, the fields of its type (sections 2.2, 2.3 and 2.5). The type field selects the id prefix, the lifecycle values and the spec. Unknown fields are refused except inside a finding's evidence. A credential appears as a reference, a digest or a public key; the schema can't stop a secret being typed into free text.",
+  "type": "object",
+  "required": [
+    "id",
+    "tenant_id",
+    "type",
+    "version",
+    "updated_by",
+    "spec"
+  ],
+  "properties": {
+    "id": {
+      "description": "Type-prefixed ULID; the prefix is set by type.",
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "agent",
+        "agent_instance",
+        "mcp_server",
+        "mcp_tool",
+        "skill",
+        "credential_ref",
+        "grant",
+        "finding",
+        "exemption",
+        "containment",
+        "nhi_account",
+        "connector",
+        "plugin",
+        "workflow",
+        "optimization_finding"
+      ]
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "lifecycle": {
+      "description": "Values depend on type.",
+      "type": "string"
+    },
+    "risk_tier": {
+      "description": "Inherent risk tier, 1 to 3 (FR-TRS-01).",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3
+    },
+    "owner": {
+      "description": "IdP subject, usr:<issuer-hash>:<sub>. Null until one is assigned.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^usr:[^:]+:.+$"
+    },
+    "backup_owner": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^usr:[^:]+:.+$"
+    },
+    "purpose": {
+      "type": "string"
+    },
+    "environment": {
+      "type": "string"
+    },
+    "data_classes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "maxProperties": 64
+    },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "signature": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sbom_ref": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "discovery": {
+      "type": "object",
+      "properties": {
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        "found_by": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "coverage": {
+      "description": "Computed from evidence, never set by a writer.",
+      "type": "string",
+      "enum": [
+        "enforced",
+        "observed",
+        "unmonitored"
+      ],
+      "readOnly": true
+    },
+    "last_seen_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+    },
+    "version": {
+      "description": "Optimistic concurrency counter.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "created_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+    },
+    "updated_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+    },
+    "updated_by": {
+      "type": "string",
+      "minLength": 1
+    },
+    "plugin_id": {
+      "description": "Recorded on a write made through the plugin host.",
+      "type": "string",
+      "pattern": "^plg_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "connector_id": {
+      "description": "Recorded on a write made through the plugin host.",
+      "type": "string",
+      "pattern": "^con_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "spec": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "const": "agent"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^agt_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "lifecycle": {
+            "enum": [
+              "discovered",
+              "pending_review",
+              "approved",
+              "restricted",
+              "quarantined",
+              "retired"
+            ]
+          },
+          "spec": {
+            "$ref": "#/$defs/agent_spec"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "const": "agent_instance"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^ain_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "lifecycle": {
+            "enum": [
+              "discovered",
+              "pending_review",
+              "approved",
+              "restricted",
+              "quarantined",
+              "retired"
+            ]
+          },
+          "spec": {
+            "$ref": "#/$defs/agent_instance_spec"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "const": "mcp_server"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^mcs_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "lifecycle": {
+            "enum": [
+              "discovered",
+              "pending_review",
+              "approved",
+              "restricted",
+              "quarantined",
+              "retired"
+            ]
+          },
+          "spec": {
+            "$ref": "#/$defs/mcp_server_spec"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "const": "mcp_tool"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^tol_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "lifecycle": {
+            "enum": [
+              "discovered",
+              "pending_review",
+              "approved",
+              "restricted",
+              "quarantined",
+              "retired"
+            ]
+          },
+          "spec": {
+            "$ref": "#/$defs/mcp_tool_spec"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "const": "skill"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^skl_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "lifecycle": {
+            "enum": [
+              "discovered",
+              "pending_review",
+              "approved",
+              "restricted",
+              "quarantined",
+              "retired"
+            ]
+          },
+          "spec": {
+            "$ref": "#/$defs/skill_spec"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "const": "credential_ref"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^crd_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "lifecycle": {
+            "enum": [
+              "discovered",
+              "pending_review",
+              "approved",
+              "restricted",
+              "quarantined",
+              "retired"
+            ]
+          },
+          "spec": {
+            "$ref": "#/$defs/credential_ref_spec"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "const": "grant"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^grt_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "lifecycle": {
+            "enum": [
+              "active",
+              "expired",
+              "revoked"
+            ]
+          },
+          "spec": {
+            "$ref": "#/$defs/grant_spec"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "const": "finding"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^fnd_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "lifecycle": {
+            "enum": [
+              "discovered",
+              "pending_review",
+              "approved",
+              "restricted",
+              "quarantined",
+              "retired"
+            ]
+          },
+          "spec": {
+            "$ref": "#/$defs/finding_spec"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "const": "exemption"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^exm_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "lifecycle": {
+            "enum": [
+              "discovered",
+              "pending_review",
+              "approved",
+              "restricted",
+              "quarantined",
+              "retired"
+            ]
+          },
+          "spec": {
+            "$ref": "#/$defs/exemption_spec"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "const": "containment"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^cnt_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "lifecycle": {
+            "enum": [
+              "discovered",
+              "pending_review",
+              "approved",
+              "restricted",
+              "quarantined",
+              "retired"
+            ]
+          },
+          "spec": {
+            "$ref": "#/$defs/containment_spec"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "const": "nhi_account"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^nhi_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "lifecycle": {
+            "enum": [
+              "discovered",
+              "approved",
+              "restricted",
+              "retired"
+            ]
+          },
+          "spec": {
+            "$ref": "#/$defs/nhi_account_spec"
+          },
+          "coverage": {
+            "enum": [
+              "observed",
+              "unmonitored"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "const": "connector"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^con_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "lifecycle": {
+            "enum": [
+              "discovered",
+              "pending_review",
+              "approved",
+              "restricted",
+              "quarantined",
+              "retired"
+            ]
+          },
+          "spec": {
+            "$ref": "#/$defs/connector_spec"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "const": "plugin"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^plg_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "lifecycle": {
+            "enum": [
+              "discovered",
+              "pending_review",
+              "approved",
+              "restricted",
+              "quarantined",
+              "retired"
+            ]
+          },
+          "spec": {
+            "$ref": "#/$defs/plugin_spec"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "const": "workflow"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^wfl_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "lifecycle": {
+            "enum": [
+              "discovered",
+              "pending_review",
+              "approved",
+              "restricted",
+              "quarantined",
+              "retired"
+            ]
+          },
+          "spec": {
+            "$ref": "#/$defs/workflow_spec"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "const": "optimization_finding"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^opt_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "lifecycle": {
+            "enum": [
+              "discovered",
+              "pending_review",
+              "approved",
+              "restricted",
+              "quarantined",
+              "retired"
+            ]
+          },
+          "spec": {
+            "$ref": "#/$defs/optimization_finding_spec"
+          }
+        }
+      }
+    },
+    {
+      "$comment": "FR-CON-16: an agent a vendor hosts is observed at best.",
+      "if": {
+        "required": [
+          "type",
+          "spec"
+        ],
+        "properties": {
+          "type": {
+            "const": "agent"
+          },
+          "spec": {
+            "required": [
+              "hosting"
+            ],
+            "properties": {
+              "hosting": {
+                "const": "vendor_hosted"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "coverage": {
+            "enum": [
+              "observed",
+              "unmonitored"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "agent_spec": {
+      "type": "object",
+      "required": [
+        "workflow_id"
+      ],
+      "properties": {
+        "runtime": {
+          "description": "Runtime adapter key.",
+          "type": "string"
+        },
+        "hosting": {
+          "description": "A vendor_hosted agent is never enforced.",
+          "type": "string",
+          "enum": [
+            "self_hosted",
+            "vendor_hosted"
+          ]
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "expires_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+        },
+        "access_profiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "models_allowed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mcp_servers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^mcs_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          }
+        },
+        "may_delegate_to": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^agt_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          }
+        },
+        "max_delegation_depth": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 32
+        },
+        "default_task_budget": {
+          "type": "object",
+          "properties": {
+            "tokens": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "cost_usd": {
+              "type": "number"
+            },
+            "tool_calls": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "wall_seconds": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "egress_hosts": {
+          "description": "Lowercase DNS names: no scheme, port, userinfo, path, wildcard or IP literal.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 253,
+            "pattern": "^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]([a-z0-9-]{0,61}[a-z0-9])?$"
+          },
+          "uniqueItems": true,
+          "maxItems": 64
+        },
+        "workflow_id": {
+          "type": "string",
+          "pattern": "^wfl_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "agent_instance_spec": {
+      "type": "object",
+      "required": [
+        "agent_id"
+      ],
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "pattern": "^agt_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "host": {
+          "type": "object",
+          "properties": {
+            "hostname": {
+              "type": "string"
+            },
+            "os": {
+              "type": "string"
+            },
+            "managed": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "public_key_jwk": {
+          "description": "The instance's public key. Closed, so a private member such as d is refused.",
+          "type": "object",
+          "required": [
+            "kty",
+            "crv",
+            "x"
+          ],
+          "properties": {
+            "kty": {
+              "type": "string"
+            },
+            "crv": {
+              "type": "string"
+            },
+            "x": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]+$"
+            }
+          },
+          "additionalProperties": false
+        },
+        "spiffe_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^spiffe://\\S+$"
+        },
+        "adapter_version": {
+          "type": "string"
+        },
+        "posture": {
+          "type": "object",
+          "properties": {
+            "checked_at": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+            },
+            "runtime_version": {
+              "type": "string"
+            },
+            "pass": {
+              "type": "boolean"
+            },
+            "checks": {
+              "type": "object",
+              "properties": {
+                "hook_managed": {
+                  "type": "boolean"
+                },
+                "fail_closed": {
+                  "type": "boolean"
+                },
+                "matcher_all": {
+                  "type": "boolean"
+                },
+                "hooks_enabled": {
+                  "type": "boolean"
+                },
+                "bypass_modes_off": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            },
+            "managed_config_digest": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            }
+          },
+          "additionalProperties": false
+        },
+        "pep_id": {
+          "type": "string",
+          "pattern": "^pep_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "enrolled_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+        },
+        "expires_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "mcp_server_spec": {
+      "type": "object",
+      "properties": {
+        "transport": {
+          "type": "string",
+          "enum": [
+            "streamable_http",
+            "stdio"
+          ]
+        },
+        "upstream_url": {
+          "description": "No userinfo, query string or fragment, the places a URL carries a credential.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^https?://[^/?#@\\s]+(/[^?#\\s]*)?$"
+        },
+        "launch": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "command": {
+              "type": "string"
+            },
+            "args": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "spec_version": {
+          "type": "string"
+        },
+        "auth": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string"
+            },
+            "credential_ref": {
+              "type": "string",
+              "pattern": "^crd_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+            }
+          },
+          "additionalProperties": false
+        },
+        "egress_hosts": {
+          "description": "Lowercase DNS names: no scheme, port, userinfo, path, wildcard or IP literal.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 253,
+            "pattern": "^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]([a-z0-9-]{0,61}[a-z0-9])?$"
+          },
+          "uniqueItems": true,
+          "maxItems": 64
+        },
+        "pinned_tools": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "tool_id"
+            ],
+            "properties": {
+              "tool_id": {
+                "type": "string",
+                "pattern": "^tol_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+              },
+              "name": {
+                "type": "string"
+              },
+              "description_digest": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              },
+              "input_schema_digest": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              },
+              "tier": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 3
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "mcp_tool_spec": {
+      "type": "object",
+      "required": [
+        "server_id"
+      ],
+      "properties": {
+        "server_id": {
+          "type": "string",
+          "pattern": "^mcs_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "name": {
+          "type": "string"
+        },
+        "tier": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "arg_constraints": {
+          "description": "Argument name to its constraint, such as in or matches.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "result_trust": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "skill_spec": {
+      "type": "object",
+      "properties": {
+        "format": {
+          "type": "string"
+        },
+        "entrypoint": {
+          "type": "string"
+        },
+        "declared_tools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "install_scripts": {
+          "type": "boolean"
+        },
+        "trust_tier": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "credential_ref_spec": {
+      "description": "Where a credential lives, never its value.",
+      "type": "object",
+      "properties": {
+        "backend": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "static",
+            "dynamic",
+            "oauth_client"
+          ]
+        },
+        "audience": {
+          "type": "string"
+        },
+        "injection": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "format": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "rotation_days": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "data_classes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "nhi_id": {
+          "type": "string",
+          "pattern": "^nhi_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "grant_spec": {
+      "type": "object",
+      "required": [
+        "principal",
+        "action",
+        "resource"
+      ],
+      "properties": {
+        "principal": {
+          "description": "An agent, a group or a user.",
+          "type": "string",
+          "minLength": 1
+        },
+        "action": {
+          "type": "string",
+          "minLength": 1
+        },
+        "resource": {
+          "type": "string",
+          "minLength": 1
+        },
+        "conditions": {
+          "type": "object",
+          "properties": {
+            "arg_constraints_ref": {
+              "type": "string",
+              "pattern": "^tol_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+            }
+          },
+          "additionalProperties": false
+        },
+        "authority": {
+          "type": "string",
+          "enum": [
+            "delegated",
+            "service_grant"
+          ]
+        },
+        "expires_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+        },
+        "approved_by": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^usr:[^:]+:.+$"
+          }
+        },
+        "approval_id": {
+          "type": "string",
+          "pattern": "^apr_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "finding_spec": {
+      "type": "object",
+      "required": [
+        "asset_id",
+        "rule_id"
+      ],
+      "properties": {
+        "asset_id": {
+          "type": "string",
+          "pattern": "^(agt|ain|mcs|tol|skl|crd|grt|fnd|exm|apr|cnt|pep|evt|tsk|ses|nhi|con|plg|wfl|opt)_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "asset_digest": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "scanner": {
+          "type": "string"
+        },
+        "scanner_version": {
+          "type": "string"
+        },
+        "rule_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string"
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "info",
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "confidence": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "static",
+            "dynamic",
+            "advisory",
+            "model_review",
+            "manual",
+            "connector",
+            "detector"
+          ]
+        },
+        "evidence": {
+          "description": "Open: evidence differs by rule.",
+          "type": "object",
+          "properties": {
+            "location": {
+              "type": "string"
+            },
+            "excerpt": {
+              "type": "string"
+            }
+          }
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "open",
+            "fixed",
+            "exempted",
+            "false_positive"
+          ]
+        },
+        "first_seen": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "exemption_spec": {
+      "type": "object",
+      "required": [
+        "finding_id"
+      ],
+      "properties": {
+        "finding_id": {
+          "type": "string",
+          "pattern": "^fnd_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "asset_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "justification": {
+          "type": "string"
+        },
+        "granted_by": {
+          "type": "string",
+          "pattern": "^usr:[^:]+:.+$"
+        },
+        "expires_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "containment_spec": {
+      "type": "object",
+      "required": [
+        "action",
+        "target"
+      ],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "deny_next",
+            "terminate_session",
+            "suspend_agent",
+            "disable_tool",
+            "quarantine_skill",
+            "revoke_credential",
+            "block_provider",
+            "isolate_network",
+            "fleet_emergency",
+            "disable_plugin",
+            "revoke_nhi",
+            "disable_nhi"
+          ]
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string"
+        },
+        "requested_by": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^usr:[^:]+:.+$"
+          }
+        },
+        "epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "requested",
+            "propagated",
+            "acknowledged",
+            "partially_acknowledged",
+            "unconfirmed",
+            "reversed"
+          ]
+        },
+        "peps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "pep_id"
+            ],
+            "properties": {
+              "pep_id": {
+                "type": "string",
+                "pattern": "^pep_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+              },
+              "status": {
+                "type": "string"
+              },
+              "at": {
+                "type": "string",
+                "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+              },
+              "sessions_closed": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "last_heartbeat": {
+                "type": "string",
+                "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+              },
+              "plugins_stopped": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "nhi_account_spec": {
+      "type": "object",
+      "required": [
+        "kind",
+        "platform",
+        "external_id"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "agent_identity",
+            "service_account",
+            "iam_user",
+            "iam_role",
+            "service_principal",
+            "managed_identity",
+            "api_key",
+            "oauth_app",
+            "bot_token",
+            "deploy_key",
+            "ci_token",
+            "db_user",
+            "certificate",
+            "vault_role",
+            "k8s_service_account",
+            "ad_service_account",
+            "workflow_credential"
+          ]
+        },
+        "platform": {
+          "type": "string",
+          "minLength": 1
+        },
+        "external_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "display": {
+          "type": "string"
+        },
+        "ownerless": {
+          "type": "boolean"
+        },
+        "created_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+        },
+        "last_used_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+        },
+        "credential_age_days": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rotation": {
+          "type": "object",
+          "properties": {
+            "policy_days": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "last_rotated_at": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "ok",
+                "due_soon",
+                "overdue",
+                "unknown",
+                "none"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "permissions_summary": {
+          "type": "object",
+          "properties": {
+            "admin_class": {
+              "type": "boolean"
+            },
+            "scopes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "roles": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "disabled",
+            "expired",
+            "revoked",
+            "unknown"
+          ]
+        },
+        "ai_linked": {
+          "type": "boolean"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "connector_id"
+            ],
+            "properties": {
+              "connector_id": {
+                "type": "string",
+                "pattern": "^con_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+              },
+              "external_ref": {
+                "type": "string"
+              },
+              "observed_at": {
+                "type": "string",
+                "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "reconciliation": {
+          "type": "object",
+          "properties": {
+            "keys": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "confidence": {
+              "type": "string"
+            },
+            "method": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "freshness_seconds": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "connector_spec": {
+      "type": "object",
+      "required": [
+        "plugin_id"
+      ],
+      "properties": {
+        "plugin_id": {
+          "type": "string",
+          "pattern": "^plg_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "platform": {
+          "type": "string"
+        },
+        "estate_entry": {
+          "type": "string"
+        },
+        "credential_ref_read": {
+          "type": "string",
+          "pattern": "^crd_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "credential_ref_write": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^crd_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "scopes_needed": {
+          "description": "The platform's own scope names.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "scopes_granted": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "schedule": {
+          "type": "object",
+          "properties": {
+            "incremental": {
+              "type": "string"
+            },
+            "full": {
+              "type": "string"
+            },
+            "events": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "cursor": {
+          "type": "string"
+        },
+        "last_sync": {
+          "type": "object",
+          "properties": {
+            "at": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+            },
+            "status": {
+              "type": "string"
+            },
+            "objects": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "errors": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "duration_ms": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "coverage": {
+          "type": "object",
+          "properties": {
+            "scopes_pct": {
+              "type": "number"
+            },
+            "freshness_seconds": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "fresh",
+                "stale",
+                "error",
+                "not_connected"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "actions_enabled": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$"
+          },
+          "uniqueItems": true,
+          "maxItems": 64
+        },
+        "rate_limit_actions_per_hour": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "plugin_spec": {
+      "type": "object",
+      "required": [
+        "plugin_type"
+      ],
+      "properties": {
+        "plugin_type": {
+          "type": "string",
+          "enum": [
+            "connector",
+            "scanner",
+            "detector",
+            "notification",
+            "console_panel",
+            "policy_pack",
+            "runtime_adapter",
+            "report_template"
+          ]
+        },
+        "version": {
+          "type": "string"
+        },
+        "contract_version": {
+          "type": "string"
+        },
+        "publisher": {
+          "type": "string"
+        },
+        "trust_tier": {
+          "type": "string",
+          "enum": [
+            "core",
+            "verified",
+            "community"
+          ]
+        },
+        "library_ref": {
+          "type": "string",
+          "pattern": "^https://[^/?#@\\s]+([/?#]\\S*)?$"
+        },
+        "capabilities_requested": {
+          "type": "object",
+          "properties": {
+            "api_scopes": {
+              "description": "Each scope ends in @self: the plugin's own namespace.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z_]+:[a-z_]+@self$"
+              },
+              "uniqueItems": true,
+              "maxItems": 64
+            },
+            "events": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$"
+              },
+              "uniqueItems": true,
+              "maxItems": 64
+            },
+            "network_hosts": {
+              "description": "Lowercase DNS names: no scheme, port, userinfo, path, wildcard or IP literal.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 253,
+                "pattern": "^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]([a-z0-9-]{0,61}[a-z0-9])?$"
+              },
+              "uniqueItems": true,
+              "maxItems": 64
+            },
+            "credential_kinds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$"
+              },
+              "uniqueItems": true,
+              "maxItems": 64
+            },
+            "actions": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "disable",
+                  "enable",
+                  "rotate",
+                  "revoke",
+                  "set_owner_tag",
+                  "delete"
+                ]
+              },
+              "uniqueItems": true,
+              "maxItems": 64
+            }
+          },
+          "additionalProperties": false
+        },
+        "capabilities_approved": {
+          "type": "object",
+          "properties": {
+            "api_scopes": {
+              "description": "Each scope ends in @self: the plugin's own namespace.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z_]+:[a-z_]+@self$"
+              },
+              "uniqueItems": true,
+              "maxItems": 64
+            },
+            "events": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$"
+              },
+              "uniqueItems": true,
+              "maxItems": 64
+            },
+            "network_hosts": {
+              "description": "Lowercase DNS names: no scheme, port, userinfo, path, wildcard or IP literal.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 253,
+                "pattern": "^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]([a-z0-9-]{0,61}[a-z0-9])?$"
+              },
+              "uniqueItems": true,
+              "maxItems": 64
+            },
+            "credential_kinds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$"
+              },
+              "uniqueItems": true,
+              "maxItems": 64
+            },
+            "actions": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "disable",
+                  "enable",
+                  "rotate",
+                  "revoke",
+                  "set_owner_tag",
+                  "delete"
+                ]
+              },
+              "uniqueItems": true,
+              "maxItems": 64
+            }
+          },
+          "additionalProperties": false
+        },
+        "approval_id": {
+          "type": "string",
+          "pattern": "^apr_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "host_state": {
+          "type": "object",
+          "properties": {
+            "running": {
+              "type": "boolean"
+            },
+            "instances": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "last_heartbeat": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+            },
+            "restarts_24h": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_spec": {
+      "type": "object",
+      "required": [
+        "platform"
+      ],
+      "properties": {
+        "platform": {
+          "type": "string",
+          "enum": [
+            "ascc_agent",
+            "n8n",
+            "github_actions",
+            "power_automate",
+            "make",
+            "zapier",
+            "airflow",
+            "other"
+          ]
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fingerprint": {
+          "type": "object",
+          "properties": {
+            "declared": {
+              "type": "object",
+              "properties": {
+                "trigger": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "schedule",
+                        "event",
+                        "manual"
+                      ]
+                    },
+                    "source": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "inputs": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "tools": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "models": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "destinations": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "nhis": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^nhi_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+                  }
+                },
+                "schedule": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            "observed": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "window_days": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "inputs": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "tools": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "models": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "destinations": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "nhis": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^nhi_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+                  }
+                },
+                "runs": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "tool_calls": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "tokens": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "cost_usd": {
+                  "type": "number"
+                },
+                "success_rate": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "optimization_finding_spec": {
+      "type": "object",
+      "required": [
+        "class",
+        "workflows"
+      ],
+      "properties": {
+        "class": {
+          "type": "string",
+          "enum": [
+            "redundant_workflows",
+            "idle_workflow",
+            "pass_through_chain",
+            "shared_service_opportunity",
+            "credential_consolidation",
+            "cost_hotspot"
+          ]
+        },
+        "workflows": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^wfl_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          }
+        },
+        "evidence": {
+          "description": "Open: evidence differs by class.",
+          "type": "object",
+          "properties": {
+            "shared_tools": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "shared_sources": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "shared_destinations": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "schedule_overlap": {
+              "type": "string"
+            },
+            "shared_nhis": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^nhi_[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+              }
+            },
+            "overlap_score": {
+              "type": "number"
+            },
+            "purpose_similarity": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        },
+        "estimate": {
+          "type": "object",
+          "properties": {
+            "cost_usd_month": {
+              "type": "number"
+            },
+            "nhis_removable": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "permissions_removable": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "destinations_removable": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "method": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "confidence": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "open",
+            "proposed",
+            "accepted",
+            "dismissed",
+            "snoozed",
+            "verified"
+          ]
+        },
+        "owners": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^usr:[^:]+:.+$"
+          }
+        },
+        "decision": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "by": {
+              "type": "string",
+              "pattern": "^usr:[^:]+:.+$"
+            },
+            "at": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+            },
+            "outcome": {
+              "type": "string"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "snooze_until": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+            }
+          },
+          "additionalProperties": false
+        },
+        "verification": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "at": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+            },
+            "cost_delta_usd_month": {
+              "type": "number"
+            },
+            "nhis_delta": {
+              "type": "integer"
+            },
+            "permissions_delta": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        "first_seen": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+        },
+        "run_id": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

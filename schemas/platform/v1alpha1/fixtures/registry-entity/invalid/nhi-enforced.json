@@ -1,0 +1,61 @@
+{
+  "id": "nhi_01JC8Y7Q5W3M2N4P6R8T000001",
+  "tenant_id": "tnt_lab",
+  "type": "nhi_account",
+  "name": "lab-triage-app",
+  "lifecycle": "discovered",
+  "owner": null,
+  "backup_owner": null,
+  "version": 1,
+  "created_at": "2026-10-30T09:00:00.000Z",
+  "updated_at": "2026-11-06T16:40:03.551Z",
+  "updated_by": "usr:kc01:5f1c0000",
+  "coverage": "enforced",
+  "spec": {
+    "kind": "oauth_app",
+    "platform": "github",
+    "external_id": "app:1234567",
+    "display": "Lab Triage (app)",
+    "ownerless": true,
+    "created_at": "2026-02-11T09:30:00.000Z",
+    "last_used_at": "2026-11-08T22:10:04.000Z",
+    "credential_age_days": 88,
+    "rotation": {
+      "policy_days": 90,
+      "last_rotated_at": "2026-08-12T00:00:00.000Z",
+      "state": "due_soon"
+    },
+    "permissions_summary": {
+      "admin_class": false,
+      "scopes": [
+        "issues:write",
+        "metadata:read",
+        "pull_requests:read"
+      ],
+      "roles": []
+    },
+    "status": "active",
+    "ai_linked": true,
+    "sources": [
+      {
+        "connector_id": "con_01JC8Y7Q5W3M2N4P6R8T000001",
+        "external_ref": "installations/98765",
+        "observed_at": "2026-11-09T03:00:12.000Z"
+      },
+      {
+        "connector_id": "con_01JC8Y7Q5W3M2N4P6R8T000002",
+        "external_ref": "kv/data/integrations/issues-app",
+        "observed_at": "2026-11-09T03:05:40.000Z"
+      }
+    ],
+    "reconciliation": {
+      "keys": [
+        "github:app_id:1234567",
+        "openbao:kv:integrations/issues-app"
+      ],
+      "confidence": "high",
+      "method": "exact_key"
+    },
+    "freshness_seconds": 1840
+  }
+}

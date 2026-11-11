@@ -1,0 +1,20 @@
+{
+  "id": "exm_01JC8Y7Q5W3M2N4P6R8T000001",
+  "tenant_id": "tnt_lab",
+  "type": "exemption",
+  "name": "description-reviewed",
+  "lifecycle": "approved",
+  "owner": "usr:kc01:5f1c0000",
+  "backup_owner": "usr:kc01:9a2e0000",
+  "version": 1,
+  "created_at": "2026-10-30T09:00:00.000Z",
+  "updated_at": "2026-11-06T16:40:03.551Z",
+  "updated_by": "usr:kc01:5f1c0000",
+  "spec": {
+    "finding_id": "fnd_01JC8Y7Q5W3M2N4P6R8T000001",
+    "asset_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "justification": "Description text is documentation, reviewed",
+    "granted_by": "usr:kc01:appsec0000",
+    "expires_at": "2027-02-07T00:00:00.000Z"
+  }
+}

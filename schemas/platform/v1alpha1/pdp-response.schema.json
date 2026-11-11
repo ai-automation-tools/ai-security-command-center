@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-automation-tools.dev/schemas/ascc/v1alpha1/pdp-response.json",
+  "title": "ASCC PDP response",
+  "description": "v1alpha1. The answer to a PDP request (data contracts section 6). decision is allow or deny and nothing else. obligations is required, so a response that lost its obligations is invalid. Each one is a word from the v1alpha1 vocabulary with its argument, written name(arg) or name:arg; a PEP that does not implement one must deny.",
+  "type": "object",
+  "required": [
+    "decision",
+    "policy_version",
+    "determining_policies",
+    "reasons",
+    "obligations"
+  ],
+  "properties": {
+    "decision": {
+      "type": "string",
+      "enum": [
+        "allow",
+        "deny"
+      ]
+    },
+    "policy_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "determining_policies": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "remedy": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "permission": {
+          "type": "string"
+        },
+        "for": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "obligations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(inject_credential|require_approval|redact|log_content|rate_limit|deduct_budget)(\\([A-Za-z0-9_.:@/-]+(, ?[A-Za-z0-9_.:@/-]+)*\\)|:[A-Za-z0-9_.:@/-]+)$"
+      }
+    },
+    "degraded": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false
+}

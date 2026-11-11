@@ -1,0 +1,21 @@
+{
+  "iss": "https://ascc.lab.internal/plugin-host/ph1",
+  "aud": "ascc-mgmt-api",
+  "sub": "plg_01JC8Y7Q5W3M2N4P6R8T000002",
+  "tenant": "tnt_lab",
+  "iat": 1762660800,
+  "exp": 1762664400,
+  "jti": "cap_01JC8Y7Q5W3M2N4P6R8T000001",
+  "ascc": {
+    "v": -1,
+    "contract_version": "v1alpha1",
+    "scopes": [
+      "events:read@self"
+    ],
+    "network_hosts": [
+      "example.com"
+    ],
+    "credential_kinds": [],
+    "epoch_min": 1841
+  }
+}

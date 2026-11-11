@@ -1,0 +1,26 @@
+{
+  "action-not-a-string.json": {
+    "pointer": "/action",
+    "rule": "type"
+  },
+  "missing-principal.json": {
+    "pointer": "",
+    "rule": "required"
+  },
+  "missing-tenant-id.json": {
+    "pointer": "",
+    "rule": "required"
+  },
+  "principal-without-id.json": {
+    "pointer": "/principal",
+    "rule": "required"
+  },
+  "trace-id-not-hex.json": {
+    "pointer": "/trace_id",
+    "rule": "pattern"
+  },
+  "unknown-field.json": {
+    "pointer": "/override",
+    "rule": "additionalProperties"
+  }
+}

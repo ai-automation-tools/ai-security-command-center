@@ -1,0 +1,28 @@
+{
+  "id": "grt_01JC8Y7Q5W3M2N4P6R8T000001",
+  "tenant_id": "tnt_lab",
+  "type": "grant",
+  "name": "triage-may-create-issues",
+  "lifecycle": "approved",
+  "owner": "usr:kc01:5f1c0000",
+  "backup_owner": "usr:kc01:9a2e0000",
+  "version": 1,
+  "created_at": "2026-10-30T09:00:00.000Z",
+  "updated_at": "2026-11-06T16:40:03.551Z",
+  "updated_by": "usr:kc01:5f1c0000",
+  "spec": {
+    "principal": "agt_01JC8Y7Q5W3M2N4P6R8T000001",
+    "action": "mcp.call",
+    "resource": "tol_01JC8Y7Q5W3M2N4P6R8T000002",
+    "conditions": {
+      "arg_constraints_ref": "tol_01JC8Y7Q5W3M2N4P6R8T000002"
+    },
+    "authority": "delegated",
+    "expires_at": null,
+    "approved_by": [
+      "usr:kc01:owner0000",
+      "usr:kc01:secops0000"
+    ],
+    "approval_id": "apr_01JC8Y7Q5W3M2N4P6R8T000001"
+  }
+}

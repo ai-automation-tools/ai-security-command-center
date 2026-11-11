@@ -1,0 +1,33 @@
+{
+  "id": "github-connector",
+  "version": "1.2.0",
+  "type": "connector",
+  "publisher": {
+    "name": "ai-automation-tools",
+    "url": "https://example.com/ai-automation-tools",
+    "security_contact": "security@example.com"
+  },
+  "licence": "Apache-2.0",
+  "docs_url": "https://plugins.example.com/github-connector",
+  "compat": {
+    "contract": ">=1.0.0-alpha.1 <2.0.0"
+  },
+  "capabilities": {
+    "api_scopes": [
+      "nhi:write@self",
+      "assets:discover@self",
+      "findings:write@self"
+    ],
+    "events": [],
+    "network_hosts": [
+      "api.example.com"
+    ],
+    "credential_kinds": [
+      "github_app",
+      "github_pat"
+    ],
+    "actions": []
+  },
+  "platform": "github",
+  "sbom": "sbom/github-connector-1.2.0.spdx.json"
+}

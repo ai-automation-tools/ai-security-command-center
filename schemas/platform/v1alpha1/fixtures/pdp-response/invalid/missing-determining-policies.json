@@ -1,0 +1,14 @@
+{
+  "decision": "deny",
+  "policy_version": "pol-2026-11-07.3",
+  "reasons": [
+    "Initiator lacks repo:write:example-org; agent may not exceed initiator"
+  ],
+  "remedy": {
+    "kind": "access_request",
+    "permission": "repo:write:example-org",
+    "for": "usr:kc01:5f1c0000"
+  },
+  "obligations": [],
+  "degraded": false
+}
