@@ -1,12 +1,12 @@
 # The ASCC development stack. For one machine, never for production: see README.md in this folder.
 #
-#   docker compose -f deploy/compose/compose.yaml up -d --build --wait
+#   docker compose --env-file .env -f deploy/compose/compose.yaml up -d --build --wait
 #
 # Rules this file keeps, each checked by stack_test.go:
 #   - every published port is bound to 127.0.0.1;
 #   - every image is pinned by digest, the ones a Dockerfile builds from included;
-#   - no variable naming a password, token or key is set here, and no URL carries one: each service makes
-#     its own secret on first start and keeps it in its own volume;
+#   - every secret comes from .env at the repository root (names in .env.example) and from nowhere else: no
+#     value is written here, no URL carries one, and a missing one stops the stack from starting;
 #   - no service is privileged, adds a capability, shares the host's namespaces or mounts anything from
 #     outside this repository, and the sandbox network stays internal.
 name: ascc-dev
@@ -21,22 +21,12 @@ services:
   postgres:
     <<: *common
     image: postgres:18.6-alpine@sha256:123b17998ccaf47e53b502e8c6a1e79afd8f579c6f3eec83c563da026f957395
-    entrypoint:
-      - /bin/sh
-      - -c
-      - |
-        set -eu
-        f=/run/ascc/password
-        # The umask stays in the subshell: the image's own entrypoint creates the data folders after this.
-        [ -s "$$f" ] || (umask 077; cat /proc/sys/kernel/random/uuid /proc/sys/kernel/random/uuid | tr -d '\n-' > "$$f")
-        exec docker-entrypoint.sh postgres
     environment:
       POSTGRES_USER: ascc
       POSTGRES_DB: ascc
-      POSTGRES_PASSWORD_FILE: /run/ascc/password
+      POSTGRES_PASSWORD: ${ASCC_POSTGRES_PASSWORD:?set ASCC_POSTGRES_PASSWORD in .env}
     volumes:
       - postgres-data:/var/lib/postgresql
-      - postgres-secret:/run/ascc
     ports:
       - "127.0.0.1:15432:5432"
     healthcheck:
@@ -50,20 +40,12 @@ services:
   keycloak:
     <<: *common
     image: quay.io/keycloak/keycloak:26.8.2@sha256:723b1d6e254c0fc96d5cffec860c7e0744d6a3277822b865bb538cf891575e41
-    entrypoint:
-      - /bin/bash
-      - -c
-      - |
-        set -eu
-        umask 077
-        f=/opt/keycloak/data/admin-password
-        [ -s "$$f" ] || printf '%s%s' "$$(< /proc/sys/kernel/random/uuid)" "$$(< /proc/sys/kernel/random/uuid)" > "$$f"
-        export KC_BOOTSTRAP_ADMIN_PASSWORD="$$(< "$$f")"
-        exec /opt/keycloak/bin/kc.sh start-dev --import-realm
+    command: ["start-dev", "--import-realm"]
     cap_drop:
       - ALL
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${ASCC_KEYCLOAK_ADMIN_PASSWORD:?set ASCC_KEYCLOAK_ADMIN_PASSWORD in .env}
       KC_HEALTH_ENABLED: "true"
     healthcheck:
       # The image has no curl. Ready is a 200 from the management port.
@@ -82,22 +64,26 @@ services:
     ports:
       - "127.0.0.1:18080:8080"
 
-  # ADR-07's secrets backend. dev-unseal.sh initialises it once and unseals it on every start.
+  # ADR-07's secrets backend. It unseals itself with the key from .env, and dev-init.sh initialises it once
+  # and makes the root token the one from .env.
   openbao:
     <<: *common
     image: openbao/openbao:2.7.2@sha256:5046911075e137e154ce49ab051502f4ec7cf367d484ae4a4dce665d9b90561f
     user: openbao
     cap_drop:
       - ALL
-    entrypoint: ["/bin/sh", "/ascc/dev-unseal.sh"]
+    entrypoint: ["/bin/sh", "/ascc/dev-init.sh"]
+    environment:
+      ASCC_OPENBAO_SEAL_KEY: ${ASCC_OPENBAO_SEAL_KEY:?set ASCC_OPENBAO_SEAL_KEY in .env}
+      ASCC_OPENBAO_ROOT_TOKEN: ${ASCC_OPENBAO_ROOT_TOKEN:?set ASCC_OPENBAO_ROOT_TOKEN in .env}
     volumes:
       - openbao-data:/openbao/file
       - ./openbao/config.hcl:/ascc/config.hcl:ro
-      - ./openbao/dev-unseal.sh:/ascc/dev-unseal.sh:ro
+      - ./openbao/dev-init.sh:/ascc/dev-init.sh:ro
     ports:
       - "127.0.0.1:18200:8200"
     healthcheck:
-      # Healthy only when it is unsealed and dev-unseal.sh has mounted both engines.
+      # Healthy only when it is unsealed and dev-init.sh has mounted both engines.
       test: ["CMD", "/bin/sh", "-c", "test -f /tmp/ascc-ready && bao status -address=http://127.0.0.1:8200"]
       interval: 5s
       timeout: 3s
@@ -167,6 +153,5 @@ networks:
 
 volumes:
   postgres-data:
-  postgres-secret:
   keycloak-data:
   openbao-data:

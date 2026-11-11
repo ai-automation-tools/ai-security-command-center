@@ -12,3 +12,9 @@ listener "tcp" {
   address     = "0.0.0.0:8200"
   tls_disable = true
 }
+
+# Unseals on start with the key from .env: 32 random bytes, written as 64 hex digits.
+seal "static" {
+  current_key_id = "dev-1"
+  current_key    = "env://ASCC_OPENBAO_SEAL_KEY"
+}

@@ -92,20 +92,22 @@ decision goes in as an ADR amendment there, never as a quiet code change.
 - `deploy/compose/` is the development stack (TKT-006): Postgres, Keycloak, OpenBao, Jaeger, `ascc-pdp` and a
   deny-everything Envoy as the egress placeholder. It is for one developer's machine and its README says so.
   `stack_test.go` there holds its rules and `go test ./...` runs them: every port on `127.0.0.1`, every image
-  pinned by digest (a Dockerfile's included), no secret-named variable and no password in a URL, no added
+  pinned by digest (a Dockerfile's included), every secret-named variable taken from `.env`, no password in a
+  URL, no added
   privilege, nothing mounted from outside the repo, the `sandbox` network internal. A new rule gets a row in
   `TestRulesCatchABrokenFile`. The rule test needs `docker compose`: it skips without it locally and fails
-  without it in CI on Linux. `ASCC_COMPOSE_SMOKE=1` starts the stack; CI does, in its own job. Each service
-  generates its own secret on first start into its own volume; never write one into a file here, print one,
-  or pass one as a process argument.
+  without it in CI on Linux. `ASCC_COMPOSE_SMOKE=1` starts the stack; CI does, in its own job, with
+  throwaway secrets. Every secret the stack has comes from `.env` (Mike, 2026-11-10) and a missing one stops
+  it starting; never write one into a file here, print one, or pass one as a process argument.
 - `src/spikes/pluginhost` is the TKT-031 prototype of the plugin host, **in a Go module of its own**. It uses
   gRPC and `os/exec`, which the `ascc` binary may never link, so nothing under `src/cmd` or `src/internal`
   imports it and the four verify commands skip it (`gofmt -l .` still covers it). CI runs `go vet ./...` and
   `go test ./...` inside that folder. `pluginv1alpha1/` and `CONTRACT.md` there are generated from
   `proto/plugin.proto`; its README has the command.
 - Must build and test on Windows and Linux (CI runs both). Use `path/filepath`, never hard-coded separators.
-- Settings live in `.env` at the repo root, names in `.env.example`; the real environment wins. There are none
-  today. If one is ever needed, load it with a few lines of stdlib parsing and document it in `.env.example`.
+- Settings and secrets live in `.env` at the repo root, names in `.env.example`; the real environment wins.
+  `ascc` has none today; the development stack's four secrets are there. If `ascc` ever needs one, load it
+  with a few lines of stdlib parsing and document it in `.env.example`.
   Never tell anyone to set a Windows user environment variable.
 
 ## Verify
@@ -185,7 +187,8 @@ listen and connect. Each one:
 **Everything, always:**
 
 - **Accounts, telemetry, a hosted service or a paid tier.**
-- **Holding or printing a secret.**
+- **Committing or printing a secret.** A secret lives in `.env` at the repo root, which git ignores, and
+  nowhere else: not in a tracked file, a log, an error message, a fixture or a process argument.
 - **Model-based or score-based decisions.**
 - **Runtimes other than Claude Code.**
 - **Real agents, repos, people or hosts in demo data.** Fictional only (`example.com`, `paste.example`).

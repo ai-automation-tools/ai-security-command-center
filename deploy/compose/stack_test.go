@@ -4,6 +4,8 @@ package compose_test
 
 import (
 	"bytes"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -69,8 +71,9 @@ func unpinned(dockerfile string) []string {
 }
 
 // checkConfig returns every rule the resolved Compose document breaks. dockerfile reads a Dockerfile a
-// service builds from, given its build context and name.
-func checkConfig(doc []byte, dockerfile func(context, name string) ([]byte, error)) []string {
+// service builds from, given its build context and name. fromEnv holds the values the env file gave, so a
+// secret that came from anywhere else stands out.
+func checkConfig(doc []byte, dockerfile func(context, name string) ([]byte, error), fromEnv map[string]bool) []string {
 	var bad []string
 	fail := func(format string, args ...any) { bad = append(bad, fmt.Sprintf(format, args...)) }
 	var file struct {
@@ -137,9 +140,9 @@ func checkConfig(doc []byte, dockerfile func(context, name string) ([]byte, erro
 				fail("%s builds from %s, which isn't pinned by digest", name, image)
 			}
 		}
-		for key := range s.Environment {
-			if secretName.MatchString(key) && !strings.HasSuffix(key, "_FILE") {
-				fail("%s sets %s in the Compose file; a secret is made on first start, never written here", name, key)
+		for key, value := range s.Environment {
+			if secretName.MatchString(key) && !strings.HasSuffix(key, "_FILE") && (value == nil || !fromEnv[*value]) {
+				fail("%s sets %s to something that isn't a variable from .env", name, key)
 			}
 		}
 		if s.EnvFile != nil {
@@ -175,18 +178,59 @@ func checkConfig(doc []byte, dockerfile func(context, name string) ([]byte, erro
 	return bad
 }
 
+// envFile writes an env file giving every name in .env.example the value made for it, and returns its path
+// and the values. .env.example itself must hold names only.
+func envFile(t *testing.T, value func(name string) string) (string, map[string]bool) {
+	t.Helper()
+	example, err := os.ReadFile(filepath.Join("..", "..", ".env.example"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out strings.Builder
+	values := map[string]bool{}
+	for _, line := range strings.Split(string(example), "\n") {
+		name, v, ok := strings.Cut(strings.TrimSpace(line), "=")
+		if !ok || strings.HasPrefix(name, "#") {
+			continue
+		}
+		if v != "" {
+			t.Errorf(".env.example gives %s a value; it holds names only", name)
+		}
+		values[value(name)] = true
+		fmt.Fprintf(&out, "%s=%s\n", name, value(name))
+	}
+	if len(values) == 0 {
+		t.Fatal(".env.example names no variable")
+	}
+	path := filepath.Join(t.TempDir(), "env")
+	if err := os.WriteFile(path, []byte(out.String()), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return path, values
+}
+
 // The rules in the comment at the top of compose.yaml, read from Compose's own resolved view of the file so
 // a short-form port or an anchor can't hide one.
 func TestComposeFileKeepsItsRules(t *testing.T) {
 	needCompose(t)
-	out, err := exec.Command("docker", "compose", "-f", "compose.yaml", "config", "--format", "json").Output()
+	env, fromEnv := envFile(t, func(name string) string { return "from-env-" + name })
+	out, err := exec.Command("docker", "compose", "--env-file", env, "-f", "compose.yaml", "config", "--format", "json").Output()
 	if err != nil {
 		t.Fatalf("docker compose config: %v", err)
 	}
 	for _, problem := range checkConfig(out, func(context, name string) ([]byte, error) {
 		return os.ReadFile(filepath.Join(context, name))
-	}) {
+	}, fromEnv) {
 		t.Error(problem)
+	}
+
+	// With no secret given the stack must refuse to start, not start with an empty or default one.
+	empty := filepath.Join(t.TempDir(), "empty")
+	os.WriteFile(empty, nil, 0o600)
+	cmd := exec.Command("docker", "compose", "--env-file", empty, "-f", "compose.yaml", "config", "-q")
+	cmd.Env = append(os.Environ(), "ASCC_POSTGRES_PASSWORD=", "ASCC_KEYCLOAK_ADMIN_PASSWORD=", "ASCC_OPENBAO_SEAL_KEY=", "ASCC_OPENBAO_ROOT_TOKEN=")
+	if err := cmd.Run(); err == nil {
+		t.Error("the Compose file resolves with no secret set; each one must be required")
 	}
 }
 
@@ -205,9 +249,10 @@ func TestRulesCatchABrokenFile(t *testing.T) {
 	read := func(string, string) ([]byte, error) { return []byte(dockerfile), nil }
 
 	good := ok + `,"build":{"context":".","dockerfile":"d"},"ports":[{"host_ip":"127.0.0.1"}],` +
-		`"environment":{"POSTGRES_PASSWORD_FILE":"/f"},` +
+		`"environment":{"POSTGRES_PASSWORD_FILE":"/f","POSTGRES_PASSWORD":"from-env"},` +
 		`"volumes":[{"type":"volume","source":"v"},{"type":"bind","source":` + quote(filepath.Join(root, "examples")) + `}]`
-	if bad := checkConfig([]byte(doc(good, "")), read); len(bad) != 0 {
+	fromEnv := map[string]bool{"from-env": true}
+	if bad := checkConfig([]byte(doc(good, "")), read, fromEnv); len(bad) != 0 {
 		t.Fatalf("a file that keeps every rule was refused: %v", bad)
 	}
 
@@ -221,6 +266,7 @@ func TestRulesCatchABrokenFile(t *testing.T) {
 		"Dockerfile in lower case": {service: ok + `,"build":{"dockerfile":"d"}`, dockerfile: "from --platform=linux/amd64 alpine:latest\n", want: "pinned"},
 		"COPY from a tag":          {service: ok + `,"build":{"dockerfile":"d"}`, dockerfile: "FROM scratch\nCOPY --from=busybox:latest /a /a\n", want: "pinned"},
 		"password variable":        {service: ok + `,"environment":{"POSTGRES_PASSWORD":"x"}`, want: "POSTGRES_PASSWORD"},
+		"password left empty":      {service: ok + `,"environment":{"POSTGRES_PASSWORD":null}`, want: "POSTGRES_PASSWORD"},
 		"PGPASS variable":          {service: ok + `,"environment":{"PGPASS":"x"}`, want: "PGPASS"},
 		"password in a URL":        {service: ok + `,"environment":{"DATABASE_URL":"postgres://ascc:x@postgres/ascc"}`, want: "URL"},
 		"password in a command":    {service: ok + `,"command":["--db","postgres://ascc:x@postgres/ascc"]`, want: "URL"},
@@ -241,7 +287,7 @@ func TestRulesCatchABrokenFile(t *testing.T) {
 		"sandbox not internal":     {service: ok, networks: `,"sandbox":{"internal":false}`, want: "sandbox"},
 	} {
 		dockerfile = c.dockerfile
-		bad := strings.Join(checkConfig([]byte(doc(c.service, c.networks)), read), "\n")
+		bad := strings.Join(checkConfig([]byte(doc(c.service, c.networks)), read, fromEnv), "\n")
 		if !strings.Contains(bad, c.want) {
 			t.Errorf("%s: got %q, want a refusal mentioning %q", name, bad, c.want)
 		}
@@ -255,7 +301,6 @@ const (
 	allowBody = `{"tenant_id":"tnt_lab","principal":{"type":"Agent","id":"dev-agent"},"action":"runtime.tool_use",` +
 		`"resource":{"type":"Tool","id":"claude-code/Read"},` +
 		`"context":{"path_in_repo":true,"network":false,"touches_secret_path":false,"touches_ascc_state":false}}`
-	rootToken = `sed -n 's/^Initial Root Token: //p' /openbao/file/dev-keys`
 )
 
 // Brings the whole stack up from nothing and checks what the roadmap item says it gives. It uses the same
@@ -265,8 +310,18 @@ func TestStackComesUp(t *testing.T) {
 		t.Skip("set ASCC_COMPOSE_SMOKE=1 to start the stack")
 	}
 	needCompose(t)
+	// Throwaway secrets, as .env would give them. They are never printed: a failure names the variable.
+	secrets := map[string]string{}
+	env, _ := envFile(t, func(name string) string {
+		if secrets[name] == "" {
+			b := make([]byte, 32)
+			rand.Read(b)
+			secrets[name] = hex.EncodeToString(b)
+		}
+		return secrets[name]
+	})
 	dc := func(args ...string) ([]byte, error) {
-		cmd := exec.Command("docker", append([]string{"compose", "-f", "compose.yaml", "-p", "ascc-smoke"}, args...)...)
+		cmd := exec.Command("docker", append([]string{"compose", "--env-file", env, "-f", "compose.yaml", "-p", "ascc-smoke"}, args...)...)
 		var stderr bytes.Buffer
 		cmd.Stderr = &stderr
 		out, err := cmd.Output()
@@ -337,11 +392,22 @@ func TestStackComesUp(t *testing.T) {
 	if !unsealed() {
 		t.Error("OpenBao isn't initialised and unsealed after up --wait")
 	}
-	// The token stays inside the container: the shell there reads it and hands it to bao.
+	// The root token is the one from .env, and the one OpenBao generated at init is gone.
 	mounts, _ := dc("exec", "-T", "openbao", "sh", "-c",
-		`BAO_TOKEN=$(`+rootToken+`) bao secrets list -address=http://127.0.0.1:8200`)
+		`test ! -e /openbao/file/dev-init.tmp && BAO_TOKEN=$ASCC_OPENBAO_ROOT_TOKEN bao secrets list -address=http://127.0.0.1:8200`)
 	if !bytes.Contains(mounts, []byte("secret/")) || !bytes.Contains(mounts, []byte("transit/")) {
-		t.Error("OpenBao reports healthy without kv-v2 at secret/ and transit at transit/")
+		t.Error("OpenBao doesn't take the root token from .env, or lacks kv-v2 at secret/ and transit at transit/")
+	}
+	if resp, err := client.PostForm("http://127.0.0.1:18080/realms/master/protocol/openid-connect/token", url.Values{
+		"grant_type": {"password"}, "client_id": {"admin-cli"}, "username": {"admin"},
+		"password": {secrets["ASCC_KEYCLOAK_ADMIN_PASSWORD"]},
+	}); err != nil {
+		t.Errorf("Keycloak admin login: %v", err)
+	} else {
+		resp.Body.Close()
+		if resp.StatusCode != 200 {
+			t.Errorf("Keycloak refuses the admin password from .env (status %d)", resp.StatusCode)
+		}
 	}
 	if out, err := dc("restart", "openbao"); err != nil {
 		t.Fatalf("restart openbao: %v\n%s", err, out)
@@ -353,9 +419,14 @@ func TestStackComesUp(t *testing.T) {
 		return code == 200
 	})
 
-	if out, err := dc("exec", "-T", "postgres", "psql", "-U", "ascc", "-d", "ascc", "-Atc", "select current_database()"); err != nil ||
+	// By name, not loopback: inside its own container Postgres trusts loopback and asks for no password.
+	const psql = `psql -h postgres -U ascc -d ascc -Atc "select current_database()"`
+	if out, err := dc("exec", "-T", "postgres", "sh", "-c", `PGPASSWORD=$POSTGRES_PASSWORD `+psql); err != nil ||
 		strings.TrimSpace(string(out)) != "ascc" {
-		t.Errorf("Postgres has no ascc database: %v", err)
+		t.Errorf("Postgres has no ascc database behind the password from .env: %v", err)
+	}
+	if _, err := dc("exec", "-T", "postgres", "sh", "-c", `PGPASSWORD=wrong `+psql); err == nil {
+		t.Error("Postgres let a wrong password in")
 	}
 
 	// The egress placeholder refuses everything. paste.example is never resolved: the proxy has no upstream.
@@ -376,26 +447,14 @@ func TestStackComesUp(t *testing.T) {
 		t.Errorf("CONNECT through the egress proxy failed, but not with a 403: %v", err)
 	}
 
-	// Each service made its own secret and none of them reached a log. The values are read here only to
-	// search for them, and a failure names the secret without printing it.
+	// No secret from .env reached a log.
 	logs, err := dc("logs", "--no-color")
 	if err != nil {
 		t.Fatalf("docker compose logs: %v", err)
 	}
-	for name, cmd := range map[string][]string{
-		"the Postgres password":       {"postgres", "cat", "/run/ascc/password"},
-		"the Keycloak admin password": {"keycloak", "cat", "/opt/keycloak/data/admin-password"},
-		"the OpenBao unseal key":      {"openbao", "sed", "-n", "s/^Unseal Key 1: //p", "/openbao/file/dev-keys"},
-		"the OpenBao root token":      {"openbao", "sh", "-c", rootToken},
-	} {
-		out, err := dc(append([]string{"exec", "-T"}, cmd...)...)
-		value := bytes.TrimSpace(out)
-		if err != nil || len(value) < 20 {
-			t.Errorf("%s wasn't made on first start", name)
-			continue
-		}
-		if bytes.Contains(logs, value) {
-			t.Errorf("%s is in the service logs", name)
+	for name, value := range secrets {
+		if bytes.Contains(logs, []byte(value)) {
+			t.Errorf("the value of %s is in the service logs", name)
 		}
 	}
 }
