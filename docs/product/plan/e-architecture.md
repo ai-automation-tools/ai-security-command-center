@@ -524,9 +524,9 @@ spike in TKT-031/032 decides whether its handshake and health model fit **[V]**.
 | # | Question | Why open | Phase |
 |:--|:--|:--|:--|
 | R1 | Which CLI runtimes expose a *blocking* pre-tool hook, for which tool types, and how stable is the contract? | Vendor-specific, changes often **[V]** | 0 |
-| R2 | Proof-of-possession for agent tokens on laptops: DPoP vs mTLS-bound tokens vs instance-key signatures | Client support varies **[V]** | 0 to 1 |
-| R3 | Status and fit of the IETF OAuth transaction-token draft and of OAuth work on AI agent delegation; OAuth 2.1 is still a draft (`draft-ietf-oauth-v2-1-16` as of 2026-09 [DS]) **[V]** | Drafts move; prefer adopting a standard to inventing claims | 0 |
-| R4 | Can MCP server-initiated requests (sampling, elicitation) be governed without breaking clients? MCP revision 2026-07-28 introduced transport-level auth; stdio remains env-credential only [DS] **[V]** | Spec behaviour | 2 |
+| R2 | Proof-of-possession for agent tokens on laptops: DPoP vs mTLS-bound tokens vs instance-key signatures | Answered 2026-11-10 in the [proof-of-possession report](../../reports/2026-proof-of-possession.md): per client, and Claude Code's remote MCP token can't be bound yet | 0 to 1 |
+| R3 | Status and fit of the IETF OAuth transaction-token draft and of OAuth work on AI agent delegation; OAuth 2.1 is still a draft (`draft-ietf-oauth-v2-1-16` as of 2026-09 [DS]; `-17` when checked 2026-11-10, see [K §1.1](k-next-steps.md#11-v-check-results-2026-11-10)) **[V]** | Drafts move; prefer adopting a standard to inventing claims | 0 |
+| R4 | Can MCP server-initiated requests (sampling, elicitation) be governed without breaking clients? MCP revision 2026-07-28 introduced transport-level auth; stdio remains env-credential only [DS] **[V]** (checked 2026-11-10: that revision replaced server-initiated requests with results the client answers on a retry, and added no transport auth; see [K §1.1](k-next-steps.md#11-v-check-results-2026-11-10)) | Spec behaviour | 2 |
 | R5 | Useful precision/recall for prompt-injection detectors on tool results in our traffic | Public benchmarks don't transfer | 2 |
 | R6 | Command-level policy for shell tools: allowlists vs parsed AST vs sandbox-only | Pattern rules are bypassable | 1 to 2 |
 | R7 | Collusion detection between agents sharing a model | No established method | 4 |

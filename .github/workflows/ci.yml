@@ -53,6 +53,15 @@ jobs:
         if: runner.os == 'Linux'
         run: curl -fsS --max-time 30 https://ai-automation-tools.dev/schemas/agent-inventory/v0.1.json | diff - schemas/agent-inventory.schema.json
 
+      # The plugin host prototype is a module of its own (it links gRPC, which ascc may not), so the steps
+      # above never build it.
+      - name: Plugin host prototype
+        shell: bash
+        working-directory: src/spikes/pluginhost
+        run: |
+          go vet ./...
+          go test ./...
+
       - name: Build the core and the demo for WebAssembly
         shell: bash
         run: GOOS=js GOARCH=wasm go build ./src/internal/... ./src/cmd/ascc-wasm
