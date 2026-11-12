@@ -162,7 +162,11 @@ go build ./...
   added. For the demo, `TestBuiltPageRendersWithNoNetwork` builds the site and runs its scripts in Node with
   `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource` and `sendBeacon` stubbed to throw: the page must render
   the planted deny and never call one. The page's content policy sets `connect-src 'none'` as well. That test
-  needs `node` on `PATH`: it skips without it locally and fails without it in CI.
+  needs `node` on `PATH`: it skips without it locally and fails without it in CI. `TestBuiltPageInABrowser`
+  walks the page again in headless Chromium (Playwright, `src/cmd/buildsite/testdata/browser/`), where any
+  request for something other than the site's own files, and any console error, fails it. It runs with
+  `ASCC_BROWSER_TEST` set, which CI's `browser` job does. A change to the page's buttons or ids is made in
+  `site/`, `testdata/render.js` and `page.test.mjs` together.
 - **A call that can't be recorded doesn't happen.** If the audit append fails or can't get the lock, the hook
   exits 2 even when policy said allow.
 - **An agent can't switch ascc off.** `touches_ascc_state` covers writes to the registry, policies, audit log

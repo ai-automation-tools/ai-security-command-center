@@ -75,6 +75,32 @@ jobs:
         shell: bash
         run: GOOS=js GOARCH=wasm go build ./src/internal/... ./src/cmd/ascc-wasm
 
+  # The demo page in a real browser: headless Chromium, every request stopped, anything but the site's
+  # own files refused. The `verify` job runs the same walk in Node with a stand-in for the DOM.
+  browser:
+    name: Demo page in Chromium
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install Playwright and Chromium
+        working-directory: src/cmd/buildsite/testdata/browser
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Walk the page
+        env:
+          ASCC_BROWSER_TEST: "1"
+        run: go test -count=1 -v -run '^TestBuiltPageInABrowser$' ./src/cmd/buildsite
+
   # Runs agentgateway between a stub MCP server and a stub policy service and checks the six results the
   # gateway report records. The binary is the tagged release, refused unless it matches the checksum
   # written here. Linux only: one platform is enough to catch a release that behaves differently.
