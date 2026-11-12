@@ -60,7 +60,7 @@ is scored as what it was for: can one caller be cut off at once, without a resta
 | **1** | Streamable HTTP, SSE and stdio upstreams. The stateless revision is handled, `server/discover` included; stdio and SSE upstreams still use the older handshake. | `crates/agentgateway/src/mcp/upstream/`, `mcp/handler.rs`, `mcp/README.md` |
 | **2** | Each tool in a merged `tools/list` is checked against CEL rules that see the caller's token claims and headers. A remote "guardrail" service is also shown the merged list and may rewrite or reject it. | `mcp/handler.rs` (`merge_tools`), `mcp/rbac.rs`, `crates/protos/proto/ext_mcp.proto` |
 | **3** | The `ext_mcp` gRPC callout is sent the MCP method and the request's parameters, so the tool name and arguments, on every `tools/call`. It can pass, change or reject the call, and **its default when the service can't be reached is to fail closed.** | `mcp/guardrails/client.rs`, `mcp/guardrails/mod.rs` |
-| **4** | No admin call ends a session or revokes one identity. Authorization and the callout run per request, so a deny from ASCC's PDP stops further calls. Whether a stream already open is torn down wasn't established. | `management/admin.rs`, `mcp/session.rs` |
+| **4** | No admin call ends a session or revokes one identity. Authorization and the callout run per request, so a deny from ASCC's PDP stops further calls. Whether a stream already open is torn down wasn't established by reading; [the run](#the-run-2026-11-11) showed it isn't. | `management/admin.rs`, `mcp/session.rs` |
 | **5** | No plugin host and no WebAssembly. Custom logic is CEL in config or a gRPC service in any language (`ext_mcp`, `ext_proc`, `ext_authz`); Go stubs for `ext_mcp` ship in the repo. | `http/ext_proc.rs`, `api/ext_mcp*.go` |
 
 Also: it runs as one binary from a YAML file with no Kubernetes, it proxies A2A, and it has **no pinning of tool
@@ -98,8 +98,9 @@ It would put Python on the hot path, the reason ADR-04 gives for rejecting LiteL
   description pinning and the delegation check. ADR-02 would then cover the code ASCC writes, not the proxy.
 - **The trust base grows by a Rust proxy** and its admin surface (a config dump, a config write, a quit
   endpoint). That is a change to T-20 in the [threat model](../product/plan/d-threat-model.md).
-- **The kill switch is a PDP deny plus a config push**, not a call the gateway offers. That needs a test that
-  an open stream is cut.
+- **The kill switch is a PDP deny plus something more**, not a call the gateway offers.
+  [The run](#the-run-2026-11-11) showed the deny alone stops the next call and leaves an open stream running;
+  whether a config push cuts it wasn't tried.
 - **The LLM side wasn't read.** ADR-04's gateway also carries Anthropic and OpenAI-compatible traffic. Whether
   agentgateway's LLM proxying is enough is outside this report.
 

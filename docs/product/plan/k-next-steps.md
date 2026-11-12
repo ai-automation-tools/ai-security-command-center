@@ -30,7 +30,7 @@
     (Phase 3)
 - [x] **4. Run Phase 0 spikes** TKT-001 to TKT-004 **and TKT-031** together (about 4 weeks of focused work;
       TKT-031 also records the connector scope verification above). Done 2026-11-10, each as a report:
-      [gateway build or adopt](../../reports/2026-gateway-build-vs-adopt.md) (TKT-001, a source read, not a run),
+      [gateway build or adopt](../../reports/2026-gateway-build-vs-adopt.md) (TKT-001, a source read, then a run of agentgateway on 2026-11-11),
       [cedar-go check](../../reports/2026-cedar-go-check.md) (TKT-002, cut down),
       [proof of possession](../../reports/2026-proof-of-possession.md) (TKT-003),
       [Claude Code hook contract](../../reports/2026-claude-code-hook-contract.md) (TKT-004, Claude Code only) and
