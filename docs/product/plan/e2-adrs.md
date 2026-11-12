@@ -16,7 +16,7 @@ a decision, the change is marked **Amended 2026-11-10** inside the ADR; earlier 
 | [01](#adr-01) | Hybrid enforcement with one PDP | **Spike** | Half proven: the public MVP is one PDP (`src/internal/pdp`) with a hook as its first enforcement point, checked against a live Claude Code session. The gateway and egress halves aren't built. Waits for sign-off |
 | [02](#adr-02) | Go for backend services and PEPs | **Spike** | The MVP is Go throughout and builds for Windows, Linux and WebAssembly. Amended: an adopted gateway would not be ASCC code, so this turns on K5. Waits for K5 and sign-off |
 | [03](#adr-03) | Cedar as the authorization language | **Spike** | [cedar-go check](../../reports/2026-cedar-go-check.md): 9 of 9 requests match the Rust reference. Timed at 500 policies and 5,000 entities: 1.0 ms p99 ([service guide](../../guides/pdp-service.md#how-fast)). Waits for K4 |
-| [04](#adr-04) | Build the gateway in Go (unless the spike favours an existing project) | **Spike** | [Gateway report](../../reports/2026-gateway-build-vs-adopt.md): agentgateway meets the adopt rule on a source read. Waits for a run and for K5 |
+| [04](#adr-04) | Build the gateway in Go (unless the spike favours an existing project) | **Spike** | [Gateway report](../../reports/2026-gateway-build-vs-adopt.md): agentgateway meets the adopt rule on a source read, and a [run of v1.7.0](../../reports/2026-gateway-build-vs-adopt.md#the-run-2026-11-11) confirmed it; a deny doesn't end an open stream. Waits for K5 |
 | [05](#adr-05) | PostgreSQL as the single MVP store | **Spike** | No evidence yet: nothing is built on it and no check touched it. First used in Slice 5. Waits for sign-off. Since 2026-11-10 PostgreSQL 18 runs in the [development stack](../../../deploy/compose/README.md) with an empty database; that shows it starts, nothing more |
 | [06](#adr-06) | Token exchange + ASCC transaction tokens for delegation; SVIDs as server-side instance proof; gateway as OAuth 2.1 resource server | **Spike** | [Proof-of-possession report](../../reports/2026-proof-of-possession.md) settles TKT-003. Waits for the token service (Slice 5), the claim names (TKT-005) and K3 for the unbound-token rule |
 | [07](#adr-07) | OpenBao as the bundled secrets backend; Vault, cloud secret managers and PAM via connector plugins | **Spike** | [V] checks: OpenBao is MPL-2.0 and documents the KV v2, AppRole, transit and lease APIs. Read, not run. Waits for TKT-036's test and for K2 and K8. Since 2026-11-10 OpenBao 2.7 runs in the [development stack](../../../deploy/compose/README.md), unsealed, with KV v2 and transit mounted and nothing stored; no ASCC code calls it yet |
@@ -113,6 +113,14 @@ a decision, the change is marked **Amended 2026-11-10** inside the ADR; earlier 
   decision K5. Two corrections to the text above: Envoy AI Gateway is now Agent Router, an Agentic AI Foundation
   project; and MCP revision 2026-07-28 has no protocol sessions, so "session termination API" and "kill
   confirmation per session" mean cutting off one caller, by a PDP deny on its next request.
+- **Amended 2026-11-11:** agentgateway v1.7.0 was run against a stub of the callout
+  ([the run](../../reports/2026-gateway-build-vs-adopt.md#the-run-2026-11-11)). A deny reached the client with
+  its reason, `tools/list` was filtered per caller, a call was refused with the policy service down, a changed
+  tool description was rejected, and the gateway with its callouts added about 1.4 ms a call. So the adopt
+  rule is met on a run, not only a reading. **One result went the other way: a deny issued while a response
+  stream is open doesn't end it**; the suspended caller gets the rest of the stream and is refused from its
+  next call on. The decision is still not changed here: it is K5, the owner's. If it is "adopt", cutting an
+  open stream is added work this ADR has to name.
 
 <a id="adr-05"></a>
 ## ADR-05 PostgreSQL as the single MVP store

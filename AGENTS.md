@@ -104,6 +104,12 @@ decision goes in as an ADR amendment there, never as a quiet code change.
   imports it and the four verify commands skip it (`gofmt -l .` still covers it). CI runs `go vet ./...` and
   `go test ./...` inside that folder. `pluginv1alpha1/` and `CONTRACT.md` there are generated from
   `proto/plugin.proto`; its README has the command.
+- `src/spikes/gatewayrun` is the TKT-001 run, **also a Go module of its own** and for the same reason. Its test
+  starts a real agentgateway between a stub MCP server and a stub `ext_mcp` policy service and pins the six
+  results in the gateway report to what v1.7.0 does. It needs the release binary named in `ASCC_AGENTGATEWAY`
+  and skips without it; CI's `gateway` job downloads the release, checks its SHA-256 and runs it. `extmcp/`
+  there is agentgateway's contract and generated code, copied at the tag and changed only by `gofmt`. Moving
+  to a later release means the checksum in `ci.yml`, the three copied files and a reread of the report.
 - Must build and test on Windows and Linux (CI runs both). Use `path/filepath`, never hard-coded separators.
 - Settings and secrets live in `.env` at the repo root, names in `.env.example`; the real environment wins.
   `ascc` has none today; the development stack's four secrets are there. If `ascc` ever needs one, load it

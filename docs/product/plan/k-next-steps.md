@@ -38,8 +38,9 @@
 - [-] **5. Accept or amend ADR-01 to ADR-17** with spike results; ADR-15 may stay *Spike* until the first
       connector runs on the real host (M1.4). Amended 2026-11-10, **not yet accepted**: nine carry an amendment and
       every one has its evidence and what it waits for in the [status table](e2-adrs.md). Two are Accepted
-      (ADR-12 and ADR-14, which the public MVP runs on); accepting the other fifteen is the owner's. ADR-04 waits on a run of agentgateway
-      and on K5: the spike found it meets the adopt rule, so "build in Go" is no longer the safe default.
+      (ADR-12 and ADR-14, which the public MVP runs on); accepting the other fifteen is the owner's. ADR-04 waits on K5: the spike
+      found agentgateway meets the adopt rule and a run on 2026-11-11 confirmed it, so "build in Go" is no longer
+      the safe default. The run also showed a deny doesn't end an open stream.
 - [x] **6. Re-rate the threat model** (D) with the chosen runtimes, deployment and connector set, including
       T-23 to T-27. Done 2026-11-10: [D §4.1](d-threat-model.md#41-re-rating-2026-11-10). T-03 goes up; T-23 and
       T-24 come down for Phase 1 only.

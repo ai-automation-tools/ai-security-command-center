@@ -5,8 +5,9 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/verdict-agentgateway_meets_the_adopt_rule,_unproven_by_a_run-F59E0B?style=for-the-badge" alt="Verdict: agentgateway meets the adopt rule on a source read; not yet proven by a run">
-  <img src="https://img.shields.io/badge/checked-2026--11--10-6B7280?style=for-the-badge" alt="Checked 2026-11-10">
+  <img src="https://img.shields.io/badge/verdict-agentgateway_meets_the_adopt_rule,_confirmed_by_a_run-2ea44f?style=for-the-badge" alt="Verdict: agentgateway meets the adopt rule, confirmed by a run of v1.7.0">
+  <img src="https://img.shields.io/badge/read-2026--11--10-6B7280?style=for-the-badge" alt="Read 2026-11-10">
+  <img src="https://img.shields.io/badge/run-2026--11--11-6B7280?style=for-the-badge" alt="Run 2026-11-11">
   <a href="../README.md"><img src="https://img.shields.io/badge/↩-docs_home-6B7280?style=for-the-badge" alt="Back to docs"></a>
 </p>
 
@@ -16,11 +17,12 @@
 a fork, which is ADR-04's own rule for adopting.** Agent Router (the renamed Envoy AI Gateway) passes none and
 ContextForge three. So the default in ADR-04, build the gateway in Go, no longer follows from the evidence.
 
-**This was a source read, not a run.** Each project was cloned at the commit below and its code and in-repo docs
-were read; nothing was built or started. The roadmap item says "tested commit hashes", and this report doesn't
-meet that: the hashes are the ones read. Before ADR-04 changes, agentgateway has to be run against a stub of
-the callout it would use ([what a run must show](#what-a-run-must-show)). Build or adopt is also decision K5 in
-[K. Next steps](../product/plan/k-next-steps.md), so it is on the roadmap as an owner item.
+**The comparison was a source read; agentgateway has since been run.** Each project was cloned at the commit
+below and its code and in-repo docs were read. On 2026-11-11 agentgateway v1.7.0 was then run against a stub of
+the callout it would use, and the three results the verdict depends on held: [the run](#the-run-2026-11-11).
+One thing the run was asked to show, it showed the other way: **a deny doesn't end a stream that is already
+open.** Build or adopt is decision K5 in [K. Next steps](../product/plan/k-next-steps.md), an owner item on the
+roadmap, and it can now be made.
 
 ## What was read
 
@@ -103,7 +105,8 @@ It would put Python on the hot path, the reason ADR-04 gives for rejecting LiteL
 
 ## What a run must show
 
-Before ADR-04 is amended from "build" to "adopt", at the commit above or a later tagged release:
+Written before the run; [the run](#the-run-2026-11-11) answers each. Before ADR-04 is amended from "build" to
+"adopt", at the commit above or a later tagged release:
 
 1. A `tools/call` is denied when a stub `ext_mcp` service says no, and the client sees the reason.
 2. `tools/list` comes back with a tool removed for one identity and present for another.
@@ -114,11 +117,56 @@ Before ADR-04 is amended from "build" to "adopt", at the commit above or a later
 
 If any of 1 to 3 fails, agentgateway drops to three passes and ADR-04's build default stands.
 
+## The run (2026-11-11)
+
+agentgateway **v1.7.0** (commit `26f5aebe99a36a037fe54f8080a608aca5547e15`, released 2026-10-27), the release's
+own Windows binary, checked against its published SHA-256. The harness is
+[`src/spikes/gatewayrun/`](../../src/spikes/gatewayrun/README.md): a stub MCP server with three tools, a stub
+`ext_mcp` service with five rules standing in for ASCC's decision point, and a test that starts the gateway
+between them. CI runs the same test on Linux against the Linux binary. Every `tools/call` and `tools/list`
+went to the stub on the way in and on the way out.
+
+| # | Asked | Result | What happened |
+|:--|:--|:--|:--|
+| **1** | A deny reaches the client with its reason | **Pass** | `delete_repo` was refused with the stub's reason and never reached the upstream. The deny is not a JSON-RPC error: it arrives as a tool result marked `isError` with the reason as its text, so the model reads it like any tool failure. |
+| **2** | `tools/list` differs by identity | **Pass** | One agent was shown three tools, the other two. The stub removed the tool by rewriting the result in the response callout. An agent id the stub didn't know, or none, was refused at `initialize`. |
+| **3** | Stub down, call refused | **Pass** | With the policy service stopped the call came back as error `-32603`, "guardrail check failed", and the upstream wasn't called. The failure mode was left unset, so this is the default. The refusal took about two seconds. |
+| **4** | A deny ends an open stream | **Fail** | The agent was suspended three messages into a 25-message stream. **The other 22 still arrived.** Only the final result was replaced by the deny. The agent's next call was refused before it reached the upstream. |
+| **5** | A changed description is rejected | **Pass** | With one tool's description swapped for a poisoned one, the stub rejected the whole list against its pin. The same gateway with no callout passed the poisoned list through. |
+| **6** | Added latency, against NFR-02 | **Pass** | About 1.4 ms a call on average: 0.65 ms for the gateway and 0.75 ms for the two callouts. Worst p99 over two runs was 12 ms added. NFR-02 allows a 5 ms median, 25 ms p95 and 50 ms p99. |
+
+Latency is 2,000 sequential calls over loopback on one quiet Windows machine, so it says the callout is cheap
+and nothing about load. Windows' clock ticks about every half millisecond, which blurs a percentile at this
+size; the mean is the figure to trust.
+
+**What it means for the verdict.** Results 1 to 3 are the ones that could have dropped agentgateway to three
+passes. They held, so it passes four of five on a run and ADR-04's adopt rule is met. Criterion 4 stays
+"partial", now with a measurement behind it: **suspending an agent stops its next call, not the one in
+flight.** A long-running tool keeps streaming to a suspended agent until it finishes, and whatever the tool is
+doing upstream carries on. If K5 says adopt, the kill switch needs something more for open streams, and that
+is work to design, not a setting. What might do it wasn't tried: a config push, a proxy in front that resets
+the connection, or the upstream ending its own call.
+
+Four things the run turned up that the source read didn't:
+
+- **It listens on every interface unless told otherwise.** The short `mcp: port:` form has no address. A
+  loopback listener needs a `gateways` entry with `bindAddress: 127.0.0.1`, which is what the harness uses.
+- **The response callout carries no headers.** Only the `metadata` map, filled by CEL in the gateway's config,
+  reaches both callouts, so that is where the caller's identity has to travel. The harness reads it from a
+  request header, which a caller can set to anything; a real deployment takes it from a verified token's
+  claims.
+- **The Go stubs can't be imported as a module.** Asking for the `api` folder pulls in the whole repository,
+  which needs a newer Go than ASCC uses. The harness carries a copy of the proto and its generated code.
+- **The Windows build works**, which the source read had left open.
+
 ## Not covered
 
-- Nothing was run. Every "pass" is a reading of code at one commit.
-- Callout latency, the LLM adapters, A2A in depth, each project's dependency licences and its history.
-- Whether agentgateway's Windows build works. ASCC's first runtime is Claude Code on Windows.
+- Agent Router and ContextForge were read, not run. Their rows are still a reading of code at one commit.
+- What ends an open stream. The run shows a deny doesn't; it tried nothing else.
+- Latency under load or with many callers, and the callout over anything but loopback.
+- Identity from a real token. The harness trusts a header, which proves the plumbing and nothing about who
+  is calling.
+- The LLM adapters, A2A in depth, each project's dependency licences and its history.
 - LiteLLM and Kong, which ADR-04 already rejects; the [V] checks confirmed their open-core split.
 
 ---
