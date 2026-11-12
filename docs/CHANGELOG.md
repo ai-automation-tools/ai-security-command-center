@@ -18,7 +18,13 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 **Security**
 - `.gitleaksignore` suppresses the two gitleaks hits on the planted fake credentials in `discover_test.go`, so the weekly secret scan stays quiet.
 
+**Changed**
+- The demo's address in the README and docs is `https://ai-security-command-center-demo.ai-automation-tools.dev/`. The old one redirects there. *Next slices*
+- `deploy/compose/README.md` asks for Docker Engine 28.3.3, not 28: the loopback fix it relies on was lost again after a firewalld reload until that release (CVE-2025-54388). *Next slices*
+- The Pages workflow uses `actions/deploy-pages@v5` and `actions/upload-pages-artifact@v5`. *Next slices*
+
 **Added**
+- `ascc inventory --import` warns on stderr when two imported files describe one id differently. It names the id and both files and nothing else; the first file still wins. *Next slices*
 - The gateway run. agentgateway v1.7.0 was run between a stub MCP server and a stub `ext_mcp` policy service, by a harness in `src/spikes/gatewayrun/` (a Go module of its own, with a CI job that checks the release's SHA-256 before running it). A deny reached the client with its reason, `tools/list` was filtered per agent, a call was refused with the policy service down, a changed tool description was rejected against its pin, and the gateway with its callouts added about 1.4 ms a call. One result went the other way: a deny doesn't end a stream that is already open. The [gateway report](reports/2026-gateway-build-vs-adopt.md#the-run-2026-11-11) has the table and ADR-04 an amendment; build or adopt (K5) is still the owner's call. *Next slices*
 - A development stack in `deploy/compose/`: one `docker compose` command starts Postgres, Keycloak with an `ascc-dev` realm, OpenBao (unsealed and initialised with no step by hand), Jaeger, `ascc-pdp` on the sample policies, and an egress proxy placeholder that refuses everything. Every port is on `127.0.0.1`, every image is pinned by digest, and every secret comes from `.env`, so none is in the repository and a missing one stops the start. For one developer's machine only. *Next slices*
 - `ascc-pdp`, the policy decision point as a service: `POST /pdp/v1/decide` gives the same answer as `ascc decide`, in the platform's request and response shape. It listens on loopback, re-reads the registry and policies on every request so the kill switch needs no restart, and answers a deny for anything it can't evaluate or can't log. It doesn't authenticate callers or keep an audit chain yet. Guide: `docs/guides/pdp-service.md`. *Next slices*

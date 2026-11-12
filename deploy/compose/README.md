@@ -27,8 +27,10 @@ owner's sign-off. Nothing in ASCC depends on any of them yet.
 
 ## Run it
 
-You need Docker Engine 28 or newer, with Compose v2. On Linux, older engines let another machine on the same
-network segment reach a port that was published on loopback only.
+You need Docker Engine 28.3.3 or newer, with Compose v2. On Linux, engines before 28.0.0 let another machine
+on the same network segment reach a port that was published on loopback only, and 28.0.0 to 28.3.2 let it
+again after a firewalld reload (CVE-2025-54388). Both are in Docker's
+[Engine 28 release notes](https://docs.docker.com/engine/release-notes/28/), read 2026-11-11.
 
 First the secrets. Copy [`.env.example`](../../.env.example) to `.env` at the repository root and give each of
 the four names a long random value (letters and digits; `openssl rand -hex 32` makes one, and the seal key
