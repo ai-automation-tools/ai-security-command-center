@@ -145,6 +145,18 @@ func TestInventoryImportCommand(t *testing.T) {
 	if strings.Contains(out, "IMPORTED-COPY") || strings.Contains(out, "SECOND-COPY") {
 		t.Error("an imported identity replaced or doubled one ascc already had")
 	}
+	// The two files disagree about the standup bot. The first wins, and stderr says so by id and file
+	// without repeating what either file says about it.
+	if strings.Count(errOut, "warning:") != 1 || !strings.Contains(errOut, `"slack:bot/standup"`) ||
+		!strings.Contains(errOut, first) || !strings.Contains(errOut, second) || strings.Contains(errOut, "SECOND-COPY") {
+		t.Errorf("want one warning naming the id and both files and no value, got %q", errOut)
+	}
+	// The same file twice, or two files that agree, is nothing to warn about.
+	agrees := write("agrees.json", `{"schemaVersion":"0.1","generatedAt":"2026-11-01T00:00:00Z","producer":{"name":"ghost-grant","version":"2"},"identities":[
+		{"id":"slack:bot/standup","kind":"bot","platform":"slack","displayName":"standup","status":"active","owner":null}]}`)
+	if code, _, errOut := ascc(t, "", append([]string{"inventory", "--import", first, "--import", first, "--import", agrees}, hermetic...)...); code != 0 || strings.Contains(errOut, "warning:") {
+		t.Errorf("imports that agree: exit %d, stderr %q", code, errOut)
+	}
 	// discover's own report can be merged back in.
 	found := filepath.Join(none, "found.json")
 	if code, _, errOut := ascc(t, "", "discover", "--registry", sample[1], "--root", discoverFixture(t).root, "--out", found); code != 0 {

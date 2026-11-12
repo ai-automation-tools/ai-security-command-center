@@ -16,7 +16,9 @@ rm -f "$ready"
 mkdir -p /openbao/file/data
 bao server -config=/ascc/config.hcl &
 server=$!
-trap 'kill "$server" 2>/dev/null || true; wait "$server" 2>/dev/null || true; exit 0' TERM INT
+body=/tmp/ascc-token # holds the root token from .env for one command; never outlives this script
+trap 'rm -f "$body"' EXIT
+trap 'rm -f "$body"; kill "$server" 2>/dev/null || true; wait "$server" 2>/dev/null || true; exit 0' TERM INT
 
 # retry <what> <command...>: once a second for a minute, then give up and stop the container.
 retry() {
@@ -48,7 +50,6 @@ if [ -s "$init" ]; then
   export BAO_TOKEN
   active() { bao token lookup >/dev/null 2>&1; }
   retry "OpenBao becoming active" active
-  body=/tmp/ascc-token
   printf '{"id":"%s","policies":["root"],"display_name":"ascc-dev"}' "$ASCC_OPENBAO_ROOT_TOKEN" >"$body"
   bao write auth/token/create-orphan @"$body" >/dev/null || {
     rm -f "$body"

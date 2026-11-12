@@ -278,7 +278,8 @@ ascc inventory --import ghost-grant.json --import discovered.json --out inventor
 
 `--import` merges the identities of another suite tool's inventory document, or of an `ascc discover` report.
 An identity the registry already has, as an agent or under `identities`, is kept and the imported copy dropped;
-between two imports the first on the command line wins, and nothing says they differed. Each imported identity
+between two imports the first on the command line wins, and a warning on stderr names the id and both files
+when they describe it differently. Each imported identity
 is tagged `imported-from:<producer>` and gets the same findings. An imported `coverage:unmonitored` tag is kept,
 any other coverage tag is dropped, and the other tool's findings aren't carried over. A file that isn't a valid
 suite document stops the command: nothing is written.

@@ -29,6 +29,7 @@ import (
 	"path/filepath"
 	"sort"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/ai-automation-tools/ai-security-command-center/src/internal/pdp"
@@ -347,7 +348,21 @@ func checkListen(addr string, allowRemote bool) error {
 	return fmt.Errorf("--listen %s is reachable from other machines and this service doesn't authenticate callers; use a loopback address such as 127.0.0.1, or pass --allow-remote on a private network", addr)
 }
 
+// stopSignals end the service: Ctrl-C, and the terminate signal `docker stop` and an init system send.
+var stopSignals = []os.Signal{os.Interrupt, syscall.SIGTERM}
+
+// drainFor is how long a stop waits for requests already in flight. Under `docker stop`'s ten seconds.
+const drainFor = 5 * time.Second
+
 func run(args []string, stdout, stderr io.Writer) int {
+	ctx, stop := signal.NotifyContext(context.Background(), stopSignals...)
+	defer stop()
+	return serve(ctx, args, stdout, stderr)
+}
+
+// serve runs the service until ctx ends, then stops taking connections and lets the requests already
+// in flight finish before it returns.
+func serve(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("ascc-pdp", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	listen := fs.String("listen", "127.0.0.1:8181", "address to listen on")
@@ -377,19 +392,23 @@ func run(args []string, stdout, stderr io.Writer) int {
 		Handler: s.handler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second,
 		WriteTimeout: 10 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 << 10,
 	}
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer stop()
+	// Serve returns the moment Shutdown is called, not when it is done, so the wait is on drained.
+	drained := make(chan struct{})
 	go func() {
+		defer close(drained)
 		<-ctx.Done()
-		shut, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		shut, cancel := context.WithTimeout(context.Background(), drainFor)
 		defer cancel()
-		srv.Shutdown(shut)
+		if err := srv.Shutdown(shut); err != nil {
+			srv.Close() // still busy after drainFor: cut what is left
+		}
 	}()
 	fmt.Fprintf(stderr, "ascc-pdp: listening on %s\n", lis.Addr())
 	if err := srv.Serve(lis); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		fmt.Fprintln(stderr, "ascc-pdp: stopped:", err)
 		return 2
 	}
+	<-drained
 	return 0
 }
 

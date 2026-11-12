@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -35,7 +36,8 @@ var (
 	secretName = regexp.MustCompile(`(?i)(PASSWORD|PASSWD|PGPASS|SECRET|TOKEN|KEY|CREDENTIAL)`)
 	// A URL with a password in it, as in postgres://user:pw@host.
 	urlSecret = regexp.MustCompile(`://[^/\s:@"]+:[^@\s"]+@`)
-	copyFrom  = regexp.MustCompile(`(?i)--from=(\S+)`)
+	// --from=image on a COPY, and from=image inside a RUN --mount.
+	copyFrom = regexp.MustCompile(`(?i)\bfrom=([^\s,]+)`)
 )
 
 // unpinned returns the images a Dockerfile takes from a registry without a digest.
@@ -43,7 +45,7 @@ func unpinned(dockerfile string) []string {
 	var bad []string
 	stages := map[string]bool{"scratch": true}
 	check := func(image string) {
-		if _, err := fmt.Sscanf(image, "%d", new(int)); err == nil || stages[strings.ToLower(image)] {
+		if _, err := strconv.Atoi(image); err == nil || stages[strings.ToLower(image)] {
 			return // an earlier stage, by number or by name
 		}
 		if !strings.Contains(image, "@sha256:") {
@@ -51,6 +53,11 @@ func unpinned(dockerfile string) []string {
 		}
 	}
 	for _, line := range strings.Split(dockerfile, "\n") {
+		// A "# syntax=" line names an image too: the one that reads the rest of the file.
+		if rest, ok := strings.CutPrefix(strings.ReplaceAll(strings.ToLower(line), " ", ""), "#syntax="); ok {
+			check(rest)
+			continue
+		}
 		f := strings.Fields(line)
 		if len(f) > 1 && strings.EqualFold(f[0], "FROM") {
 			f = f[1:]
@@ -84,6 +91,13 @@ func checkConfig(doc []byte, dockerfile func(context, name string) ([]byte, erro
 			Pid         string   `json:"pid"`
 			Ipc         string   `json:"ipc"`
 			Userns      string   `json:"userns_mode"`
+			Uts         string   `json:"uts"`
+			Cgroup      string   `json:"cgroup"`
+			Sysctls     any      `json:"sysctls"`
+			APISocket   bool     `json:"use_api_socket"`
+			VolumesFrom []string `json:"volumes_from"`
+			Secrets     []any    `json:"secrets"`
+			Configs     []any    `json:"configs"`
 			CapAdd      []string `json:"cap_add"`
 			Devices     []any    `json:"devices"`
 			SecurityOpt []string `json:"security_opt"`
@@ -91,6 +105,7 @@ func checkConfig(doc []byte, dockerfile func(context, name string) ([]byte, erro
 				Context          string `json:"context"`
 				Dockerfile       string `json:"dockerfile"`
 				DockerfileInline string `json:"dockerfile_inline"`
+				Network          string `json:"network"`
 			} `json:"build"`
 			Environment map[string]*string `json:"environment"`
 			EnvFile     any                `json:"env_file"`
@@ -103,10 +118,20 @@ func checkConfig(doc []byte, dockerfile func(context, name string) ([]byte, erro
 			} `json:"volumes"`
 		} `json:"services"`
 		Networks map[string]struct {
-			Driver   string `json:"driver"`
-			Internal bool   `json:"internal"`
-			External any    `json:"external"`
+			Driver     string `json:"driver"`
+			DriverOpts any    `json:"driver_opts"`
+			Internal   bool   `json:"internal"`
+			External   any    `json:"external"`
+			IPv6       bool   `json:"enable_ipv6"`
+			Attachable bool   `json:"attachable"`
 		} `json:"networks"`
+		Volumes map[string]struct {
+			Driver     string `json:"driver"`
+			DriverOpts any    `json:"driver_opts"`
+			External   any    `json:"external"`
+		} `json:"volumes"`
+		Secrets map[string]any `json:"secrets"`
+		Configs map[string]any `json:"configs"`
 	}
 	if err := json.Unmarshal(doc, &file); err != nil {
 		return []string{"not the JSON docker compose config prints: " + err.Error()}
@@ -117,7 +142,28 @@ func checkConfig(doc []byte, dockerfile func(context, name string) ([]byte, erro
 	if urlSecret.Match(doc) {
 		fail("a URL in the file carries a password")
 	}
+	// A value from .env belongs in a service's environment and nowhere else: in a command or a health
+	// check it is a process argument, in a label anyone can read it, in a build argument it is in the image.
+	var rest map[string]any
+	json.Unmarshal(doc, &rest)
+	if services, ok := rest["services"].(map[string]any); ok {
+		for _, s := range services {
+			if s, ok := s.(map[string]any); ok {
+				delete(s, "environment")
+			}
+		}
+	}
+	outside, _ := json.Marshal(rest)
+	for value := range fromEnv {
+		if bytes.Contains(outside, []byte(value)) {
+			fail("a value from .env is used outside a service's environment")
+		}
+	}
 	root, _ := filepath.Abs(filepath.Join("..", ".."))
+	inRepo := func(path string) bool {
+		path = filepath.Clean(path)
+		return path == root || strings.HasPrefix(path, root+string(filepath.Separator))
+	}
 	for name, s := range file.Services {
 		for _, p := range s.Ports {
 			if p.HostIP != "127.0.0.1" {
@@ -131,6 +177,8 @@ func checkConfig(doc []byte, dockerfile func(context, name string) ([]byte, erro
 			}
 		case s.Build.DockerfileInline != "":
 			fail("%s builds from an inline Dockerfile; keep it in a file this test reads", name)
+		case !inRepo(s.Build.Context) || (s.Build.Network != "" && s.Build.Network != "default"):
+			fail("%s builds from a context outside this repository, or on a network of its own choosing", name)
 		default:
 			text, err := dockerfile(s.Build.Context, s.Build.Dockerfile)
 			if err != nil {
@@ -151,8 +199,12 @@ func checkConfig(doc []byte, dockerfile func(context, name string) ([]byte, erro
 		if s.Privileged || len(s.CapAdd) > 0 || len(s.Devices) > 0 {
 			fail("%s is privileged, adds a capability or gets a device", name)
 		}
-		if s.NetworkMode == "host" || s.Pid != "" || s.Ipc != "" || s.Userns != "" {
-			fail("%s shares a namespace with the host or another container", name)
+		if s.NetworkMode == "host" || strings.Contains(s.NetworkMode, ":") || s.Pid != "" || s.Ipc != "" || s.Userns != "" ||
+			s.Uts != "" || s.Cgroup != "" || s.Sysctls != nil {
+			fail("%s shares a namespace with the host or another container, or sets a sysctl", name)
+		}
+		if s.APISocket || len(s.VolumesFrom) > 0 || len(s.Secrets) > 0 || len(s.Configs) > 0 {
+			fail("%s gets the Docker socket, another container's volumes, or a secret or config file from outside this repository", name)
 		}
 		if len(s.SecurityOpt) != 1 || s.SecurityOpt[0] != "no-new-privileges:true" {
 			fail("%s must set exactly no-new-privileges:true under security_opt", name)
@@ -161,16 +213,24 @@ func checkConfig(doc []byte, dockerfile func(context, name string) ([]byte, erro
 			if v.Type == "volume" {
 				continue
 			}
-			src := filepath.Clean(v.Source)
-			if v.Type != "bind" || (src != root && !strings.HasPrefix(src, root+string(filepath.Separator))) {
+			if v.Type != "bind" || !inRepo(v.Source) {
 				fail("%s mounts a %s from outside this repository; only named volumes and folders in it are allowed", name, v.Type)
 			}
 		}
 	}
 	for name, n := range file.Networks {
-		if (n.Driver != "" && n.Driver != "bridge") || n.External != nil {
+		if (n.Driver != "" && n.Driver != "bridge") || n.External != nil || n.DriverOpts != nil || n.IPv6 || n.Attachable {
 			fail("network %s isn't a plain bridge network of this stack", name)
 		}
+	}
+	// A named volume with driver options can be a bind mount of anything on the host.
+	for name, v := range file.Volumes {
+		if (v.Driver != "" && v.Driver != "local") || v.DriverOpts != nil || v.External != nil {
+			fail("volume %s mounts from outside this repository; a named volume takes no driver, options or external name", name)
+		}
+	}
+	if len(file.Secrets) > 0 || len(file.Configs) > 0 {
+		fail("the file declares a secret or config, which mounts a file from outside this repository; secrets come from .env")
 	}
 	if !file.Networks["sandbox"].Internal {
 		fail("the sandbox network must be internal")
@@ -224,13 +284,33 @@ func TestComposeFileKeepsItsRules(t *testing.T) {
 		t.Error(problem)
 	}
 
-	// With no secret given the stack must refuse to start, not start with an empty or default one.
-	empty := filepath.Join(t.TempDir(), "empty")
-	os.WriteFile(empty, nil, 0o600)
-	cmd := exec.Command("docker", "compose", "--env-file", empty, "-f", "compose.yaml", "config", "-q")
-	cmd.Env = append(os.Environ(), "ASCC_POSTGRES_PASSWORD=", "ASCC_KEYCLOAK_ADMIN_PASSWORD=", "ASCC_OPENBAO_SEAL_KEY=", "ASCC_OPENBAO_ROOT_TOKEN=")
-	if err := cmd.Run(); err == nil {
-		t.Error("the Compose file resolves with no secret set; each one must be required")
+	// Compose folds an env_file into environment and drops the key, so it has to be looked for in the file.
+	if raw, err := os.ReadFile("compose.yaml"); err != nil || bytes.Contains(raw, []byte("env_file")) {
+		t.Errorf("compose.yaml uses env_file, which this test can't see into (or can't be read: %v)", err)
+	}
+
+	// With any one secret missing the stack must refuse to start, not start with an empty or default one.
+	example, _ := os.ReadFile(filepath.Join("..", "..", ".env.example"))
+	var names []string
+	for _, line := range strings.Split(string(example), "\n") {
+		if name, _, ok := strings.Cut(strings.TrimSpace(line), "="); ok && !strings.HasPrefix(name, "#") {
+			names = append(names, name)
+		}
+	}
+	for _, missing := range names {
+		partial := filepath.Join(t.TempDir(), "env")
+		var text string
+		for _, name := range names {
+			if name != missing {
+				text += name + "=from-env-" + name + "\n"
+			}
+		}
+		os.WriteFile(partial, []byte(text), 0o600)
+		cmd := exec.Command("docker", "compose", "--env-file", partial, "-f", "compose.yaml", "config", "-q")
+		cmd.Env = append(os.Environ(), missing+"=")
+		if err := cmd.Run(); err == nil {
+			t.Errorf("the Compose file resolves without %s; each secret must be required", missing)
+		}
 	}
 }
 
@@ -242,52 +322,81 @@ func TestRulesCatchABrokenFile(t *testing.T) {
 		return string(b)
 	}
 	const ok = `"image":"x@sha256:00","security_opt":["no-new-privileges:true"]`
-	doc := func(service, networks string) string {
-		return `{"services":{"a":{` + service + `}},"networks":{"sandbox":{"internal":true}` + networks + `}}`
+	doc := func(service, networks, more string) string {
+		return `{"services":{"a":{` + service + `}},"networks":{"sandbox":{"internal":true}` + networks + `}` + more + `}`
 	}
 	dockerfile := "FROM --platform=linux/amd64 golang:1@sha256:00 AS build\nFROM scratch\nCOPY --from=build /a /a\nCOPY --from=0 /a /b\n"
 	read := func(string, string) ([]byte, error) { return []byte(dockerfile), nil }
 
-	good := ok + `,"build":{"context":".","dockerfile":"d"},"ports":[{"host_ip":"127.0.0.1"}],` +
+	good := ok + `,"build":{"context":` + quote(root) + `,"dockerfile":"d"},"ports":[{"host_ip":"127.0.0.1"}],` +
 		`"environment":{"POSTGRES_PASSWORD_FILE":"/f","POSTGRES_PASSWORD":"from-env"},` +
 		`"volumes":[{"type":"volume","source":"v"},{"type":"bind","source":` + quote(filepath.Join(root, "examples")) + `}]`
 	fromEnv := map[string]bool{"from-env": true}
-	if bad := checkConfig([]byte(doc(good, "")), read, fromEnv); len(bad) != 0 {
+	if bad := checkConfig([]byte(doc(good, "", `,"volumes":{"v":{"name":"stack_v"}}`)), read, fromEnv); len(bad) != 0 {
 		t.Fatalf("a file that keeps every rule was refused: %v", bad)
 	}
 
 	const noOpt = `"image":"x@sha256:00"`
-	for name, c := range map[string]struct{ service, networks, dockerfile, want string }{
-		"port on every address":    {service: ok + `,"ports":[{"host_ip":"0.0.0.0"}]`, want: "127.0.0.1"},
-		"port with no address":     {service: ok + `,"ports":[{}]`, want: "127.0.0.1"},
-		"image by tag":             {service: `"image":"x:latest","security_opt":["no-new-privileges:true"]`, want: "pinned"},
-		"inline Dockerfile":        {service: ok + `,"build":{"dockerfile_inline":"FROM x"}`, want: "inline"},
-		"Dockerfile by tag":        {service: ok + `,"build":{"dockerfile":"d"}`, dockerfile: "FROM alpine:latest\n", want: "pinned"},
-		"Dockerfile in lower case": {service: ok + `,"build":{"dockerfile":"d"}`, dockerfile: "from --platform=linux/amd64 alpine:latest\n", want: "pinned"},
-		"COPY from a tag":          {service: ok + `,"build":{"dockerfile":"d"}`, dockerfile: "FROM scratch\nCOPY --from=busybox:latest /a /a\n", want: "pinned"},
-		"password variable":        {service: ok + `,"environment":{"POSTGRES_PASSWORD":"x"}`, want: "POSTGRES_PASSWORD"},
-		"password left empty":      {service: ok + `,"environment":{"POSTGRES_PASSWORD":null}`, want: "POSTGRES_PASSWORD"},
-		"PGPASS variable":          {service: ok + `,"environment":{"PGPASS":"x"}`, want: "PGPASS"},
-		"password in a URL":        {service: ok + `,"environment":{"DATABASE_URL":"postgres://ascc:x@postgres/ascc"}`, want: "URL"},
-		"password in a command":    {service: ok + `,"command":["--db","postgres://ascc:x@postgres/ascc"]`, want: "URL"},
-		"env_file":                 {service: ok + `,"env_file":[{"path":".env"}]`, want: "env_file"},
-		"privileged":               {service: ok + `,"privileged":true`, want: "privileged"},
-		"added capability":         {service: ok + `,"cap_add":["SYS_ADMIN"]`, want: "capability"},
-		"host network":             {service: ok + `,"network_mode":"host"`, want: "namespace"},
-		"host pid":                 {service: ok + `,"pid":"host"`, want: "namespace"},
-		"no-new-privileges off":    {service: noOpt + `,"security_opt":["no-new-privileges:false"]`, want: "no-new-privileges"},
-		"seccomp off":              {service: noOpt + `,"security_opt":["no-new-privileges:true","seccomp:unconfined"]`, want: "no-new-privileges"},
-		"no security_opt":          {service: noOpt, want: "no-new-privileges"},
-		"Docker socket":            {service: ok + `,"volumes":[{"type":"bind","source":"/var/run/docker.sock"}]`, want: "outside"},
-		"repo's parent":            {service: ok + `,"volumes":[{"type":"bind","source":` + quote(filepath.Dir(root)) + `}]`, want: "outside"},
-		"repo's sibling":           {service: ok + `,"volumes":[{"type":"bind","source":` + quote(root+"-other") + `}]`, want: "outside"},
-		"tmpfs":                    {service: ok + `,"volumes":[{"type":"tmpfs"}]`, want: "outside"},
-		"macvlan network":          {service: ok, networks: `,"lan":{"driver":"macvlan"}`, want: "bridge"},
-		"external network":         {service: ok, networks: `,"lan":{"external":true}`, want: "bridge"},
-		"sandbox not internal":     {service: ok, networks: `,"sandbox":{"internal":false}`, want: "sandbox"},
+	build := func(dockerfile string) struct{ service, networks, volumes, dockerfile, want string } {
+		return struct{ service, networks, volumes, dockerfile, want string }{
+			service: ok + `,"build":{"context":` + quote(root) + `,"dockerfile":"d"}`, dockerfile: dockerfile, want: "pinned"}
+	}
+	for name, c := range map[string]struct{ service, networks, volumes, dockerfile, want string }{
+		"port on every address":     {service: ok + `,"ports":[{"host_ip":"0.0.0.0"}]`, want: "127.0.0.1"},
+		"port with no address":      {service: ok + `,"ports":[{}]`, want: "127.0.0.1"},
+		"image by tag":              {service: `"image":"x:latest","security_opt":["no-new-privileges:true"]`, want: "pinned"},
+		"inline Dockerfile":         {service: ok + `,"build":{"context":` + quote(root) + `,"dockerfile_inline":"FROM x"}`, want: "inline"},
+		"Dockerfile by tag":         build("FROM alpine:latest\n"),
+		"Dockerfile in lower case":  build("from --platform=linux/amd64 alpine:latest\n"),
+		"COPY from a tag":           build("FROM scratch\nCOPY --from=busybox:latest /a /a\n"),
+		"image named like a stage":  build("FROM 1password/op:latest\n"),
+		"syntax line by tag":        build("# syntax=frontend.example/dockerfile:latest\nFROM scratch\n"),
+		"RUN mount from a tag":      build("FROM scratch\nRUN --mount=type=bind,from=busybox:latest,target=/b true\n"),
+		"build context outside":     {service: ok + `,"build":{"context":` + quote(filepath.Dir(root)) + `,"dockerfile":"d"}`, want: "context"},
+		"build on the host net":     {service: ok + `,"build":{"context":` + quote(root) + `,"dockerfile":"d","network":"host"}`, want: "context"},
+		"secret in a command":       {service: ok + `,"command":["--password","from-env"]`, want: "outside a service's environment"},
+		"secret in a health check":  {service: ok + `,"healthcheck":{"test":["CMD","pg_isready","from-env"]}`, want: "outside a service's environment"},
+		"secret in a label":         {service: ok + `,"labels":{"pw":"from-env"}`, want: "outside a service's environment"},
+		"secret as a build arg":     {service: ok + `,"build":{"context":` + quote(root) + `,"dockerfile":"d","args":{"PW":"from-env"}}`, want: "outside a service's environment"},
+		"password variable":         {service: ok + `,"environment":{"POSTGRES_PASSWORD":"x"}`, want: "POSTGRES_PASSWORD"},
+		"password left empty":       {service: ok + `,"environment":{"POSTGRES_PASSWORD":null}`, want: "POSTGRES_PASSWORD"},
+		"PGPASS variable":           {service: ok + `,"environment":{"PGPASS":"x"}`, want: "PGPASS"},
+		"password in a URL":         {service: ok + `,"environment":{"DATABASE_URL":"postgres://ascc:x@postgres/ascc"}`, want: "URL"},
+		"password in a command":     {service: ok + `,"command":["--db","postgres://ascc:x@postgres/ascc"]`, want: "URL"},
+		"env_file":                  {service: ok + `,"env_file":[{"path":".env"}]`, want: "env_file"},
+		"privileged":                {service: ok + `,"privileged":true`, want: "privileged"},
+		"added capability":          {service: ok + `,"cap_add":["SYS_ADMIN"]`, want: "capability"},
+		"host network":              {service: ok + `,"network_mode":"host"`, want: "namespace"},
+		"host pid":                  {service: ok + `,"pid":"host"`, want: "namespace"},
+		"host ipc":                  {service: ok + `,"ipc":"host"`, want: "namespace"},
+		"host user namespace":       {service: ok + `,"userns_mode":"host"`, want: "namespace"},
+		"host uts":                  {service: ok + `,"uts":"host"`, want: "namespace"},
+		"host cgroup":               {service: ok + `,"cgroup":"host"`, want: "namespace"},
+		"another service's network": {service: ok + `,"network_mode":"service:b"`, want: "namespace"},
+		"a sysctl":                  {service: ok + `,"sysctls":{"net.ipv4.ip_forward":"1"}`, want: "sysctl"},
+		"a device":                  {service: ok + `,"devices":[{"source":"/dev/kmsg"}]`, want: "device"},
+		"the API socket":            {service: ok + `,"use_api_socket":true`, want: "Docker socket"},
+		"volumes from another":      {service: ok + `,"volumes_from":["b"]`, want: "Docker socket"},
+		"a secret file":             {service: ok + `,"secrets":[{"source":"s"}]`, want: "Docker socket"},
+		"a declared secret":         {service: ok, volumes: `,"secrets":{"s":{"file":"/etc/shadow"}}`, want: "declares a secret"},
+		"volume bound to the host":  {service: ok, volumes: `,"volumes":{"v":{"driver_opts":{"type":"none","o":"bind","device":"/"}}}`, want: "volume v"},
+		"external volume":           {service: ok, volumes: `,"volumes":{"v":{"external":true}}`, want: "volume v"},
+		"network driver options":    {service: ok, networks: `,"lan":{"driver_opts":{"com.docker.network.bridge.gateway_mode_ipv4":"nat-unprotected"}}`, want: "bridge"},
+		"IPv6 network":              {service: ok, networks: `,"lan":{"enable_ipv6":true}`, want: "bridge"},
+		"attachable network":        {service: ok, networks: `,"lan":{"attachable":true}`, want: "bridge"},
+		"no-new-privileges off":     {service: noOpt + `,"security_opt":["no-new-privileges:false"]`, want: "no-new-privileges"},
+		"seccomp off":               {service: noOpt + `,"security_opt":["no-new-privileges:true","seccomp:unconfined"]`, want: "no-new-privileges"},
+		"no security_opt":           {service: noOpt, want: "no-new-privileges"},
+		"Docker socket":             {service: ok + `,"volumes":[{"type":"bind","source":"/var/run/docker.sock"}]`, want: "outside"},
+		"repo's parent":             {service: ok + `,"volumes":[{"type":"bind","source":` + quote(filepath.Dir(root)) + `}]`, want: "outside"},
+		"repo's sibling":            {service: ok + `,"volumes":[{"type":"bind","source":` + quote(root+"-other") + `}]`, want: "outside"},
+		"tmpfs":                     {service: ok + `,"volumes":[{"type":"tmpfs"}]`, want: "outside"},
+		"macvlan network":           {service: ok, networks: `,"lan":{"driver":"macvlan"}`, want: "bridge"},
+		"external network":          {service: ok, networks: `,"lan":{"external":true}`, want: "bridge"},
+		"sandbox not internal":      {service: ok, networks: `,"sandbox":{"internal":false}`, want: "sandbox"},
 	} {
 		dockerfile = c.dockerfile
-		bad := strings.Join(checkConfig([]byte(doc(c.service, c.networks)), read, fromEnv), "\n")
+		bad := strings.Join(checkConfig([]byte(doc(c.service, c.networks, c.volumes)), read, fromEnv), "\n")
 		if !strings.Contains(bad, c.want) {
 			t.Errorf("%s: got %q, want a refusal mentioning %q", name, bad, c.want)
 		}

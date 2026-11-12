@@ -25,6 +25,16 @@ and is skipped without it. The stack itself is optional, for work on the platfor
 [`deploy/compose/README.md`](deploy/compose/README.md) says how to start it and where its secrets go (`.env`,
 which git ignores).
 
+Three checks don't run unless you ask, because each needs something this repo won't download for you. CI
+runs all three, each in a job of its own:
+
+- **The demo page in a real browser.** `ASCC_BROWSER_TEST=1 go test -run TestBuiltPageInABrowser ./src/cmd/buildsite`,
+  after the setup in [`testdata/browser/README.md`](src/cmd/buildsite/testdata/browser/README.md). Run it
+  when you change anything under `site/`.
+- **The development stack, started.** `ASCC_COMPOSE_SMOKE=1 go test -count=1 ./deploy/compose`.
+- **The gateway run.** [`src/spikes/gatewayrun/`](src/spikes/gatewayrun/README.md), with the agentgateway
+  release binary named in `ASCC_AGENTGATEWAY`.
+
 All four must pass before a pull request opens. CI runs them on Linux and Windows, plus a WebAssembly build of
 the core packages, so use `path/filepath` and never a hard-coded separator.
 

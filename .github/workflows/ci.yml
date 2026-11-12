@@ -62,9 +62,73 @@ jobs:
           go vet ./...
           go test ./...
 
+      # The gateway run is a module of its own too. Here it is vetted and its test skips; the `gateway` job
+      # below runs it against the real binary.
+      - name: Gateway run harness
+        shell: bash
+        working-directory: src/spikes/gatewayrun
+        run: |
+          go vet ./...
+          go test ./...
+
       - name: Build the core and the demo for WebAssembly
         shell: bash
         run: GOOS=js GOARCH=wasm go build ./src/internal/... ./src/cmd/ascc-wasm
+
+  # The demo page in a real browser: headless Chromium, every request stopped, anything but the site's
+  # own files refused. The `verify` job runs the same walk in Node with a stand-in for the DOM.
+  browser:
+    name: Demo page in Chromium
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install Playwright and Chromium
+        working-directory: src/cmd/buildsite/testdata/browser
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Walk the page
+        env:
+          ASCC_BROWSER_TEST: "1"
+        run: go test -count=1 -v -run '^TestBuiltPageInABrowser$' ./src/cmd/buildsite
+
+  # Runs agentgateway between a stub MCP server and a stub policy service and checks the six results the
+  # gateway report records. The binary is the tagged release, refused unless it matches the checksum
+  # written here. Linux only: one platform is enough to catch a release that behaves differently.
+  gateway:
+    name: Gateway run against agentgateway
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      AGENTGATEWAY_VERSION: v1.7.0
+      AGENTGATEWAY_SHA256: 1b2fc01a2de29ca113bbb6258b5cae7b1eb3c724071c09d687a449132f2f42f8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Download agentgateway and check it
+        run: |
+          curl -fsSL --max-time 120 -o "$RUNNER_TEMP/agentgateway" "https://github.com/agentgateway/agentgateway/releases/download/$AGENTGATEWAY_VERSION/agentgateway-linux-amd64"
+          echo "$AGENTGATEWAY_SHA256  $RUNNER_TEMP/agentgateway" | sha256sum --check
+          chmod +x "$RUNNER_TEMP/agentgateway"
+
+      - name: Run it
+        working-directory: src/spikes/gatewayrun
+        run: ASCC_AGENTGATEWAY="$RUNNER_TEMP/agentgateway" go test -count=1 -v .
 
   # Starts the development stack from nothing and checks each service, the egress deny and that no secret
   # reached a log. Linux only: the stack is Linux containers.

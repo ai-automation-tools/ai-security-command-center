@@ -97,3 +97,27 @@ func TestBuiltPageRendersWithNoNetwork(t *testing.T) {
 		t.Fatalf("the page failed in Node: %v\n%s", err, msg)
 	}
 }
+
+// The same walk as the test above, in a real browser: headless Chromium driven by Playwright, with
+// every request the page makes stopped and anything but the site's own files refused. It proves what
+// the Node stand-in can't: that the page's own DOM code, its content policy and the WebAssembly engine
+// work together in a browser. It needs `npm ci` in testdata/browser and a Chromium, so it runs only
+// when ASCC_BROWSER_TEST is set; CI sets it in a job of its own.
+func TestBuiltPageInABrowser(t *testing.T) {
+	if os.Getenv("ASCC_BROWSER_TEST") == "" {
+		t.Skip("ASCC_BROWSER_TEST is not set; see testdata/browser/README.md")
+	}
+	root, err := repoRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := t.TempDir()
+	if err := build(root, out); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command("node", "page.test.mjs", out)
+	cmd.Dir = filepath.Join("testdata", "browser")
+	if msg, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("the page failed in Chromium: %v\n%s", err, msg)
+	}
+}

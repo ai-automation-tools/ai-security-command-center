@@ -15,6 +15,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"time"
 
 	"github.com/ai-automation-tools/ai-security-command-center/src/internal/audit"
@@ -290,13 +291,20 @@ func decide(registry, policies, request string, stdin io.Reader) (pdp.Decision, 
 }
 
 // inventory writes the document. An --import file that can't be read or isn't a valid suite document
-// stops it: a merged list with a silent hole in it would read as complete.
+// stops it: a merged list with a silent hole in it would read as complete. Two imports that describe
+// one id differently don't stop it, since the first still wins, but stderr names the id and both files.
+// It names nothing else: what the two entries say stays out of the terminal.
 func inventory(registry, policies, auditLog, out string, imports []string, sp settingsPaths, stdout, stderr io.Writer) error {
 	p, err := load(registry, policies)
 	if err != nil {
 		return err
 	}
 	var docs []pdp.Inventory
+	type seenIn struct {
+		file     string
+		identity pdp.Identity
+	}
+	seen := map[string]seenIn{}
 	for _, file := range imports {
 		st, err := os.Stat(file)
 		if err != nil || !st.Mode().IsRegular() || st.Size() > maxConfigBytes {
@@ -309,6 +317,13 @@ func inventory(registry, policies, auditLog, out string, imports []string, sp se
 		doc, err := pdp.ParseInventory(data)
 		if err != nil {
 			return fmt.Errorf("--import %s: %v", file, err)
+		}
+		for _, n := range doc.Identities {
+			if first, ok := seen[n.ID]; !ok {
+				seen[n.ID] = seenIn{file, n}
+			} else if first.file != file && !reflect.DeepEqual(first.identity, n) {
+				fmt.Fprintf(stderr, "warning: --import %s describes %q differently from %s; the first is used unless the registry declares it\n", file, n.ID, first.file)
+			}
 		}
 		docs = append(docs, doc)
 	}

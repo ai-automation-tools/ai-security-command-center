@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <a href="https://ai-automation-tools.dev/ai-security-command-center/"><img src="https://img.shields.io/badge/Live_Demo-open-c084fc?style=for-the-badge" alt="Live demo"></a>
+  <a href="https://ai-security-command-center-demo.ai-automation-tools.dev/"><img src="https://img.shields.io/badge/Live_Demo-open-c084fc?style=for-the-badge" alt="Live demo"></a>
   <img src="https://img.shields.io/badge/status-incubating-F59E0B?style=for-the-badge" alt="Status: incubating">
   <a href="docs/ROADMAP.md"><img src="https://img.shields.io/badge/plan-ROADMAP-8B5CF6?style=for-the-badge" alt="Roadmap"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge" alt="License: MIT"></a>
@@ -41,7 +41,7 @@
 > [!WARNING]
 > **Incubating.** The policy decision point, the Claude Code hook, the audit log, the kill switch and the posture
 > check, `discover` and the inventory of agents and the non-human identities they use work and are tested.
-> So does the [browser demo](https://ai-automation-tools.dev/ai-security-command-center/). Nothing here has had an outside review. The [roadmap](docs/ROADMAP.md) says what's next.
+> So does the [browser demo](https://ai-security-command-center-demo.ai-automation-tools.dev/). Nothing here has had an outside review. The [roadmap](docs/ROADMAP.md) says what's next.
 
 ## 🎯 What it's for
 
@@ -63,7 +63,7 @@ ASCC (`ascc`) puts one policy decision point in front of the agent:
 
 The browser demo runs the same Go core as WebAssembly on a planted setup: the injected `curl` call shows as
 denied on first load, and you can edit the policy, replay the calls, edit the audit log and flip the kill switch.
-It is live at [ai-automation-tools.dev/ai-security-command-center](https://ai-automation-tools.dev/ai-security-command-center/), published from `main` by the
+It is live at [ai-security-command-center-demo.ai-automation-tools.dev](https://ai-security-command-center-demo.ai-automation-tools.dev/), published from `main` by the
 Pages workflow. To build it yourself, run `go run ./src/cmd/buildsite` and serve `_site/` with any static file
 server. The page makes no network call.
 
@@ -152,7 +152,7 @@ To put it in front of a real agent, follow the [Claude Code setup guide](docs/gu
 | **`ascc kill <agent>`**, **`ascc revive <agent>`** | none | 0 done; 2 the agent is unknown or retired |
 | **`ascc posture claude-code`** | `--agent <id>` checks one agent; `--managed <file>`, `--user <file>`, `--project <dir>` point at other settings | 0 every agent passes; 1 one fails; 2 ascc couldn't run |
 | **`ascc discover`** | `--root <dir>` (default: the current folder), `--out <file>` | 0 everything under the root was read; 1 something couldn't be, and is named on stderr; 2 ascc couldn't run |
-| **`ascc inventory`** | `--import <file>` (repeatable), `--out <file>`, and the three settings flags `posture` takes | 0 done; 2 ascc couldn't run or an import isn't a valid suite document |
+| **`ascc inventory`** | `--import <file>` (repeatable), `--out <file>`, and the three settings flags `posture` takes | 0 done, with a warning on stderr if two imports describe one id differently; 2 ascc couldn't run or an import isn't a valid suite document |
 | **`ascc version`**, **`ascc help`** | none | 0 |
 
 Every command also takes `--registry <file>` (default `ascc.registry.json`), `--policies <dir>` (default
@@ -221,7 +221,7 @@ never replaces what the registry declares.
 | Folder | What's inside |
 |:---|:---|
 | [**📚 docs/**](docs/README.md) | The roadmap, the changelog, the public-MVP spec and build plan, the full planning package and the resource library. |
-| [**🧩 src/**](src/) | The Go code: `cmd/ascc` is the CLI, `cmd/ascc-wasm` the browser build, `cmd/buildsite` the demo's build tool, and `internal/` holds the packages. Tests sit next to the code. `cmd/ascc-pdp` is the decision point as a service and `cmd/ascc-schema` the schema validator, both binaries of their own for the platform still being built. `spikes/pluginhost` is a prototype in a Go module of its own. None of the three is part of `ascc`. |
+| [**🧩 src/**](src/) | The Go code: `cmd/ascc` is the CLI, `cmd/ascc-wasm` the browser build, `cmd/buildsite` the demo's build tool, and `internal/` holds the packages. Tests sit next to the code. `cmd/ascc-pdp` is the decision point as a service and `cmd/ascc-schema` the schema validator, both binaries of their own for the platform still being built. `spikes/pluginhost` is a prototype and `spikes/gatewayrun` the harness that ran agentgateway against a stub policy service, each in a Go module of its own. None of the four is part of `ascc`. |
 | [**🧪 examples/**](examples/) | A sample registry, Cedar policies, requests and hook payloads with fictional agents. The tests run these same files. |
 | [**🧱 deploy/**](deploy/compose/README.md) | The development stack for the platform still being built: a Compose file that starts Postgres, Keycloak, OpenBao, Jaeger, `ascc-pdp` and an egress placeholder on loopback. `ascc` needs none of it. |
 | [**📐 schemas/**](schemas/) | The Agent Security Suite inventory schema, v0.1, vendored from `ai-automation-tools.dev`, and under [`platform/`](schemas/platform/README.md) the schemas for the platform still being built, with the `ascc-schema` validator. |

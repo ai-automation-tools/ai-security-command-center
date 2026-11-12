@@ -459,3 +459,48 @@ func TestBinaryCantOpenASocket(t *testing.T) {
 		}
 	}
 }
+
+// Two kills at once both land: the registry rewrite and its audit line happen under the audit log's
+// lock, so one kill can't read the registry, lose the race and write the other's change away.
+func TestParallelKillsAllLand(t *testing.T) {
+	w := newWorkspace(t)
+	agents := []string{"dev-agent", "ci-agent", "ownerless-agent"}
+	const rounds = 10
+	for round := range rounds {
+		for _, step := range []struct{ cmd, status string }{{"kill", pdp.StatusSuspended}, {"revive", pdp.StatusActive}} {
+			var wg sync.WaitGroup
+			codes, errs := make([]int, len(agents)), make([]string, len(agents))
+			for i, agent := range agents {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					codes[i], _, errs[i] = w.run("", step.cmd, agent)
+				}()
+			}
+			wg.Wait()
+			reg, err := pdp.ParseRegistry([]byte(w.registry()))
+			if err != nil {
+				t.Fatalf("round %d, %s: the registry no longer loads: %v", round, step.cmd, err)
+			}
+			for i, agent := range agents {
+				if codes[i] != 0 {
+					t.Fatalf("round %d: %s %s exited %d: %s", round, step.cmd, agent, codes[i], errs[i])
+				}
+				for _, a := range reg.Agents {
+					if a.ID == agent && a.Status != step.status {
+						t.Fatalf("round %d: %s %s exited 0 but the registry says %s", round, step.cmd, agent, a.Status)
+					}
+				}
+			}
+		}
+	}
+	// Every one of them is on the chain, which still verifies.
+	if count, _, err := audit.Verify([]byte(w.log())); err != nil || count != rounds*2*len(agents) {
+		t.Fatalf("%d entries, verify: %v", count, err)
+	}
+	for _, left := range []string{filepath.Join(".ascc", "audit.jsonl.lock"), "ascc.registry.json.tmp"} {
+		if _, err := os.Stat(filepath.Join(w.dir, left)); err == nil {
+			t.Fatalf("%s was left behind", left)
+		}
+	}
+}

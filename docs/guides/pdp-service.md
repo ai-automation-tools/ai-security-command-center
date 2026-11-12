@@ -44,6 +44,10 @@ services, on the same sample files.
 It exits 2 if it can't listen or the flags are wrong. It starts even when the registry or policies don't load:
 it then denies everything, which is safer than leaving an enforcement point with nothing to ask.
 
+On Ctrl-C, or the terminate signal that `docker stop` and an init system send, it stops taking connections,
+gives the requests already in flight up to five seconds to finish, and exits 0. A caller mid-request gets its
+answer and not a reset.
+
 ## Ask for a decision
 
 `POST /pdp/v1/decide` as `application/json`, with the request from [F §6](../product/plan/f-data-contracts.md), which
