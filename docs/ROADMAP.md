@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/now-next_slices-F59E0B?style=for-the-badge" alt="Now: next slices, release gates all ticked">
+  <img src="https://img.shields.io/badge/now-waiting_on_owner-F59E0B?style=for-the-badge" alt="Now: waiting on owner decisions, release gates all ticked">
   <img src="https://img.shields.io/badge/stage-incubating-2ea44f?style=for-the-badge" alt="Stage: incubating">
   <a href="README.md"><img src="https://img.shields.io/badge/↩-docs_home-6B7280?style=for-the-badge" alt="Back to docs"></a>
 </p>
@@ -28,31 +28,36 @@ repo owns, with fictional agents and repos, and need no running service, credent
 Slice 5 on the items build the platform's services, which may use the network; `ascc` itself never does
 ([AGENTS.md](../AGENTS.md), Won't).
 
-## 📍 Where things stand (2026-11-10)
+## 📍 Where things stand (2026-11-11)
 
 - **Every release gate is ticked.** Slices 0 to 3 are built and the demo is live at
-  `https://ai-automation-tools.dev/ai-security-command-center/`. Every push to `main` redeploys it.
+  `https://ai-security-command-center-demo.ai-automation-tools.dev/`. Every push to `main` redeploys it.
 - **The repo stays private for now** (Mike, 2026-11-10). Going public is his call; `/release-gate` runs the
   going-public checks and changes nothing. Until then the demo page's "View source" link returns 404 for
   visitors, and `go install …@latest` in the README doesn't work.
-- **Next item for a run:** the **gateway run**. 5a (schemas), 5b (the PDP as a service) and 5c (the Compose
-  skeleton) are done and merged; 5d and 5e wait on the ADR sign-off.
+- **Next item for a run: none until Mike answers.** Everything a run could build without a decision is
+  done: the gateway run, the demo address, the loose ends, the hardening pass and the browser page test all
+  closed on 2026-11-11. 5d and 5e wait on the ADR sign-off, and Slice 6 on K5. Slices 7 to 10 follow Slice 6
+  in order and build on ADRs that are still Spike.
+- **The gateway run changes K5.** agentgateway v1.7.0 met ADR-04's adopt rule on a
+  [run](reports/2026-gateway-build-vs-adopt.md#the-run-2026-11-11), not only a reading. One result went
+  against it: a deny doesn't end a stream that is already open, so a suspended agent keeps a long-running
+  call until it finishes. Adopting means designing that cut; building means writing the proxy.
 - **The development stack needs a `.env`.** [`deploy/compose/`](../deploy/compose/README.md) takes its four
   secrets from `.env` at the repo root (names in `.env.example`) and won't start without them. A run that
   needs the stack and finds no `.env` makes one with random values, as that README shows; it never prints
-  or commits one. The stack's own test makes throwaway secrets and needs none. Slice 4 is
-  done: three spike reports, a plugin-host prototype, the ADR statuses and the threat re-rating.
-- **Waiting on Mike:** K3 (tiers, and whether a token with no key binding may do a tier 2 or 3 action), K5
-  (build the gateway or adopt agentgateway, after the gateway run), K7 to K10, and the ADR sign-off: the
+  or commits one. The stack's own test makes throwaway secrets and needs none.
+- **Waiting on Mike:** K5 first, since Slice 6 hangs on it. Then K3 (tiers, and whether a token with no key
+  binding may do a tier 2 or 3 action), K7 to K10, and the ADR sign-off: the
   [status table](product/plan/e2-adrs.md) has the evidence for each, and only two are Accepted so far.
-- **Known loose ends, none blocking:** the change that moved the stack's secrets into `.env` merged without a
-  `security-reviewer` pass, so the next run that touches `deploy/compose/` starts with one; that README's
-  "Docker Engine 28 or newer" is from memory and wants checking against Docker's release notes; `ascc-pdp`
-  handles an interrupt but not the terminate signal `docker stop` sends, so it ends without draining;
-  `kill` and `revive` rewrite the registry without a lock, so two at once
-  can lose one; two `--import` files that disagree about an id are settled by order with no warning;
-  `actions/deploy-pages@v4` targets a Node version GitHub has deprecated; the demo's page test uses a stand-in
-  for the DOM, not a browser.
+- **Known loose ends, none blocking:** the new Pages action versions first run when this merges to `main`;
+  CI's `checkout` and `setup-go` are on the majors it started with; the browser test skips three steps the
+  Node one walks; on a first start that OpenBao refuses, its generated root token stays in the volume until
+  a start that works; the rule test for the stack doesn't check that a sandbox service is on `sandbox` only;
+  and `gitleaks` over the full history now reports 57 hits, every one a hash or trace id in the schema
+  fixtures added with 5a or a planted value in `discover_test.go` at an older commit. None is a secret, but
+  the Secret scan gate above was ticked before they existed, so it wants an ignore list or a second look
+  before the repo goes public.
 
 ## 🧭 Slice 0: Contracts
 
@@ -116,10 +121,10 @@ The plan's Phase 1 ([plan/h-roadmap.md](product/plan/h-roadmap.md)), in its own 
 - [x] **Gateway run.** Run agentgateway at a tagged release against a stub `ext_mcp` service and record the six results the [gateway report](reports/2026-gateway-build-vs-adopt.md#what-a-run-must-show) asks for: a deny, a filtered `tools/list`, fail closed with the stub down, an open stream cut, a pinned description enforced, and the added latency. This item needs a download and a local process, unlike the release gates. — done 2026-11-11: agentgateway v1.7.0, the release's Windows binary, run by [`src/spikes/gatewayrun/`](../src/spikes/gatewayrun/README.md) and recorded in [the report](reports/2026-gateway-build-vs-adopt.md#the-run-2026-11-11). **Five of the six held and one didn't: a deny issued while a stream is open doesn't end it.** The suspended agent got the remaining 22 of 25 messages and was refused from its next call on. The three results the verdict hangs on (the deny, the filtered list, fail closed) passed, so agentgateway meets ADR-04's adopt rule on a run and K5 can be decided. Latency: about 1.4 ms added a call, against NFR-02's 5 ms median. Beyond the text: the harness is a Go module of its own with a CI job that downloads the Linux release, checks its SHA-256 and runs the same test, and each result is pinned so a later release that behaves differently fails. The run also found the gateway listens on every interface unless given a `bindAddress`, and that the response callout carries no headers, so identity has to travel in the callout's metadata. Not covered: what would end an open stream (a config push, a reset in front, the upstream cancelling) wasn't tried, the stub trusts a header for the agent id where a deployment needs a verified token, latency is one quiet machine with no load, and the other two gateways were still only read
 - [x] `small` **Demo URL.** README hero badge, `docs/` links and this roadmap's status block point at `https://ai-security-command-center-demo.ai-automation-tools.dev/`, and the Pages setting enforces HTTPS (`gh api -X PUT repos/ai-automation-tools/ai-security-command-center/pages -F https_enforced=true`, read back) — done 2026-11-11: the README's badge and two links, `docs/README.md`, `AGENTS.md` and the status block above. The Pages setting needed no change: read back, it already had the custom domain with `https_enforced` true. Checked live the same day: the new address returned 200 with `main`'s commit in its build tag, and the old one redirects to it. The Live demo item above and the changelog keep the old address, as a record of where the demo first went up
 - [x] `small` **Loose ends.** `pages.yml` on the current major of `actions/deploy-pages` and `upload-pages-artifact`; the Compose README's Docker minimum checked against Docker's release notes with the date; `inventory --import` warns on stderr when two imports disagree about an id — done 2026-11-11: `deploy-pages@v5` and `upload-pages-artifact@v5`; the Docker minimum is now 28.3.3, not 28; and the warning, with a test. Two things differ from the text above. **The Docker check moved the number:** 28.0.0 has the loopback fix the README meant, but 28.0.0 to 28.3.2 lose it again after a firewalld reload (CVE-2025-54388), so the README names 28.3.3 and links the release notes it was read from. And the warning names the id and both files but nothing either file says about the identity, in keeping with the rule that an import's values stay out of error text. Not covered: the Pages actions can't be tried before the merge, since that workflow runs on `main` only (the one breaking change between the majors, dotfiles left out of the upload, doesn't touch a site with none); `checkout` and `setup-go` are still on the majors CI started with; an import that disagrees with the registry draws no warning, because the registry is meant to win
-- [ ] **Hardening pass.** A `security-reviewer` review of `deploy/compose/` (findings fixed or listed), `ascc-pdp` drains in-flight requests on SIGTERM, and `kill`/`revive` take the same lock file as the audit append; a test runs two `kill`s at once and both land
+- [x] **Hardening pass.** A `security-reviewer` review of `deploy/compose/` (findings fixed or listed), `ascc-pdp` drains in-flight requests on SIGTERM, and `kill`/`revive` take the same lock file as the audit append; a test runs two `kill`s at once and both land — done 2026-11-11, all three. **The lock:** `kill` and `revive` hold the audit log's lock from reading the registry to writing their audit line. `TestParallelKillsAllLand` runs three at once for ten rounds; before the change it failed on the first. **The drain:** `ascc-pdp` now stops on the terminate signal as well as Ctrl-C, and the drain it was thought to have on Ctrl-C wasn't one: the process returned the moment it was told to stop. It now waits up to five seconds for requests in flight; one test holds a request half sent across a stop and gets its answer, another sends the real signal (Linux and macOS only, since Windows has none to send). **The review** found nothing leaking and nothing exposed in the files as merged. What it found was the rule test: one Compose file breaking a dozen rules at once passed it. Fixed, each with a row that breaks it: a secret required one at a time and not all four together, a value from `.env` in a command, health check, label or build argument, a named volume bound to a host path, a Compose secret or config file, the API socket, network driver options, three ways to name an unpinned image in a Dockerfile, a build context outside the repo, and the namespace settings the test didn't know. Also `dev-init.sh` now removes the file holding the root token on every way out. Listed, not fixed: if OpenBao refuses the root token on a first start, the generated root token stays in the volume until the next good start (kept on purpose: without it the swap can't be finished); nothing tests that a service meant for `sandbox` is on that network only, that `.env` is gitignored, or that `.dockerignore` keeps it out of a build; the Docker minimum is stated, not checked; and the smoke test reads the logs for a secret only after a start that worked. Not covered: the stack wasn't started for this, so the `dev-init.sh` change is first run by CI's smoke job
 - [x] **Browser page test.** `TestBuiltPageRendersWithNoNetwork`'s steps (planted deny, edit, replay, tamper, kill) run in headless Chromium via Playwright in CI, with the network blocked — done 2026-11-11: `TestBuiltPageInABrowser` builds the site and runs [`testdata/browser/page.test.mjs`](../src/cmd/buildsite/testdata/browser/README.md) against it, in a CI job of its own. "Blocked" means every request the page makes is stopped inside the browser: one for a file of the built site is answered from disk, anything else is refused and fails the test, and so does any console error, which is how a content-policy violation shows. Run for real against a local Chromium: it passed on the built page, and failed both when a `fetch` to another host was added to the page's script and when an image from another host was added to its markup. The test needs `npm ci` and a Chromium, so it runs only with `ASCC_BROWSER_TEST` set and skips otherwise. Playwright 1.65.0 is the one new dependency, a test tool pinned exactly and by hash; nothing from that folder reaches the site. Not covered: the Node stand-in test still walks three steps this one doesn't (a damaged last log line, a kill that can't be recorded, an engine that stops answering), since two of them need the engine swapped out from inside; Chromium only, at one desktop size; and the Pages workflow still publishes on the Node test alone
-- [ ] K5 build the gateway in Go or adopt agentgateway, decided on the gateway run (default until then: build, as ADR-04 says) 🔒 Needs owner
-- [ ] **Slice 6: MCP and LLM gateway** enforcing allow and deny, Anthropic and OpenAI-compatible adapters, gateway latency measured against NFR-02 (M1.2).
+- [ ] K5 build the gateway in Go or adopt agentgateway, decided on the gateway run (default until then: build, as ADR-04 says). The run is done: [adopt rule met, one result against](reports/2026-gateway-build-vs-adopt.md#the-run-2026-11-11) 🔒 Needs owner
+- [!] **Slice 6: MCP and LLM gateway** enforcing allow and deny, Anthropic and OpenAI-compatible adapters, gateway latency measured against NFR-02 (M1.2). — blocked: builds on ADR-04, which waits on K5. The run met the adopt rule, so a gateway built under the "build" default could be thrown away
 - [ ] **Slice 7: stdio MCP wrapper, default-deny egress and credential broker** working end to end (M1.3).
 - [ ] **Slice 8: plugin host, install gate and the OpenBao connector** syncing into the NHI inventory (M1.4).
 - [ ] **Slice 9: GitHub connector, console screens, kill switch with per-PEP confirmation** including `disable_plugin` (M1.5).

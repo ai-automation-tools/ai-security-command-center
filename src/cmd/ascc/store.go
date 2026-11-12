@@ -28,15 +28,25 @@ const tailBytes = 64 << 10 // far more than one audit line
 // at once: the lock makes read-last-hash-then-write one step. No lock within lockWait is an error,
 // and the caller turns every error into a blocked call.
 func appendAudit(path string, e audit.Entry) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
-		return fmt.Errorf("audit: %v", err)
-	}
-	unlock, err := lock(path + ".lock")
+	unlock, err := lockAudit(path)
 	if err != nil {
 		return err
 	}
 	defer unlock()
+	return appendLocked(path, e)
+}
 
+// lockAudit takes the audit log's lock, making its folder first. The same lock guards the registry
+// rewrite in setStatus, so a status change and its audit line are one step.
+func lockAudit(path string) (unlock func(), err error) {
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return nil, fmt.Errorf("audit: %v", err)
+	}
+	return lock(path + ".lock")
+}
+
+// appendLocked is appendAudit for a caller that already holds the lock.
+func appendLocked(path string, e audit.Entry) error {
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0o600)
 	if err != nil {
 		return fmt.Errorf("audit: %v", err)
@@ -94,8 +104,16 @@ func lock(path string) (unlock func(), err error) {
 // setStatus is the kill switch: it flips one agent's status in the registry file and records it.
 // A retired agent stays retired: offboarding is one-way. A kill also names the identities the agent
 // uses, because suspending it in ascc leaves every one of them live.
+//
+// The read, the rewrite and the audit line all happen under the audit log's lock. Without it two kills
+// at once each read the registry, and the second to write puts the first agent back to active.
 func setStatus(registryPath, auditPath, agentID, event string) (string, error) {
 	want := map[string]string{audit.EventKill: pdp.StatusSuspended, audit.EventRevive: pdp.StatusActive}[event]
+	unlock, err := lockAudit(auditPath)
+	if err != nil {
+		return "", err
+	}
+	defer unlock()
 	data, err := os.ReadFile(registryPath)
 	if err != nil {
 		return "", fmt.Errorf("registry: %v", err)
@@ -136,7 +154,7 @@ func setStatus(registryPath, auditPath, agentID, event string) (string, error) {
 			}
 		}
 	}
-	if err := appendAudit(auditPath, audit.Entry{Event: event, Agent: agentID}); err != nil {
+	if err := appendLocked(auditPath, audit.Entry{Event: event, Agent: agentID}); err != nil {
 		return "", fmt.Errorf("%s in the registry, but that couldn't be recorded: %v%s", msg, err, list)
 	}
 	return msg + list, nil

@@ -104,12 +104,15 @@ different key. Run `down -v` and start again.
   container to be reachable at all, so every container in this stack may ask it for a decision.
 - **Every image is pinned by digest,** the Go image `ascc-pdp` is built with included.
 - **Every variable that names a password, token, key or secret takes its value from `.env`,** no URL in the
-  file carries a password, `.env.example` holds names only, and with no secret set the file doesn't resolve.
-  The test knows those shapes; it can't recognise a secret written any other way.
+  file carries a password, `.env.example` holds names only, and with any one secret missing the file doesn't
+  resolve. A value from `.env` appears only under a service's `environment`: never in a command, a health
+  check, a label or a build argument. The test knows those shapes; it can't recognise a secret typed
+  straight into the file under a name it doesn't know.
 - **Every service sets `no-new-privileges` and nothing else under `security_opt`;** none is privileged, adds a
-  capability, shares a namespace with the host, or mounts anything from outside this repository (the Docker
-  socket included).
-- **The `sandbox` network is internal,** and every network is a plain bridge.
+  capability, shares a namespace with the host or another container, sets a sysctl, or mounts anything from
+  outside this repository: the Docker socket, a named volume with driver options, and a Compose secret or
+  config file all count. A build's context is inside the repository.
+- **The `sandbox` network is internal,** and every network is a plain bridge with no driver options.
 
 A second test breaks each rule in turn and checks it is caught.
 

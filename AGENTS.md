@@ -73,7 +73,8 @@ decision goes in as an ADR amendment there, never as a quiet code change.
   and builds its document from their bytes. A new location is added there and `LocationsVersion` changes with
   it. `src/cmd/ascc/discover.go` walks the root.
 - `src/cmd/ascc/store.go` is the only place that locks, appends to the audit log or rewrites the registry.
-  The lock is a lock file (`<log>.lock`, cleared after 30 s if a hook died holding it): the standard library
+  `kill` and `revive` hold the audit log's lock from reading the registry to writing their audit line, so two
+  at once both land; `TestParallelKillsAllLand` is the proof. The lock is a lock file (`<log>.lock`, cleared after 30 s if a hook died holding it): the standard library
   has no portable file lock, and `golang.org/x/sys` isn't worth a dependency for it.
 - **The `pdp`, `audit`, `claudecode` and `demo` packages do no I/O.** They take bytes and return values, so the
   WebAssembly demo (`GOOS=js GOARCH=wasm`) imports exactly the code the CLI runs; CI builds them for that
@@ -88,7 +89,8 @@ decision goes in as an ADR amendment there, never as a quiet code change.
   shape. It adds no decision logic. Every answer on any path but `/healthz` is a decision, and a deny unless
   the engine said allow: a bad request, a repeated or miscased key, a file that won't load, a panic and a log
   line that can't be written are all denies, each with a test. It reads the files on every request so the
-  kill switch needs no restart. It has no caller authentication and no audit chain yet; its guide says so.
+  kill switch needs no restart. On an interrupt or the terminate signal it stops listening and lets requests
+  in flight finish before it exits. It has no caller authentication and no audit chain yet; its guide says so.
 - `deploy/compose/` is the development stack (TKT-006): Postgres, Keycloak, OpenBao, Jaeger, `ascc-pdp` and a
   deny-everything Envoy as the egress placeholder. It is for one developer's machine and its README says so.
   `stack_test.go` there holds its rules and `go test ./...` runs them: every port on `127.0.0.1`, every image
