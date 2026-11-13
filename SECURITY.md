@@ -48,4 +48,5 @@ ASCC is pre-1.0. Fixes land on the latest `main`.
 
 Every agent, owner, repo and URL in this repo's tests, examples and demo is fictional (`example.com` owners,
 `paste.example` targets). Never commit a real hook payload, a token, a `.env` file or a local path. A full-history
-secret scan (`gitleaks git . --log-opts=--all`) came back clean on 2026-11-09.
+secret scan (`gitleaks git . --log-opts=--all`) came back clean on 2026-11-13. `.gitleaks.toml` allows only the
+planted fictional values the tests and schema fixtures use, by value; a new one must be planted on purpose.

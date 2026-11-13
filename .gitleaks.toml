@@ -1,0 +1,18 @@
+# gitleaks reads this file on its own when run from the repo root:
+#   gitleaks git . --log-opts=--all
+# It keeps every default rule and allows only the planted values below, by value, so the allowance
+# survives a rebase or squash (a .gitleaksignore fingerprint names a commit and doesn't).
+# A value added here must be fictional and planted on purpose; never allow a path or a whole rule.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Planted test values in discover_test.go and the fictional ULIDs of the platform schema fixtures"
+regexTarget = "secret"
+regexes = [
+  # discover_test.go feeds these in to prove no secret value reaches the report.
+  '''^(sk-planted-not-a-real-key|hunter2-planted|planted-url-token|planted-arg-secret)$''',
+  # Token and credential ids in schemas/platform/v1alpha1/fixtures: one fictional ULID timestamp, a counter after it.
+  '''^(tok|crd)_01JC8Y7Q5W3M2N4P6R8T[0-9A-HJKMNP-TV-Z]{6}$''',
+]

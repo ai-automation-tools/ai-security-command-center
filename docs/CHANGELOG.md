@@ -16,7 +16,7 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 ## Unreleased
 
 **Security**
-- `.gitleaksignore` suppresses the two gitleaks hits on the planted fake credentials in `discover_test.go`, so the weekly secret scan stays quiet.
+- The full-history secret scan is clean again. `.gitleaks.toml` keeps gitleaks' default rules and allows, by value, only the planted fake credentials in `discover_test.go` and the fictional token and credential ids in the platform schema fixtures, 57 hits in all. It replaces `.gitleaksignore`, whose fingerprints covered one commit and missed the same lines in an earlier one. *Public release*
 
 **Fixed**
 - Two `ascc kill` or `ascc revive` commands at once could lose one: each read the registry, and the second to write put the first agent back. Both now hold the audit log's lock from the read to the audit line. *Next slices*
@@ -24,6 +24,7 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 - The development stack's rule test could be passed by a Compose file that broke its rules: a secret in a command, health check, label or build argument, a named volume bound to a host path, a Compose secret file, network driver options, an unpinned image named like a build stage or pulled in a `# syntax=` line or a `RUN --mount`, and more. Each is now refused, with a test that breaks it. Found by the security review of `deploy/compose/`, which found nothing wrong in the stack's own files. `dev-init.sh` also removes the file that briefly holds the OpenBao root token on every way out. *Next slices*
 
 **Changed**
+- The roadmap marks Slice 7 blocked: egress builds on ADR-08 and the broker on ADR-07, both still Spike, and the slice follows Slice 6, which waits on K5. *Next slices*
 - The roadmap marks Slice 6 (the gateway) blocked on K5, as 5d and 5e are on the ADR sign-off: the gateway run met ADR-04's adopt rule, so a gateway built under the "build" default could be thrown away. Its status block says nothing is left that a run can build without an owner decision.
 - Docs brought in line with the above: the README's folder table and `inventory` row, `CONTRIBUTING.md` (the three checks that run only when asked for), the `/checks` command, the `fail-closed-review` skill's test table, the threat model's T-20 row and the plan's next-steps entry for TKT-001.
 - The demo's address in the README and docs is `https://ai-security-command-center-demo.ai-automation-tools.dev/`. The old one redirects there. *Next slices*
