@@ -1,4 +1,0 @@
-# discover_test.go: planted fake credentials ("sk-planted...", "planted-...") that
-# the discover test feeds in to prove no secret value reaches the report. Not real keys.
-920383c46fd8bf7653b09cf79d7d3afcbb7547ce:src/internal/claudecode/discover_test.go:generic-api-key:17
-920383c46fd8bf7653b09cf79d7d3afcbb7547ce:src/internal/claudecode/discover_test.go:generic-api-key:33
