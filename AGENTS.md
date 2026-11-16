@@ -32,6 +32,15 @@ AI Security Command Center (`ascc`) is a policy decision point for AI agents. Th
   load. The visitor can edit the policy, replay calls, edit the audit log and flip the kill switch.
   `.github/workflows/pages.yml` publishes it from `main` to
   `https://ai-security-command-center-demo.ai-automation-tools.dev/`, after the page test passes.
+- A Cronsole template catalog (`registry/`, written by `go run ./src/cmd/buildregistry`) offers four `ascc`
+  runs to schedule: `audit verify`, `posture claude-code`, `discover` and `inventory`. Edit the templates in
+  `src/cmd/buildregistry/main.go`, never the output; `go test ./...` fails when `registry/` is stale, a
+  template runs anything but `ascc` with a subcommand and flags the README documents, the README doesn't
+  link its gallery page, or a command or its parameters changed without a new version (against the
+  committed copy). `publish-registry.yml` mirrors it
+  into the private `ai-security-command-center-site` repo, which serves the homepage, and
+  `registry-drift.yml` checks the hosted copy daily. `buildregistry -published` is a build tool and the
+  one place it reaches the network; it is not part of the `ascc` binary.
 
 Public-MVP spec: `docs/product/spec.md`. Slice order: `docs/product/build-plan.md`. Work queue:
 `docs/ROADMAP.md`. The full platform design (gateway, STS, egress, broker, plugin host, connectors, console) is

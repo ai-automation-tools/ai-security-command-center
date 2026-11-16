@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "1.0",
+  "id": "ai-security-command-center-audit-verify",
+  "name": "AI Security Command Center: Audit Log Check",
+  "description": "Runs `ascc audit verify` on the hash-chained log the Claude Code hook writes every decision to, and fails the run when a line was edited, removed or reordered, naming the first one. Reads the log, writes nothing. It checks the chain, not the head: a log cut short, or emptied, still passes, and only a missing file fails. The head moves with every hook decision, and a scheduled run has nowhere safe to keep it. Makes no network call. Needs the ascc binary, built with Go 1.26 or newer, and a folder set up as the README's quick start shows.",
+  "runtime": "executable",
+  "os": "cross-platform",
+  "category": "monitoring",
+  "tags": [
+    "ai-security-command-center",
+    "ai-agents",
+    "claude-code",
+    "audit",
+    "tamper-check"
+  ],
+  "icon": "ShieldCheck",
+  "trigger": {
+    "kind": "schedule",
+    "cron": "17 * * * *"
+  },
+  "commandTemplate": "\"{{asccPath}}\" audit verify --audit \"{{asccDir}}/.ascc/audit.jsonl\"",
+  "parameters": [
+    {
+      "key": "asccPath",
+      "label": "ascc binary",
+      "type": "path",
+      "default": "ascc",
+      "required": true,
+      "help": "The ascc binary (`go install github.com/ai-automation-tools/ai-security-command-center/src/cmd/ascc@latest`). `ascc` works when Go's bin folder is on the scheduler's PATH; otherwise give its full path."
+    },
+    {
+      "key": "asccDir",
+      "label": "ascc folder",
+      "type": "path",
+      "required": true,
+      "help": "The folder you run ascc in: it holds ascc.registry.json, policies/ and .ascc/audit.jsonl."
+    }
+  ],
+  "compatibleTargets": [
+    "windows",
+    "cronsole-native",
+    "linux",
+    "macos"
+  ],
+  "execution": {
+    "timeoutSec": 60,
+    "retries": 1
+  },
+  "author": "ai-automation-tools",
+  "version": "0.1.0"
+}

@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "1.0",
+  "id": "ai-security-command-center-posture",
+  "name": "AI Security Command Center: Hook Posture Check",
+  "description": "Runs `ascc posture claude-code` and fails the run when a Claude Code agent in the ascc registry has a hook that doesn't enforce: not in managed settings, a matcher other than `*`, no `\"onFailure\": \"block\"`, not exec form, something switching it off, or the binary missing. It prints the reason for each agent. Reads the settings files and never writes them. Makes no network call. Needs the ascc binary, built with Go 1.26 or newer, and a folder set up as the README's quick start shows.",
+  "runtime": "executable",
+  "os": "cross-platform",
+  "category": "monitoring",
+  "tags": [
+    "ai-security-command-center",
+    "ai-agents",
+    "claude-code",
+    "posture",
+    "hooks"
+  ],
+  "icon": "ShieldAlert",
+  "trigger": {
+    "kind": "schedule",
+    "cron": "0 7 * * *"
+  },
+  "commandTemplate": "\"{{asccPath}}\" posture claude-code --registry \"{{asccDir}}/ascc.registry.json\" --project \"{{projectDir}}\"",
+  "parameters": [
+    {
+      "key": "asccPath",
+      "label": "ascc binary",
+      "type": "path",
+      "default": "ascc",
+      "required": true,
+      "help": "The ascc binary (`go install github.com/ai-automation-tools/ai-security-command-center/src/cmd/ascc@latest`). `ascc` works when Go's bin folder is on the scheduler's PATH; otherwise give its full path."
+    },
+    {
+      "key": "asccDir",
+      "label": "ascc folder",
+      "type": "path",
+      "required": true,
+      "help": "The folder you run ascc in: it holds ascc.registry.json, policies/ and .ascc/audit.jsonl."
+    },
+    {
+      "key": "projectDir",
+      "label": "Project folder",
+      "type": "path",
+      "required": true,
+      "help": "The project whose .claude/settings.json is read, as Claude Code reads it there. Managed and user settings are read from their usual places, for the account the task runs as."
+    }
+  ],
+  "compatibleTargets": [
+    "windows",
+    "cronsole-native",
+    "linux",
+    "macos"
+  ],
+  "execution": {
+    "timeoutSec": 60,
+    "retries": 0
+  },
+  "author": "ai-automation-tools",
+  "version": "0.1.0"
+}
