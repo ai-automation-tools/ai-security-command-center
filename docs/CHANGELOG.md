@@ -15,6 +15,9 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 
 ## Unreleased
 
+**Added**
+- Dependabot (`.github/dependabot.yml`): weekly grouped minor and patch updates for Go modules, the PDP Dockerfile and Compose images, the browser test's npm package and GitHub Actions, majors ignored. It was missed at graduation.
+
 **Security**
 - The full-history secret scan is clean again. `.gitleaks.toml` keeps gitleaks' default rules and allows, by value, only the planted fake credentials in `discover_test.go` and the fictional token and credential ids in the platform schema fixtures, 57 hits in all. It replaces `.gitleaksignore`, whose fingerprints covered one commit and missed the same lines in an earlier one. *Public release*
 
