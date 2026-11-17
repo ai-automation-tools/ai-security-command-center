@@ -16,6 +16,7 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 ## Unreleased
 
 **Added**
+- The README's suite table links GhostGrant and shows how its inventory export reaches `ascc inventory --import`.
 - Dependabot (`.github/dependabot.yml`): weekly grouped minor and patch updates for Go modules, the PDP Dockerfile and Compose images, the browser test's npm package and GitHub Actions, majors ignored. It was missed at graduation.
 
 **Security**
