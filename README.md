@@ -169,6 +169,25 @@ agent, a request whose context doesn't fit the built-in schema, a policy that er
 anything no policy permits. A registry with a typo, or a policy with no `@id` or one that reads an attribute
 the schema doesn't have, stops ascc loading at all, and the hook blocks every call until it is fixed.
 
+### Schedule it with Cronsole
+
+Four of those commands are worth running unattended, and each is a template in the
+[Cronsole](https://cronsole.ai-automation-tools.dev/) gallery. Every one runs the `ascc` binary with the flags
+above, pointed at the folder that holds your registry, policies and audit log, and makes no network call.
+
+| Template | Runs | When |
+|:---|:---|:---|
+| [**Audit Log Check**](https://cronsole.ai-automation-tools.dev/#/t/ai-security-command-center-audit-verify) | `ascc audit verify`: fails when a line of the log was edited, removed or reordered. It checks the chain, not the head, so a log cut short, or emptied, still passes. | hourly |
+| [**Hook Posture Check**](https://cronsole.ai-automation-tools.dev/#/t/ai-security-command-center-posture) | `ascc posture claude-code`: fails when an agent's hook doesn't enforce, and says why. | daily |
+| [**Unregistered Agent Discovery**](https://cronsole.ai-automation-tools.dev/#/t/ai-security-command-center-discover) | `ascc discover` over a projects folder, to a file: agent setups and MCP servers the registry doesn't list. | weekly |
+| [**Agent Inventory**](https://cronsole.ai-automation-tools.dev/#/t/ai-security-command-center-inventory) | `ascc inventory` to a file: each agent's coverage label and the identities it uses. | daily |
+
+[All four as one pack](https://cronsole.ai-automation-tools.dev/#/collection/ai-security-command-center). Both
+documents are overwritten on each run; copy them elsewhere for history. The catalog is built from
+`src/cmd/buildregistry` into [`registry/`](registry/) and published to
+`https://ai-security-command-center.ai-automation-tools.dev/registry/`, where the gallery reads it. Until the
+first publish, the gallery links don't open a template yet.
+
 ## 🔭 Coverage: what the hook sees and what it doesn't
 
 ascc sees a tool call only when Claude Code runs its hook, and judges a shell command by its text.
@@ -222,10 +241,11 @@ never replaces what the registry declares.
 | Folder | What's inside |
 |:---|:---|
 | [**📚 docs/**](docs/README.md) | The roadmap, the changelog, the public-MVP spec and build plan, the full planning package and the resource library. |
-| [**🧩 src/**](src/) | The Go code: `cmd/ascc` is the CLI, `cmd/ascc-wasm` the browser build, `cmd/buildsite` the demo's build tool, and `internal/` holds the packages. Tests sit next to the code. `cmd/ascc-pdp` is the decision point as a service and `cmd/ascc-schema` the schema validator, both binaries of their own for the platform still being built. `spikes/pluginhost` is a prototype and `spikes/gatewayrun` the harness that ran agentgateway against a stub policy service, each in a Go module of its own. None of the four is part of `ascc`. |
+| [**🧩 src/**](src/) | The Go code: `cmd/ascc` is the CLI, `cmd/ascc-wasm` the browser build, `cmd/buildsite` the demo's build tool, `cmd/buildregistry` the Cronsole catalog's, and `internal/` holds the packages. Tests sit next to the code. `cmd/ascc-pdp` is the decision point as a service and `cmd/ascc-schema` the schema validator, both binaries of their own for the platform still being built. `spikes/pluginhost` is a prototype and `spikes/gatewayrun` the harness that ran agentgateway against a stub policy service, each in a Go module of its own. None of the four is part of `ascc`. |
 | [**🧪 examples/**](examples/) | A sample registry, Cedar policies, requests and hook payloads with fictional agents. The tests run these same files. |
 | [**🧱 deploy/**](deploy/compose/README.md) | The development stack for the platform still being built: a Compose file that starts Postgres, Keycloak, OpenBao, Jaeger, `ascc-pdp` and an egress placeholder on loopback. `ascc` needs none of it. |
 | [**📐 schemas/**](schemas/) | The Agent Security Suite inventory schema, v0.1, vendored from `ai-automation-tools.dev`, and under [`platform/`](schemas/platform/README.md) the schemas for the platform still being built, with the `ascc-schema` validator. |
+| [**⏱️ registry/**](registry/) | The Cronsole template catalog, written by `go run ./src/cmd/buildregistry`. Don't edit it by hand. |
 | [**🖥️ site/**](site/) | The browser demo: the page, its two scripts and the favicon. `go run ./src/cmd/buildsite` adds the WebAssembly and the fixtures and writes `_site/`. |
 
 ## 🛠️ Development

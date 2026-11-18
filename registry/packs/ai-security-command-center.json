@@ -1,0 +1,250 @@
+{
+  "cronsoleCatalogVersion": "1.0",
+  "pack": {
+    "id": "ai-security-command-center",
+    "name": "AI Security Command Center: Unattended Checks",
+    "description": "The ascc runs worth a schedule: the audit log's hash chain, the hook's posture, agents the registry doesn't know, and the coverage inventory."
+  },
+  "templates": [
+    {
+      "schemaVersion": "1.0",
+      "id": "ai-security-command-center-audit-verify",
+      "name": "AI Security Command Center: Audit Log Check",
+      "description": "Runs `ascc audit verify` on the hash-chained log the Claude Code hook writes every decision to, and fails the run when a line was edited, removed or reordered, naming the first one. Reads the log, writes nothing. It checks the chain, not the head: a log cut short, or emptied, still passes, and only a missing file fails. The head moves with every hook decision, and a scheduled run has nowhere safe to keep it. Makes no network call. Needs the ascc binary, built with Go 1.26 or newer, and a folder set up as the README's quick start shows.",
+      "runtime": "executable",
+      "os": "cross-platform",
+      "category": "monitoring",
+      "tags": [
+        "ai-security-command-center",
+        "ai-agents",
+        "claude-code",
+        "audit",
+        "tamper-check"
+      ],
+      "icon": "ShieldCheck",
+      "trigger": {
+        "kind": "schedule",
+        "cron": "17 * * * *"
+      },
+      "commandTemplate": "\"{{asccPath}}\" audit verify --audit \"{{asccDir}}/.ascc/audit.jsonl\"",
+      "parameters": [
+        {
+          "key": "asccPath",
+          "label": "ascc binary",
+          "type": "path",
+          "default": "ascc",
+          "required": true,
+          "help": "The ascc binary (`go install github.com/ai-automation-tools/ai-security-command-center/src/cmd/ascc@latest`). `ascc` works when Go's bin folder is on the scheduler's PATH; otherwise give its full path."
+        },
+        {
+          "key": "asccDir",
+          "label": "ascc folder",
+          "type": "path",
+          "required": true,
+          "help": "The folder you run ascc in: it holds ascc.registry.json, policies/ and .ascc/audit.jsonl."
+        }
+      ],
+      "compatibleTargets": [
+        "windows",
+        "cronsole-native",
+        "linux",
+        "macos"
+      ],
+      "execution": {
+        "timeoutSec": 60,
+        "retries": 1
+      },
+      "author": "ai-automation-tools",
+      "version": "0.1.0"
+    },
+    {
+      "schemaVersion": "1.0",
+      "id": "ai-security-command-center-posture",
+      "name": "AI Security Command Center: Hook Posture Check",
+      "description": "Runs `ascc posture claude-code` and fails the run when a Claude Code agent in the ascc registry has a hook that doesn't enforce: not in managed settings, a matcher other than `*`, no `\"onFailure\": \"block\"`, not exec form, something switching it off, or the binary missing. It prints the reason for each agent. Reads the settings files and never writes them. Makes no network call. Needs the ascc binary, built with Go 1.26 or newer, and a folder set up as the README's quick start shows.",
+      "runtime": "executable",
+      "os": "cross-platform",
+      "category": "monitoring",
+      "tags": [
+        "ai-security-command-center",
+        "ai-agents",
+        "claude-code",
+        "posture",
+        "hooks"
+      ],
+      "icon": "ShieldAlert",
+      "trigger": {
+        "kind": "schedule",
+        "cron": "0 7 * * *"
+      },
+      "commandTemplate": "\"{{asccPath}}\" posture claude-code --registry \"{{asccDir}}/ascc.registry.json\" --project \"{{projectDir}}\"",
+      "parameters": [
+        {
+          "key": "asccPath",
+          "label": "ascc binary",
+          "type": "path",
+          "default": "ascc",
+          "required": true,
+          "help": "The ascc binary (`go install github.com/ai-automation-tools/ai-security-command-center/src/cmd/ascc@latest`). `ascc` works when Go's bin folder is on the scheduler's PATH; otherwise give its full path."
+        },
+        {
+          "key": "asccDir",
+          "label": "ascc folder",
+          "type": "path",
+          "required": true,
+          "help": "The folder you run ascc in: it holds ascc.registry.json, policies/ and .ascc/audit.jsonl."
+        },
+        {
+          "key": "projectDir",
+          "label": "Project folder",
+          "type": "path",
+          "required": true,
+          "help": "The project whose .claude/settings.json is read, as Claude Code reads it there. Managed and user settings are read from their usual places, for the account the task runs as."
+        }
+      ],
+      "compatibleTargets": [
+        "windows",
+        "cronsole-native",
+        "linux",
+        "macos"
+      ],
+      "execution": {
+        "timeoutSec": 60,
+        "retries": 0
+      },
+      "author": "ai-automation-tools",
+      "version": "0.1.0"
+    },
+    {
+      "schemaVersion": "1.0",
+      "id": "ai-security-command-center-discover",
+      "name": "AI Security Command Center: Unregistered Agent Discovery",
+      "description": "Runs `ascc discover` over a folder of projects and writes an Agent Security Suite inventory document: every Claude Code setup, hook agent and MCP server the ascc registry doesn't list, as an `unmonitored` identity with an `ascc/unregistered` finding, and credential-looking variable names as candidate identities. Names only, never a command, URL or value. Fails the run when a file under the folder couldn't be read, and names it. Makes no network call. Needs the ascc binary, built with Go 1.26 or newer, and a folder set up as the README's quick start shows.",
+      "runtime": "executable",
+      "os": "cross-platform",
+      "category": "monitoring",
+      "tags": [
+        "ai-security-command-center",
+        "ai-agents",
+        "claude-code",
+        "discovery",
+        "mcp",
+        "inventory"
+      ],
+      "icon": "Radar",
+      "trigger": {
+        "kind": "schedule",
+        "cron": "0 8 * * 1"
+      },
+      "commandTemplate": "\"{{asccPath}}\" discover --registry \"{{asccDir}}/ascc.registry.json\" --policies \"{{asccDir}}/policies\" --audit \"{{asccDir}}/.ascc/audit.jsonl\" --root \"{{projectsDir}}\" --out \"{{outputFile}}\"",
+      "parameters": [
+        {
+          "key": "asccPath",
+          "label": "ascc binary",
+          "type": "path",
+          "default": "ascc",
+          "required": true,
+          "help": "The ascc binary (`go install github.com/ai-automation-tools/ai-security-command-center/src/cmd/ascc@latest`). `ascc` works when Go's bin folder is on the scheduler's PATH; otherwise give its full path."
+        },
+        {
+          "key": "asccDir",
+          "label": "ascc folder",
+          "type": "path",
+          "required": true,
+          "help": "The folder you run ascc in: it holds ascc.registry.json, policies/ and .ascc/audit.jsonl."
+        },
+        {
+          "key": "projectsDir",
+          "label": "Projects folder",
+          "type": "path",
+          "required": true,
+          "help": "The folder searched for agent config files, every folder below it included."
+        },
+        {
+          "key": "outputFile",
+          "label": "Output file",
+          "type": "path",
+          "required": true,
+          "help": "Where the JSON document goes. It is overwritten on every run, so copy it elsewhere if you want history. It can't be ascc's own registry, policies or audit log."
+        }
+      ],
+      "compatibleTargets": [
+        "windows",
+        "cronsole-native",
+        "linux",
+        "macos"
+      ],
+      "execution": {
+        "timeoutSec": 300,
+        "retries": 0
+      },
+      "author": "ai-automation-tools",
+      "version": "0.1.0"
+    },
+    {
+      "schemaVersion": "1.0",
+      "id": "ai-security-command-center-inventory",
+      "name": "AI Security Command Center: Agent Inventory",
+      "description": "Runs `ascc inventory` and writes the registry as an Agent Security Suite inventory document: each agent labelled `enforced`, `observed` or `unmonitored` from the audit log and the posture check, never from a declaration, then the non-human identities the agents use, with `ascc/*` findings such as an agent with no owner or an overdue credential. Makes no network call. Needs the ascc binary, built with Go 1.26 or newer, and a folder set up as the README's quick start shows.",
+      "runtime": "executable",
+      "os": "cross-platform",
+      "category": "monitoring",
+      "tags": [
+        "ai-security-command-center",
+        "ai-agents",
+        "claude-code",
+        "inventory",
+        "nhi"
+      ],
+      "icon": "ClipboardList",
+      "trigger": {
+        "kind": "schedule",
+        "cron": "30 7 * * *"
+      },
+      "commandTemplate": "\"{{asccPath}}\" inventory --registry \"{{asccDir}}/ascc.registry.json\" --policies \"{{asccDir}}/policies\" --audit \"{{asccDir}}/.ascc/audit.jsonl\" --project \"{{projectDir}}\" --out \"{{outputFile}}\"",
+      "parameters": [
+        {
+          "key": "asccPath",
+          "label": "ascc binary",
+          "type": "path",
+          "default": "ascc",
+          "required": true,
+          "help": "The ascc binary (`go install github.com/ai-automation-tools/ai-security-command-center/src/cmd/ascc@latest`). `ascc` works when Go's bin folder is on the scheduler's PATH; otherwise give its full path."
+        },
+        {
+          "key": "asccDir",
+          "label": "ascc folder",
+          "type": "path",
+          "required": true,
+          "help": "The folder you run ascc in: it holds ascc.registry.json, policies/ and .ascc/audit.jsonl."
+        },
+        {
+          "key": "projectDir",
+          "label": "Project folder",
+          "type": "path",
+          "required": true,
+          "help": "The project whose .claude/settings.json is read, as Claude Code reads it there. Managed and user settings are read from their usual places, for the account the task runs as."
+        },
+        {
+          "key": "outputFile",
+          "label": "Output file",
+          "type": "path",
+          "required": true,
+          "help": "Where the JSON document goes. It is overwritten on every run, so copy it elsewhere if you want history. It can't be ascc's own registry, policies or audit log."
+        }
+      ],
+      "compatibleTargets": [
+        "windows",
+        "cronsole-native",
+        "linux",
+        "macos"
+      ],
+      "execution": {
+        "timeoutSec": 60,
+        "retries": 0
+      },
+      "author": "ai-automation-tools",
+      "version": "0.1.0"
+    }
+  ]
+}

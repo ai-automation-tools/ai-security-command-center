@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "1.0",
+  "id": "ai-security-command-center-inventory",
+  "name": "AI Security Command Center: Agent Inventory",
+  "description": "Runs `ascc inventory` and writes the registry as an Agent Security Suite inventory document: each agent labelled `enforced`, `observed` or `unmonitored` from the audit log and the posture check, never from a declaration, then the non-human identities the agents use, with `ascc/*` findings such as an agent with no owner or an overdue credential. Makes no network call. Needs the ascc binary, built with Go 1.26 or newer, and a folder set up as the README's quick start shows.",
+  "runtime": "executable",
+  "os": "cross-platform",
+  "category": "monitoring",
+  "tags": [
+    "ai-security-command-center",
+    "ai-agents",
+    "claude-code",
+    "inventory",
+    "nhi"
+  ],
+  "icon": "ClipboardList",
+  "trigger": {
+    "kind": "schedule",
+    "cron": "30 7 * * *"
+  },
+  "commandTemplate": "\"{{asccPath}}\" inventory --registry \"{{asccDir}}/ascc.registry.json\" --policies \"{{asccDir}}/policies\" --audit \"{{asccDir}}/.ascc/audit.jsonl\" --project \"{{projectDir}}\" --out \"{{outputFile}}\"",
+  "parameters": [
+    {
+      "key": "asccPath",
+      "label": "ascc binary",
+      "type": "path",
+      "default": "ascc",
+      "required": true,
+      "help": "The ascc binary (`go install github.com/ai-automation-tools/ai-security-command-center/src/cmd/ascc@latest`). `ascc` works when Go's bin folder is on the scheduler's PATH; otherwise give its full path."
+    },
+    {
+      "key": "asccDir",
+      "label": "ascc folder",
+      "type": "path",
+      "required": true,
+      "help": "The folder you run ascc in: it holds ascc.registry.json, policies/ and .ascc/audit.jsonl."
+    },
+    {
+      "key": "projectDir",
+      "label": "Project folder",
+      "type": "path",
+      "required": true,
+      "help": "The project whose .claude/settings.json is read, as Claude Code reads it there. Managed and user settings are read from their usual places, for the account the task runs as."
+    },
+    {
+      "key": "outputFile",
+      "label": "Output file",
+      "type": "path",
+      "required": true,
+      "help": "Where the JSON document goes. It is overwritten on every run, so copy it elsewhere if you want history. It can't be ascc's own registry, policies or audit log."
+    }
+  ],
+  "compatibleTargets": [
+    "windows",
+    "cronsole-native",
+    "linux",
+    "macos"
+  ],
+  "execution": {
+    "timeoutSec": 60,
+    "retries": 0
+  },
+  "author": "ai-automation-tools",
+  "version": "0.1.0"
+}
