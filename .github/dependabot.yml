@@ -1,10 +1,8 @@
 # Dependency updates. Minor/patch bumps arrive as one grouped PR per ecosystem per week;
-# majors are ignored (2026-11-15): the biweekly upstream check flags a major that breaks
-# something, and Dependabot security alerts still fire for any version.
-# Semantic upstream drift (Claude Code hook contract, Cedar, agentgateway, MCP) is the
-# AI-Security-Command-Center Upstream Check routine's job -- see docs/UPSTREAMS.md.
-# Dependabot's docker ecosystem doesn't read deploy/compose/pdp.Dockerfile (its name isn't
-# Dockerfile*), so the golang base image there is moved by the upstream check, not by Dependabot.
+# major versions are ignored: a major that breaks something is the upstream check's job,
+# and Dependabot security alerts still fire for any version.
+# The Go modules under src/spikes/ are throwaway spikes and are left out.
+# CI gates every PR; the org PR sweep holds Docker and Compose image bumps for Mike.
 version: 2
 updates:
   - package-ecosystem: gomod
@@ -17,33 +15,12 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
-  - package-ecosystem: gomod
-    directory: "/src/spikes/gatewayrun"
+  - package-ecosystem: docker
+    directory: "/deploy/compose"
     schedule: { interval: weekly, day: monday }
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
-    open-pull-requests-limit: 5
-    groups:
-      minor-and-patch:
-        update-types: [minor, patch]
-  - package-ecosystem: gomod
-    directory: "/src/spikes/pluginhost"
-    schedule: { interval: weekly, day: monday }
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
-    open-pull-requests-limit: 5
-    groups:
-      minor-and-patch:
-        update-types: [minor, patch]
-  - package-ecosystem: npm
-    directory: "/src/cmd/buildsite/testdata/browser"
-    schedule: { interval: weekly, day: monday }
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
-    open-pull-requests-limit: 5
     groups:
       minor-and-patch:
         update-types: [minor, patch]
@@ -53,7 +30,15 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
-    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: npm
+    directory: "/src/cmd/buildsite/testdata/browser"
+    schedule: { interval: weekly, day: monday }
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       minor-and-patch:
         update-types: [minor, patch]
