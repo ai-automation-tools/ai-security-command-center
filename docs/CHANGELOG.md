@@ -15,6 +15,10 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 
 ## Unreleased
 
+**Added**
+- The README's suite table links GhostGrant and shows how its inventory export reaches `ascc inventory --import`.
+- Dependabot (`.github/dependabot.yml`): weekly grouped minor and patch updates for Go modules, the PDP Dockerfile and Compose images, the browser test's npm package and GitHub Actions, majors ignored. It was missed at graduation.
+
 **Security**
 - The full-history secret scan is clean again. `.gitleaks.toml` keeps gitleaks' default rules and allows, by value, only the planted fake credentials in `discover_test.go` and the fictional token and credential ids in the platform schema fixtures, 57 hits in all. It replaces `.gitleaksignore`, whose fingerprints covered one commit and missed the same lines in an earlier one. *Public release*
 
@@ -34,6 +38,7 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 
 **Added**
 - A Cronsole template catalog: four unattended `ascc` runs (the audit log's chain hourly, the hook's posture daily, discovery of unregistered agents weekly, the inventory daily), each linked from the README's "Schedule it with Cronsole" section. `go run ./src/cmd/buildregistry` writes it to `registry/` as Registry v1 with a sha256 index; `go test ./...` and a CI step fail when it is stale or a template runs anything but a documented `ascc` command. A workflow mirrors it to the homepage host and a daily one checks the hosted copy; neither can publish until the site repo's deploy key is added. *Next slices*
+- `docs/UPSTREAMS.md` lists every upstream the code assumes something about, and the biweekly upstream check works from it. *Next slices*
 - A browser test for the demo page. `TestBuiltPageInABrowser` drives the built page in headless Chromium through Playwright: the planted deny on first load, then replay, a policy edit, the kill switch and a tampered log. Every request the page makes is stopped inside the browser and anything but the site's own seven files fails the test, as does any console error. It runs in a CI job of its own and skips locally unless `ASCC_BROWSER_TEST` is set. *Next slices*
 - `ascc inventory --import` warns on stderr when two imported files describe one id differently. It names the id and both files and nothing else; the first file still wins. *Next slices*
 - The gateway run. agentgateway v1.7.0 was run between a stub MCP server and a stub `ext_mcp` policy service, by a harness in `src/spikes/gatewayrun/` (a Go module of its own, with a CI job that checks the release's SHA-256 before running it). A deny reached the client with its reason, `tools/list` was filtered per agent, a call was refused with the policy service down, a changed tool description was rejected against its pin, and the gateway with its callouts added about 1.4 ms a call. One result went the other way: a deny doesn't end a stream that is already open. The [gateway report](reports/2026-gateway-build-vs-adopt.md#the-run-2026-11-11) has the table and ADR-04 an amendment; build or adopt (K5) is still the owner's call. *Next slices*
