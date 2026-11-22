@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1.0",
+  "id": "ai-security-command-center-discover",
+  "name": "AI Security Command Center: Unregistered Agent Discovery",
+  "description": "Runs `ascc discover` over a folder of projects and writes an Agent Security Suite inventory document: every Claude Code setup, hook agent and MCP server the ascc registry doesn't list, as an `unmonitored` identity with an `ascc/unregistered` finding, and credential-looking variable names as candidate identities. Names only, never a command, URL or value. Fails the run when a file under the folder couldn't be read, and names it. Makes no network call. Needs the ascc binary, built with Go 1.26 or newer, and a folder set up as the README's quick start shows.",
+  "runtime": "executable",
+  "os": "cross-platform",
+  "category": "monitoring",
+  "tags": [
+    "ai-security-command-center",
+    "ai-agents",
+    "claude-code",
+    "discovery",
+    "mcp",
+    "inventory"
+  ],
+  "icon": "Radar",
+  "trigger": {
+    "kind": "schedule",
+    "cron": "0 8 * * 1"
+  },
+  "commandTemplate": "\"{{asccPath}}\" discover --registry \"{{asccDir}}/ascc.registry.json\" --policies \"{{asccDir}}/policies\" --audit \"{{asccDir}}/.ascc/audit.jsonl\" --root \"{{projectsDir}}\" --out \"{{outputFile}}\"",
+  "parameters": [
+    {
+      "key": "asccPath",
+      "label": "ascc binary",
+      "type": "path",
+      "default": "ascc",
+      "required": true,
+      "help": "The ascc binary (`go install github.com/ai-automation-tools/ai-security-command-center/src/cmd/ascc@latest`). `ascc` works when Go's bin folder is on the scheduler's PATH; otherwise give its full path."
+    },
+    {
+      "key": "asccDir",
+      "label": "ascc folder",
+      "type": "path",
+      "required": true,
+      "help": "The folder you run ascc in: it holds ascc.registry.json, policies/ and .ascc/audit.jsonl."
+    },
+    {
+      "key": "projectsDir",
+      "label": "Projects folder",
+      "type": "path",
+      "required": true,
+      "help": "The folder searched for agent config files, every folder below it included."
+    },
+    {
+      "key": "outputFile",
+      "label": "Output file",
+      "type": "path",
+      "required": true,
+      "help": "Where the JSON document goes. It is overwritten on every run, so copy it elsewhere if you want history. It can't be ascc's own registry, policies or audit log."
+    }
+  ],
+  "compatibleTargets": [
+    "windows",
+    "cronsole-native",
+    "linux",
+    "macos"
+  ],
+  "execution": {
+    "timeoutSec": 300,
+    "retries": 0
+  },
+  "author": "ai-automation-tools",
+  "version": "0.1.0"
+}

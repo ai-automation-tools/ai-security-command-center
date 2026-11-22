@@ -1,0 +1,113 @@
+{
+  "registryVersion": "1.0",
+  "templates": [
+    {
+      "id": "ai-security-command-center-audit-verify",
+      "name": "AI Security Command Center: Audit Log Check",
+      "description": "Runs `ascc audit verify` on the hash-chained log the Claude Code hook writes every decision to, and fails the run when a line was edited, removed or reordered, naming the first one. Reads the log, writes nothing. It checks the chain, not the head: a log cut short, or emptied, still passes, and only a missing file fails. The head moves with every hook decision, and a scheduled run has nowhere safe to keep it. Makes no network call. Needs the ascc binary, built with Go 1.26 or newer, and a folder set up as the README's quick start shows.",
+      "category": "monitoring",
+      "tags": [
+        "ai-security-command-center",
+        "ai-agents",
+        "claude-code",
+        "audit",
+        "tamper-check"
+      ],
+      "runtime": "executable",
+      "os": "cross-platform",
+      "compatibleTargets": [
+        "windows",
+        "cronsole-native",
+        "linux",
+        "macos"
+      ],
+      "path": "templates/ai-security-command-center-audit-verify.json",
+      "sha256": "8c816e6c11806398c8decc10e8797f7097a05857db8c227ee3fa5420293419cd"
+    },
+    {
+      "id": "ai-security-command-center-discover",
+      "name": "AI Security Command Center: Unregistered Agent Discovery",
+      "description": "Runs `ascc discover` over a folder of projects and writes an Agent Security Suite inventory document: every Claude Code setup, hook agent and MCP server the ascc registry doesn't list, as an `unmonitored` identity with an `ascc/unregistered` finding, and credential-looking variable names as candidate identities. Names only, never a command, URL or value. Fails the run when a file under the folder couldn't be read, and names it. Makes no network call. Needs the ascc binary, built with Go 1.26 or newer, and a folder set up as the README's quick start shows.",
+      "category": "monitoring",
+      "tags": [
+        "ai-security-command-center",
+        "ai-agents",
+        "claude-code",
+        "discovery",
+        "mcp",
+        "inventory"
+      ],
+      "runtime": "executable",
+      "os": "cross-platform",
+      "compatibleTargets": [
+        "windows",
+        "cronsole-native",
+        "linux",
+        "macos"
+      ],
+      "path": "templates/ai-security-command-center-discover.json",
+      "sha256": "62185e03da967c7125ea2ca1d876e20f63738fed1422bcf2590c62dcede0afc5"
+    },
+    {
+      "id": "ai-security-command-center-inventory",
+      "name": "AI Security Command Center: Agent Inventory",
+      "description": "Runs `ascc inventory` and writes the registry as an Agent Security Suite inventory document: each agent labelled `enforced`, `observed` or `unmonitored` from the audit log and the posture check, never from a declaration, then the non-human identities the agents use, with `ascc/*` findings such as an agent with no owner or an overdue credential. Makes no network call. Needs the ascc binary, built with Go 1.26 or newer, and a folder set up as the README's quick start shows.",
+      "category": "monitoring",
+      "tags": [
+        "ai-security-command-center",
+        "ai-agents",
+        "claude-code",
+        "inventory",
+        "nhi"
+      ],
+      "runtime": "executable",
+      "os": "cross-platform",
+      "compatibleTargets": [
+        "windows",
+        "cronsole-native",
+        "linux",
+        "macos"
+      ],
+      "path": "templates/ai-security-command-center-inventory.json",
+      "sha256": "e929f426db4bebdae3c7baa770e694959f706ea7df5683fa075aeec6a5617cd5"
+    },
+    {
+      "id": "ai-security-command-center-posture",
+      "name": "AI Security Command Center: Hook Posture Check",
+      "description": "Runs `ascc posture claude-code` and fails the run when a Claude Code agent in the ascc registry has a hook that doesn't enforce: not in managed settings, a matcher other than `*`, no `\"onFailure\": \"block\"`, not exec form, something switching it off, or the binary missing. It prints the reason for each agent. Reads the settings files and never writes them. Makes no network call. Needs the ascc binary, built with Go 1.26 or newer, and a folder set up as the README's quick start shows.",
+      "category": "monitoring",
+      "tags": [
+        "ai-security-command-center",
+        "ai-agents",
+        "claude-code",
+        "posture",
+        "hooks"
+      ],
+      "runtime": "executable",
+      "os": "cross-platform",
+      "compatibleTargets": [
+        "windows",
+        "cronsole-native",
+        "linux",
+        "macos"
+      ],
+      "path": "templates/ai-security-command-center-posture.json",
+      "sha256": "9aa9d35a37aa4b55c2f90b76fbaad1f255c5457e307f924d3093963d622c5718"
+    }
+  ],
+  "packs": [
+    {
+      "id": "ai-security-command-center",
+      "name": "AI Security Command Center: Unattended Checks",
+      "description": "The ascc runs worth a schedule: the audit log's hash chain, the hook's posture, agents the registry doesn't know, and the coverage inventory.",
+      "templateIds": [
+        "ai-security-command-center-audit-verify",
+        "ai-security-command-center-posture",
+        "ai-security-command-center-discover",
+        "ai-security-command-center-inventory"
+      ],
+      "path": "packs/ai-security-command-center.json",
+      "sha256": "05fa20f148a229db5f5b1fc150e0bb64496c49c9c8db8d3075e2a4722b51d39d"
+    }
+  ]
+}

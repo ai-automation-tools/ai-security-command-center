@@ -49,6 +49,10 @@ jobs:
       - name: Inventory output validates against the suite schema
         run: go test -count=1 -run "^TestInventoryCommand$" ./src/cmd/ascc
 
+      # Also run by `go test ./...`; its own step so a stale Cronsole catalog is named in the run.
+      - name: Cronsole catalog in registry/ is current
+        run: go run ./src/cmd/buildregistry -check
+
       - name: Vendored schema matches the published one
         if: runner.os == 'Linux'
         run: curl -fsS --max-time 30 https://ai-automation-tools.dev/schemas/agent-inventory/v0.1.json | diff - schemas/agent-inventory.schema.json

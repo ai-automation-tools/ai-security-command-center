@@ -106,18 +106,33 @@ func TestDiscoverAndLinks(t *testing.T) {
 	}
 }
 
-// --out never lands on ascc's own state: only the store writes the registry and the audit log.
+// --out never lands on ascc's own state: only the store writes the registry and the audit log, and
+// nothing in ascc writes an agent config file such as Claude Code's settings.
 func TestOutWontOverwriteAsccState(t *testing.T) {
 	w := newWorkspace(t)
 	if code, _, errOut := w.run("", "kill", "old-agent"); code != 0 { // so the audit log exists
 		t.Fatal(errOut)
 	}
 	before := w.log()
+	settings := filepath.Join(w.dir, ".claude", "settings.json")
+	if err := os.MkdirAll(filepath.Dir(settings), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(settings, []byte("{}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	for name, out := range map[string]string{
 		"the registry":  filepath.Join(w.dir, "ascc.registry.json"),
 		"the audit log": filepath.Join(w.dir, ".ascc", "audit.jsonl"),
 		"a policy file": filepath.Join(w.dir, "policies", "allow.cedar"),
 		"a new policy":  filepath.Join(w.dir, "policies", "new.cedar"),
+		// A scheduled run that replaced a settings file would take the hook's registration with it.
+		"project settings":        settings,
+		"local settings":          filepath.Join(w.dir, ".claude", "settings.local.json"),
+		"user settings, any case": filepath.Join(w.dir, "home", ".Claude", "Settings.json"),
+		"managed settings":        filepath.Join(w.dir, "managed-settings.json"),
+		"a managed drop-in":       filepath.Join(w.dir, "managed-settings.d", "10-ascc.json"),
+		"an MCP config":           filepath.Join(w.dir, ".mcp.json"),
 	} {
 		for _, cmd := range []string{"discover", "inventory"} {
 			args := []string{cmd, "--out", out}
@@ -131,6 +146,9 @@ func TestOutWontOverwriteAsccState(t *testing.T) {
 	}
 	if w.log() != before {
 		t.Error("the audit log changed")
+	}
+	if b, err := os.ReadFile(settings); err != nil || string(b) != "{}\n" {
+		t.Errorf("the project settings changed: %q, %v", b, err)
 	}
 	if code, _, errOut := w.run("", "audit", "verify"); code != 0 {
 		t.Errorf("audit verify: %s", errOut)

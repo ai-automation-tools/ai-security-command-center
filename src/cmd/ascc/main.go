@@ -16,6 +16,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/ai-automation-tools/ai-security-command-center/src/internal/audit"
@@ -345,6 +346,12 @@ func writeDoc(out string, stdout io.Writer, doc any, state ...string) error {
 		if same(out, s) || same(filepath.Dir(out), s) {
 			return errors.New("--out would write over ascc's own registry, policies or audit log; choose another file")
 		}
+	}
+	// Claude Code settings hold the hook's registration, so replacing one switches ascc off. Matched by
+	// name, case ignored, like discover's locations, plus the managed drop-ins.
+	if abs, err := filepath.Abs(out); err != nil || claudecode.IsLocation(filepath.ToSlash(abs)) ||
+		strings.Contains(strings.ToLower(filepath.ToSlash(abs)), "/managed-settings.d/") {
+		return errors.New("--out would write over an agent config file, such as Claude Code's settings; choose another file")
 	}
 	f, err := os.Create(out)
 	if err != nil {
