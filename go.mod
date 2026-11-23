@@ -3,7 +3,7 @@ module github.com/ai-automation-tools/ai-security-command-center
 go 1.26.0
 
 require (
-	github.com/cedar-policy/cedar-go v1.9.1
+	github.com/cedar-policy/cedar-go v1.9.3
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
 )
 
