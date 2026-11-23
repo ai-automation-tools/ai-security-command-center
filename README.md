@@ -185,8 +185,8 @@ above, pointed at the folder that holds your registry, policies and audit log, a
 [All four as one pack](https://cronsole.ai-automation-tools.dev/#/collection/ai-security-command-center). Both
 documents are overwritten on each run; copy them elsewhere for history. The catalog is built from
 `src/cmd/buildregistry` into [`registry/`](registry/) and published to
-`https://ai-security-command-center.ai-automation-tools.dev/registry/`, where the gallery reads it. Until the
-first publish, the gallery links don't open a template yet.
+`https://ai-security-command-center.ai-automation-tools.dev/registry/`, where the gallery reads it, on every
+push to `main` that changes it; a daily check fails when the hosted copy drifts.
 
 ## 🔭 Coverage: what the hook sees and what it doesn't
 
