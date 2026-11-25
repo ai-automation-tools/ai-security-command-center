@@ -53,8 +53,8 @@ decision goes in as an ADR amendment there, never as a quiet code change.
   `github.com/ai-automation-tools/ai-security-command-center`. Code lives under `src/`: the CLI in
   `src/cmd/ascc/`, packages in `src/internal/<name>/`. Tests are `_test.go` files next to the code, using
   `testing` only (table tests; no testify).
-- Cedar via `github.com/cedar-policy/cedar-go` **v1.9.0** (ADR-03), confirmed against the Rust reference in
-  `docs/reports/2026-cedar-go-check.md`. It is why `go.mod` says 1.26. Load policies with `NewPolicyListFromBytes` and key each by its `@id` (reject missing or
+- Cedar via `github.com/cedar-policy/cedar-go` **v1.9.1** (ADR-03; Dependabot moved it from v1.9.0, the version confirmed against the Rust reference in
+  `docs/reports/2026-cedar-go-check.md`). It is why `go.mod` says 1.26. Load policies with `NewPolicyListFromBytes` and key each by its `@id` (reject missing or
   duplicate ids). Its schema validator is experimental (`x/exp/schema/validate`): it is called only from
   `newValidator` and `checkPolicy` in `src/internal/pdp/pdp.go`. `santhosh-tekuri/jsonschema/v6` is a test-only
   dependency for the inventory check everywhere except `src/cmd/ascc-schema`, the one place that imports it
