@@ -1,5 +1,5 @@
 ---
-name: cedar-policy
+name: ascc-cedar-policy
 description: Add, change or debug a Cedar policy in ASCC, together with the schema, registry and fixtures it depends on. Use when writing a permit or forbid, adding a tool or agent group, adding a context or entity attribute, when ascc refuses to load a policy, or when a decision or its reason is wrong.
 ---
 
@@ -33,7 +33,7 @@ when { context.network && context.touches_secret_path };
 
 ## Steps to add a rule
 
-1. **Does the context already carry what you need?** If not, stop and use the `hook-feature` skill first: the
+1. **Does the context already carry what you need?** If not, stop and use the `ascc-hook-feature` skill first: the
    attribute goes into `schema.cedar`, then the parser, then here.
 2. **New tool or group?** Add the tool to `tools` in the sample registry with its groups. A tool that isn't
    listed is denied before Cedar runs, MCP tools included (`claude-code/mcp__<server>__<tool>`).

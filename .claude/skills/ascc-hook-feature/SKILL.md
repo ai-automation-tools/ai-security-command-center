@@ -1,5 +1,5 @@
 ---
-name: hook-feature
+name: ascc-hook-feature
 description: Add or change a parsed command feature in ASCC's Claude Code hook (the context attributes path_in_repo, network, touches_secret_path, touches_ascc_state, git_push_target, or a new one), or change how a tool's payload is mapped to a request. Use when the hook misjudges a command, when a policy needs a fact the context doesn't carry, or when a new Claude Code tool needs mapping.
 ---
 
@@ -20,7 +20,7 @@ A feature is a fact about a tool call that Cedar can read. It crosses four layer
    gets a row for `Bash` **and** for `PowerShell`, plus at least one row that must stay false.
 4. **Fixtures.** Add the attribute to every file in `examples/requests/` (the PDP rejects a context that
    doesn't fit the schema) and a payload in `examples/hook-payloads/` if the README or guide will show it.
-5. **Policy.** If a sample policy should use it, follow the `cedar-policy` skill.
+5. **Policy.** If a sample policy should use it, follow the `ascc-cedar-policy` skill.
 6. **Audit.** The audit line stores parsed features. Confirm the new one holds no raw input: a Bool or a short
    normalised string, never a command, a path's contents or a token. `TestAuditHoldsNoRawInput` guards this.
 7. **Docs.** Update the feature list in `AGENTS.md`, and add what the feature can't see to the limits table in

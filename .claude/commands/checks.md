@@ -26,6 +26,6 @@ start the stack: `ASCC_COMPOSE_SMOKE=1 go test -count=1 ./deploy/compose` does, 
 set (setup in `src/cmd/buildsite/testdata/browser/README.md`); CI runs it in its `browser` job.
 
 Don't fix anything unless asked: this command reports. If a test fails, name the test, show its message, and
-say which invariant in `AGENTS.md` it guards (the `fail-closed-review` skill maps tests to invariants).
+say which invariant in `AGENTS.md` it guards (the `ascc-fail-closed-review` skill maps tests to invariants).
 
 $ARGUMENTS

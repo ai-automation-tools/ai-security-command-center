@@ -24,10 +24,10 @@ them, with fictional hosts (`example.com`, `paste.example`) and never a live tar
 | Agent | **`security-reviewer`** | A read-only review of a diff against the invariants, the ADRs and the threat model. Run before every PR. |
 | Agent | **`policy-engineer`** | Writing or changing Cedar policies, the built-in schema, the registry format and their fixtures. |
 | Agent | **`bypass-hunter`** | Finding command text that slips past the hook's feature parser, and turning each find into a test row. |
-| Skill | **`cedar-policy`** | The steps and traps for adding a policy rule. |
-| Skill | **`hook-feature`** | Adding or changing a parsed command feature end to end. |
-| Skill | **`fail-closed-review`** | The invariant checklist, with the test that guards each one. |
-| Skill | **`threat-trace`** | Tying a change to its threat ids, requirements and ADRs, and amending an ADR properly. |
+| Skill | **`ascc-cedar-policy`** | The steps and traps for adding a policy rule. |
+| Skill | **`ascc-hook-feature`** | Adding or changing a parsed command feature end to end. |
+| Skill | **`ascc-fail-closed-review`** | The invariant checklist, with the test that guards each one. |
+| Skill | **`ascc-threat-trace`** | Tying a change to its threat ids, requirements and ADRs, and amending an ADR properly. |
 | Command | **`/checks`** | The four verify commands plus the WebAssembly build. |
 | Command | **`/policy-check`** | Build ascc and run every sample request and hook payload, as a table. |
 | Command | **`/invariant-audit`** | `security-reviewer` over the current diff. |

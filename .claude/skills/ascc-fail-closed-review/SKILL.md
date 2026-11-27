@@ -1,5 +1,5 @@
 ---
-name: fail-closed-review
+name: ascc-fail-closed-review
 description: Check a change in ASCC against its security invariants (default deny, fail closed, no secret at rest, zero network, the audit chain, the kill switch, self-protection, honest coverage), each with the test that guards it and a command to confirm. Use before opening a PR, when reviewing a diff, when adding an error path, a dependency or a command, and when a test in this list fails.
 ---
 

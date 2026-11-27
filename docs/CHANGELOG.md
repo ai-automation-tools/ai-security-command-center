@@ -15,6 +15,9 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 
 ## Unreleased
 
+**Changed**
+- The four repo skills carry the repo's prefix: `ascc-cedar-policy`, `ascc-hook-feature`, `ascc-fail-closed-review` and `ascc-threat-trace`. A bare name like `threat-trace` could collide with another skill once a copy reaches user scope. `CLAUDE.md`, the `policy-engineer` agent and the `/checks` and `/roadmap-next` commands use the new names.
+
 **Added**
 - The Cronsole catalog is published: the site repo's deploy key went in on 2026-11-22, the first *Publish registry* run mirrored `registry/` to `https://ai-security-command-center.ai-automation-tools.dev/registry/` and the daily drift check passes. The README no longer says the gallery links don't open yet. *Next slices*
 - The README's suite table links GhostGrant and shows how its inventory export reaches `ascc inventory --import`.

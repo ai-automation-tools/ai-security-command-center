@@ -1,5 +1,5 @@
 ---
-name: threat-trace
+name: ascc-threat-trace
 description: Tie a change in ASCC to the threat it mitigates, the requirement and ADR behind it and the test that proves it, and record a changed architecture decision as an ADR amendment. Use when designing a slice or feature, when a change alters what ASCC defends against or how, when writing a PR body for a security-relevant change, when a roadmap item seems to conflict with an ADR or the Won't list, and when asked what a control does and doesn't cover.
 ---
 
