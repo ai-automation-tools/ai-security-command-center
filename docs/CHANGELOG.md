@@ -15,6 +15,8 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 
 ## Unreleased
 
+- `CLAUDE.md` is gone: Claude Code reads `AGENTS.md` directly, and its Claude-only notes are the closing *Claude Code only* section of `AGENTS.md`.
+
 **Changed**
 - The roadmap gains a Next slices item to send skill shell commands through the hook: Claude Code 2.1.332 (2026-11-25) added a `PreSkillShellCommand` hook event, and its docs say `PreToolUse` never sees the shell commands a skill runs as it loads, so today those run with no ascc decision.
 - The four repo skills carry the repo's prefix: `ascc-cedar-policy`, `ascc-hook-feature`, `ascc-fail-closed-review` and `ascc-threat-trace`. A bare name like `threat-trace` could collide with another skill once a copy reaches user scope. `CLAUDE.md`, the `policy-engineer` agent and the `/checks` and `/roadmap-next` commands use the new names.
