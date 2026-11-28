@@ -20,6 +20,9 @@
 |:---|:---|
 | [**🗺️ ROADMAP.md**](ROADMAP.md) | The release gates in build order, then the plan's Phase 1 and beyond. |
 | [**📋 CHANGELOG.md**](CHANGELOG.md) | Every change, newest first. Roadmap items land here the run they're ticked. |
+| [**🔗 UPSTREAMS.md**](UPSTREAMS.md) | Every outside tool ASCC depends on, what the code assumes about it, and where to check. |
+| [**🧭 guides/**](guides/README.md) | The Claude Code setup guide and the PDP service guide. |
+| [**🔬 reports/**](reports/README.md) | The five research reports, one verdict each. |
 
 ## 📦 Product and design
 

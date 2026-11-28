@@ -35,6 +35,9 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 - `ascc-pdp` stops cleanly on the terminate signal `docker stop` sends, and lets requests in flight finish (up to five seconds) before it exits. It used to ignore that signal, and on Ctrl-C it returned without waiting. *Next slices*
 - The development stack's rule test could be passed by a Compose file that broke its rules: a secret in a command, health check, label or build argument, a named volume bound to a host path, a Compose secret file, network driver options, an unpinned image named like a build stage or pulled in a `# syntax=` line or a `RUN --mount`, and more. Each is now refused, with a test that breaks it. Found by the security review of `deploy/compose/`, which found nothing wrong in the stack's own files. `dev-init.sh` also removes the file that briefly holds the OpenBao root token on every way out. *Next slices*
 
+**Docs**
+- `docs/guides/` and `docs/reports/` have their own README index, and the docs hub links both and `UPSTREAMS.md`.
+
 **Changed**
 - The roadmap marks Slices 8 to 10 blocked: the plugin host and connectors build on ADR-15, 16 and 07 (K7, K8), and Slices 9 and 10 need the gateway and egress as well. Its status block says the repo is public.
 - The roadmap marks Slice 7 blocked: egress builds on ADR-08 and the broker on ADR-07, both still Spike, and the slice follows Slice 6, which waits on K5. *Next slices*
